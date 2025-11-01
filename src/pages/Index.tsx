@@ -1,12 +1,76 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import AppHeader from "@/components/AppHeader";
+import ProgressIndicator from "@/components/ProgressIndicator";
+import ImportTab from "@/components/tabs/ImportTab";
+import AnalyseTab from "@/components/tabs/AnalyseTab";
+import MatieresTab from "@/components/tabs/MatieresTab";
+import AppreciationsTab from "@/components/tabs/AppreciationsTab";
+import ExportTab from "@/components/tabs/ExportTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FileUp, BarChart3, BookOpen, FileText, Download } from "lucide-react";
 
 const Index = () => {
+  const [activeTab, setActiveTab] = useState("import");
+
+  const tabs = [
+    { value: "import", label: "Import", icon: FileUp },
+    { value: "analyse", label: "Analyse", icon: BarChart3 },
+    { value: "matieres", label: "Matières", icon: BookOpen },
+    { value: "appreciations", label: "Appréciations", icon: FileText },
+    { value: "export", label: "Export", icon: Download },
+  ];
+
+  const getStepNumber = () => {
+    return tabs.findIndex((tab) => tab.value === activeTab) + 1;
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      <AppHeader />
+      
+      <main className="container mx-auto px-4 py-8">
+        <ProgressIndicator currentStep={getStepNumber()} totalSteps={5} />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
+          <TabsList className="grid w-full grid-cols-5 h-auto gap-2 bg-muted/50 p-2">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-smooth"
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-xs font-medium">{tab.label}</span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
+          <div className="mt-8">
+            <TabsContent value="import" className="mt-0">
+              <ImportTab onNext={() => setActiveTab("analyse")} />
+            </TabsContent>
+
+            <TabsContent value="analyse" className="mt-0">
+              <AnalyseTab onNext={() => setActiveTab("matieres")} />
+            </TabsContent>
+
+            <TabsContent value="matieres" className="mt-0">
+              <MatieresTab onNext={() => setActiveTab("appreciations")} />
+            </TabsContent>
+
+            <TabsContent value="appreciations" className="mt-0">
+              <AppreciationsTab onNext={() => setActiveTab("export")} />
+            </TabsContent>
+
+            <TabsContent value="export" className="mt-0">
+              <ExportTab />
+            </TabsContent>
+          </div>
+        </Tabs>
+      </main>
     </div>
   );
 };
