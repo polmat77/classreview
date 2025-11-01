@@ -1,7 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
-// Désactiver le worker pour éviter les problèmes de chargement
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// Configure le worker avec l'URL correcte pour Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export interface BulletinClasseData {
   etablissement: string;
@@ -38,16 +39,8 @@ export interface BulletinEleveData {
 export async function extractTextFromPDF(file: File): Promise<string> {
   try {
     const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     
-    // Utiliser getDocument sans worker
-    const loadingTask = pdfjsLib.getDocument({
-      data: arrayBuffer,
-      useWorkerFetch: false,
-      isEvalSupported: false,
-      useSystemFonts: true,
-    });
-    
-    const pdf = await loadingTask.promise;
     let fullText = '';
     
     for (let i = 1; i <= pdf.numPages; i++) {
