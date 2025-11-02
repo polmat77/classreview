@@ -144,64 +144,131 @@ export function parseBulletinClasse(text: string): BulletinClasseData | null {
 
 export function parseBulletinEleve(text: string): BulletinEleveData | null {
   try {
-    const lignes = text.split('\n');
+    console.log('=== PARSING BULLETIN ELEVE ===');
+    console.log('Texte extrait (200 premiers chars):', text.substring(0, 200));
     
-    // Extraction des informations de l'élève
-    const nomCompletMatch = text.match(/([A-Z]+)\s+([A-Z][a-z]+)\s+Née?\s+le/);
-    const nom = nomCompletMatch?.[1] || '';
-    const prenom = nomCompletMatch?.[2] || '';
+    // Extraction des informations de l'élève avec plusieurs patterns
+    let nom = '', prenom = '';
+    
+    // Pattern 1: "NOM Prenom Né(e) le"
+    let nomCompletMatch = text.match(/([A-Z]{2,})\s+([A-Z][a-zé]+)\s+Née?\s+le/);
+    if (nomCompletMatch) {
+      nom = nomCompletMatch[1];
+      prenom = nomCompletMatch[2];
+    } else {
+      // Pattern 2: Chercher nom en majuscules suivi d'un prénom
+      nomCompletMatch = text.match(/\b([A-Z]{3,})\s+([A-Z][a-zéè]+)\b/);
+      if (nomCompletMatch) {
+        nom = nomCompletMatch[1];
+        prenom = nomCompletMatch[2];
+      }
+    }
+    
+    console.log('Nom détecté:', nom, '- Prénom:', prenom);
+    
     const dateNaissance = text.match(/Née?\s+le\s+(\d{2}\/\d{2}\/\d{4})/)?.[1] || '';
-    
     const classeMatch = text.match(/3[eè](\d+)/);
     const classe = classeMatch ? `3e${classeMatch[1]}` : '';
-    const trimestre = text.match(/(\d+)(?:er|ème)\s+Trimestre/)?.[0] || '';
+    const trimestre = text.match(/(\d+)(?:er|ème|eme)\s+Trimestre/i)?.[0] || '';
     
     const matieres: BulletinEleveData['matieres'] = [];
     let poleActuel = '';
     
-    // Pattern pour extraire les lignes de matières du tableau
-    // Format: MATIERE | moyenneEleve | moyenneClasse | appreciation
+    // Normaliser le texte pour faciliter l'extraction
+    const normalizedText = text.replace(/\s+/g, ' ');
     const lines = text.split('\n');
+    
+    // Détection des matières avec différents patterns
+    const matierePatterns = [
+      // Pattern 1: MATIERE moyEleve moyClasse appreciation
+      /^([A-Z][A-Z\s&\.\-']+?)\s+(\d+[,\.]\d+)\s+(\d+[,\.]\d+)\s+(.+)$/,
+      // Pattern 2: MATIERE moyEleve appreciation (sans moyenne classe)
+      /^([A-Z][A-Z\s&\.\-']+?)\s+(\d+[,\.]\d+)\s+([A-Za-zÀ-ÿ].{10,})$/,
+      // Pattern 3: MATIERE seule (ligne de pole)
+      /^(POLE\s+[A-Z]+|[A-Z\s&\.\-']{3,})\s+(\d+[,\.]\d+)?\s*$/
+    ];
     
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
+      if (!line) continue;
       
       // Détecter les pôles
-      if (line.includes('POLE SCIENCES')) {
+      if (line.match(/POLE\s+SCIENCES|SCIENCES\s+\d+[,\.]\d+/i)) {
         poleActuel = 'Sciences';
-        continue;
-      }
-      if (line.includes('POLE LITTERAIRE')) {
+      } else if (line.match(/POLE\s+LITTERAIRE|LITTERAIRE\s+\d+[,\.]\d+/i)) {
         poleActuel = 'Littéraire';
-        continue;
-      }
-      if (line.includes('ARTISTIQUE')) {
+      } else if (line.match(/ARTISTIQUE|CULTURELLE/i)) {
         poleActuel = 'Artistique et culturelle';
-        continue;
       }
       
-      // Matcher les lignes de matières
-      const matiereMatch = line.match(/^([A-Z][A-Z\s&-]+)\s+(\d+[,\.]\d+)\s+(\d+[,\.]\d+)\s+(.+)$/);
-      if (matiereMatch) {
-        const [, nomMatiere, moyEleve, moyClasse, appreciation] = matiereMatch;
-        
-        matieres.push({
-          nom: nomMatiere.trim(),
-          moyenneEleve: parseFloat(moyEleve.replace(',', '.')),
-          moyenneClasse: parseFloat(moyClasse.replace(',', '.')),
-          appreciation: appreciation.trim(),
-          pole: poleActuel
-        });
+      // Essayer chaque pattern
+      for (const pattern of matierePatterns) {
+        const match = line.match(pattern);
+        if (match && match[2]) { // Si on a au moins une moyenne
+          const nomMatiere = match[1].trim();
+          
+          // Ignorer les lignes de pôles
+          if (nomMatiere.startsWith('POLE') || nomMatiere === 'SCIENCES' || nomMatiere === 'LITTERAIRE') {
+            continue;
+          }
+          
+          const moyEleve = parseFloat(match[2].replace(',', '.'));
+          let moyClasse = moyEleve; // Par défaut, si pas de moyenne classe
+          let appreciation = '';
+          
+          if (match[4]) {
+            // Pattern 1: deux moyennes + appréciation
+            moyClasse = parseFloat(match[3].replace(',', '.'));
+            appreciation = match[4].trim();
+          } else if (match[3] && isNaN(parseFloat(match[3]))) {
+            // Pattern 2: une moyenne + appréciation
+            appreciation = match[3].trim();
+          }
+          
+          // Vérifier que c'est bien une matière valide
+          if (nomMatiere.length > 2 && moyEleve >= 0 && moyEleve <= 20) {
+            matieres.push({
+              nom: nomMatiere,
+              moyenneEleve: moyEleve,
+              moyenneClasse: moyClasse,
+              appreciation: appreciation,
+              pole: poleActuel
+            });
+            console.log('Matière détectée:', nomMatiere, moyEleve, moyClasse);
+            break; // Sortir de la boucle des patterns
+          }
+        }
       }
     }
     
-    // Extraction de l'appréciation générale
-    const appreciationMatch = text.match(/Appréciation générale[:\s]+(.+?)(?=Signature|$)/s);
-    const appreciationGenerale = appreciationMatch?.[1]?.trim() || '';
+    console.log('Nombre de matières extraites:', matieres.length);
     
-    // Extraction vie scolaire
-    const absencesMatch = text.match(/Absences[:\s]+(\d+)/);
-    const retardsMatch = text.match(/Retards[:\s]+(\d+)/);
+    // Extraction de l'appréciation générale
+    const appreciationMatch = text.match(/Appréciation\s+globale\s*:?\s*(.+?)(?=Mentions|Signature|$)/si);
+    const appreciationGenerale = appreciationMatch?.[1]?.trim().replace(/\s+/g, ' ') || '';
+    
+    // Extraction vie scolaire avec patterns plus flexibles
+    let absences = 0, retards = 0;
+    
+    const absencesMatch = text.match(/Absences?\s*:?\s*(\d+)|(\d+)\s+demi-journée/i);
+    if (absencesMatch) {
+      absences = parseInt(absencesMatch[1] || absencesMatch[2]);
+    } else if (text.match(/Aucune?\s+absence/i)) {
+      absences = 0;
+    }
+    
+    const retardsMatch = text.match(/Retards?\s*:?\s*(\d+)/i);
+    if (retardsMatch) {
+      retards = parseInt(retardsMatch[1]);
+    } else if (text.match(/Aucune?\s+retard/i)) {
+      retards = 0;
+    }
+    
+    // Ne retourner que si on a au moins un nom et au moins une matière
+    if (!nom || matieres.length === 0) {
+      console.log('Bulletin invalide - nom:', nom, 'matières:', matieres.length);
+      return null;
+    }
     
     return {
       nom,
@@ -211,8 +278,8 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
       trimestre,
       matieres,
       appreciationGenerale,
-      absences: absencesMatch ? parseInt(absencesMatch[1]) : 0,
-      retards: retardsMatch ? parseInt(retardsMatch[1]) : 0
+      absences,
+      retards
     };
   } catch (error) {
     console.error('Erreur lors du parsing du bulletin élève:', error);
