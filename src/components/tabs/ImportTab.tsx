@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { extractTextFromPDF, parseBulletinClasse, parseBulletinEleve, BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
+import { extractTextFromPDF, parseBulletinClasse, parseBulletinsElevesFromPDF, BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { parseCSVClasse, ClasseDataCSV } from "@/utils/csvParser";
 
 interface ImportTabProps {
@@ -80,9 +80,8 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
     setIsProcessing(true);
     
     try {
-      const text = await extractTextFromPDF(file);
-      
       if (type === 'classe') {
+        const text = await extractTextFromPDF(file);
         const data = parseBulletinClasse(text);
         if (data) {
           setBulletinClasse(data);
@@ -95,23 +94,24 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
           throw new Error("Impossible de parser le bulletin de classe");
         }
       } else {
-        const data = parseBulletinEleve(text);
-        if (data) {
-          setBulletinsEleves(prev => [...prev, data]);
+        // Parse tous les bulletins élèves du PDF (une page = un élève)
+        const bulletins = await parseBulletinsElevesFromPDF(file);
+        if (bulletins.length > 0) {
+          setBulletinsEleves(prev => [...prev, ...bulletins]);
           toast({
-            title: "✓ Bulletin élève chargé",
-            description: `${data.prenom} ${data.nom} - ${data.matieres.length} matières`,
+            title: "✓ Bulletins élèves chargés",
+            description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''} du PDF`,
           });
-          onDataLoaded?.({ bulletinClasse, bulletinsEleves: [...bulletinsEleves, data], classeCSV });
+          onDataLoaded?.({ bulletinClasse, bulletinsEleves: [...bulletinsEleves, ...bulletins], classeCSV });
         } else {
-          throw new Error("Impossible de parser le bulletin élève");
+          throw new Error("Aucun bulletin élève trouvé dans le PDF");
         }
       }
     } catch (error) {
       console.error('Erreur lors du traitement du PDF:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de lire le fichier PDF",
+        description: error instanceof Error ? error.message : "Impossible de lire le fichier PDF",
         variant: "destructive",
       });
     } finally {

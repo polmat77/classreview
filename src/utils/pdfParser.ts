@@ -59,6 +59,29 @@ export async function extractTextFromPDF(file: File): Promise<string> {
   }
 }
 
+export async function extractTextFromPDFByPage(file: File): Promise<string[]> {
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    const pages: string[] = [];
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      pages.push(pageText);
+    }
+    
+    return pages;
+  } catch (error) {
+    console.error('Erreur extraction PDF:', error);
+    throw new Error('Impossible de lire le fichier PDF. Vérifiez que le fichier n\'est pas corrompu.');
+  }
+}
+
 export function parseBulletinClasse(text: string): BulletinClasseData | null {
   try {
     const lignes = text.split('\n');
@@ -194,5 +217,24 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
   } catch (error) {
     console.error('Erreur lors du parsing du bulletin élève:', error);
     return null;
+  }
+}
+
+export async function parseBulletinsElevesFromPDF(file: File): Promise<BulletinEleveData[]> {
+  try {
+    const pages = await extractTextFromPDFByPage(file);
+    const bulletins: BulletinEleveData[] = [];
+    
+    for (const pageText of pages) {
+      const bulletin = parseBulletinEleve(pageText);
+      if (bulletin && bulletin.nom && bulletin.prenom) {
+        bulletins.push(bulletin);
+      }
+    }
+    
+    return bulletins;
+  } catch (error) {
+    console.error('Erreur lors du parsing des bulletins élèves:', error);
+    throw new Error('Impossible de parser les bulletins élèves du PDF.');
   }
 }
