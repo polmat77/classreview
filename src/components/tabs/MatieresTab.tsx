@@ -2,69 +2,84 @@ import { TrendingUp, TrendingDown, Trophy } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
+import { ClasseDataCSV } from "@/utils/csvParser";
 
 interface MatieresTabProps {
   onNext: () => void;
+  data?: {
+    bulletinClasse?: BulletinClasseData;
+    bulletinsEleves?: BulletinEleveData[];
+    classeCSV?: ClasseDataCSV;
+  };
 }
 
-const subjects = [
-  {
-    name: "Mathématiques",
-    average: 12.5,
-    trend: 0.7,
-    top: "MARTIN Clara (18/20)",
-    needsHelp: 3,
-    comments: "Bonne participation générale. Les notions d'algèbre sont bien comprises.",
-    color: "primary",
-  },
-  {
-    name: "Français",
-    average: 13.2,
-    trend: -0.3,
-    top: "DUBOIS Thomas (17.5/20)",
-    needsHelp: 2,
-    comments: "Excellentes rédactions. Continuer les efforts en grammaire.",
-    color: "accent",
-  },
-  {
-    name: "Anglais",
-    average: 14.1,
-    trend: 0.3,
-    top: "BERNARD Sophie (18.5/20)",
-    needsHelp: 1,
-    comments: "Très bonne participation à l'oral. Progrès notables en expression écrite.",
-    color: "success",
-  },
-  {
-    name: "Histoire-Géographie",
-    average: 11.8,
-    trend: -0.4,
-    top: "MARTIN Clara (16.5/20)",
-    needsHelp: 4,
-    comments: "Méthodologie à renforcer. Les connaissances sont présentes mais mal structurées.",
-    color: "warning",
-  },
-  {
-    name: "Sciences (SVT)",
-    average: 13.5,
-    trend: 0.6,
-    top: "PETIT Lucas (17/20)",
-    needsHelp: 2,
-    comments: "Classe motivée et curieuse. Bon investissement dans les expériences.",
-    color: "success",
-  },
-  {
-    name: "Physique-Chimie",
-    average: 11.2,
-    trend: -0.3,
-    top: "DUBOIS Thomas (16/20)",
-    needsHelp: 5,
-    comments: "Difficultés en résolution de problèmes. Prévoir des séances de soutien.",
-    color: "warning",
-  },
-];
+const MatieresTab = ({ onNext, data }: MatieresTabProps) => {
+  const eleves = data?.bulletinsEleves || [];
+  const bulletinClasse = data?.bulletinClasse;
 
-const MatieresTab = ({ onNext }: MatieresTabProps) => {
+  // Calculer les statistiques par matière
+  const matieresStats = new Map<string, {
+    nom: string;
+    moyenneEleves: number[];
+    moyenneClasse: number;
+    appreciations: string[];
+    pole: string;
+  }>();
+
+  eleves.forEach(eleve => {
+    eleve.matieres.forEach(matiere => {
+      const current = matieresStats.get(matiere.nom) || {
+        nom: matiere.nom,
+        moyenneEleves: [],
+        moyenneClasse: matiere.moyenneClasse,
+        appreciations: [],
+        pole: matiere.pole
+      };
+      current.moyenneEleves.push(matiere.moyenneEleve);
+      if (matiere.appreciation) {
+        current.appreciations.push(matiere.appreciation);
+      }
+      matieresStats.set(matiere.nom, current);
+    });
+  });
+
+  const subjects = Array.from(matieresStats.values()).map(stat => {
+    const moyenne = stat.moyenneEleves.reduce((a, b) => a + b, 0) / stat.moyenneEleves.length;
+    const sorted = [...stat.moyenneEleves].sort((a, b) => b - a);
+    const meilleureNote = sorted[0] || 0;
+    const needsHelp = stat.moyenneEleves.filter(m => m < 10).length;
+    
+    // Prendre l'appréciation du bulletin de classe si disponible
+    const appreciationClasse = bulletinClasse?.matieres.find(m => m.nom === stat.nom)?.appreciation || '';
+    
+    // Trouver le meilleur élève pour cette matière
+    let meilleureEleveNom = '';
+    if (eleves.length > 0) {
+      const elevesAvecNotes = eleves
+        .map(e => {
+          const matEleve = e.matieres.find(m => m.nom === stat.nom);
+          return matEleve ? { nom: `${e.prenom} ${e.nom}`, note: matEleve.moyenneEleve } : null;
+        })
+        .filter((e): e is { nom: string; note: number } => e !== null)
+        .sort((a, b) => b.note - a.note);
+      
+      if (elevesAvecNotes.length > 0) {
+        meilleureEleveNom = `${elevesAvecNotes[0].nom} (${elevesAvecNotes[0].note.toFixed(2)}/20)`;
+      }
+    }
+    
+    return {
+      name: stat.nom,
+      average: moyenne,
+      trend: moyenne - stat.moyenneClasse,
+      top: meilleureEleveNom || `${meilleureNote.toFixed(2)}/20`,
+      needsHelp,
+      comments: appreciationClasse || stat.appreciations[0] || 'Pas d\'appréciation disponible',
+      color: moyenne >= 14 ? "success" : moyenne >= 12 ? "accent" : moyenne >= 10 ? "warning" : "destructive",
+    };
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -73,6 +88,13 @@ const MatieresTab = ({ onNext }: MatieresTabProps) => {
       </div>
 
       <div className="grid gap-4">
+        {subjects.length === 0 && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Aucune donnée disponible. Veuillez charger des bulletins élèves dans l'onglet Import.
+            </CardContent>
+          </Card>
+        )}
         {subjects.map((subject, index) => (
           <Card key={index} className="hover:shadow-md transition-smooth">
             <CardHeader>

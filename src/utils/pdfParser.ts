@@ -186,12 +186,12 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     // Liste des matières avec leurs variations possibles
     const matieresMap = {
       'MATHEMATIQUES': ['MATHEMATIQUES', 'MATHS'],
-      'PHYSIQUE-CHIMIE': ['PHYSIQUE-CHIMIE', 'PHYSIQUE CHIMIE', 'SC.PHYSIQUES'],
+      'PHYSIQUE-CHIMIE': ['PHYSIQUE-CHIMIE', 'PHYSIQUE CHIMIE', 'SC.PHYSIQUES', 'SCIENCES PHYSIQUES'],
       'SCIENCES VIE & TERRE': ['SCIENCES VIE & TERRE', 'SCIENCES VIE ET TERRE', 'SVT', 'SC.VIE & TERRE'],
       'TECHNOLOGIE': ['TECHNOLOGIE', 'TECHNO'],
       'ANGLAIS LV1': ['ANGLAIS LV1', 'ANGLAIS'],
       'FRANCAIS': ['FRANCAIS', 'FRANÇAIS'],
-      'HISTOIRE-GEOGRAPHIE': ['HISTOIRE-GEOGRAPHIE', 'HISTOIRE GEOGRAPHIE', 'HIST-GEO'],
+      'HISTOIRE-GEOGRAPHIE': ['HISTOIRE-GEOGRAPHIE', 'HISTOIRE GEOGRAPHIE', 'HIST-GEO', 'HISTOIRE-GEO'],
       'ESPAGNOL LV2': ['ESPAGNOL LV2', 'ESPAGNOL'],
       'ITALIEN LV2': ['ITALIEN LV2', 'ITALIEN'],
       'ARTS PLASTIQUES': ['ARTS PLASTIQUES', 'ARTS PLAST.'],
@@ -201,25 +201,31 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     };
     
     // Pour chaque matière, chercher ses occurrences
+    // Le format PRONOTE est: MATIERE [PROF] NOTE1_ELEVE NOTE2_ELEVE NOTE1_CLASSE NOTE2_CLASSE APPRECIATION
     for (const [nomMatiere, variations] of Object.entries(matieresMap)) {
       for (const variation of variations) {
-        // Chercher la variation de la matière suivie de 1 ou 2 nombres
-        // Pattern: MATIERE [prof] nombre1 nombre2 texte
+        // Pattern pour capturer 4 notes (2 élève + 2 classe) puis l'appréciation
         const pattern = new RegExp(
-          `${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+(?:M\\.|Mme\\s+[A-Z]+\\s+)?` +
-          `(\\d+[,\\.]\\d+)\\s+(\\d+[,\\.]\\d+)\\s+([A-Za-zÀ-ÿ\\'\\-][^\\d]{15,}?)(?=(?:${Object.values(matieresMap).flat().join('|').replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})|POLE|Moyennes|Absences|Appréciation|Vie scolaire|$)`,
+          `${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+` +
+          `(?:M\\.|Mme|Mlle)?\\s*[A-Z]*\\s*` + // Prof optionnel
+          `(\\d+[,\\.]\\d+)\\s+` + // Note 1 élève
+          `(\\d+[,\\.]\\d+)\\s+` + // Note 2 élève
+          `(\\d+[,\\.]\\d+)\\s+` + // Note 1 classe
+          `(\\d+[,\\.]\\d+)\\s+` + // Note 2 classe
+          `([A-Za-zÀ-ÿ\\'\\-\\s]{10,}?)(?=(?:MATHEMATIQUES|PHYSIQUE|SCIENCES|TECHNOLOGIE|ANGLAIS|FRANCAIS|HISTOIRE|ESPAGNOL|ITALIEN|ARTS|EDUCATION|ATELIER|ED\\.|POLE|Moyennes|Absences|Appréciation|Vie scolaire)|$)`,
           'i'
         );
         
         const match = normalizedText.match(pattern);
         
         if (match) {
+          // Prendre la première note de chaque paire (ou faire la moyenne)
           const moyEleve = parseFloat(match[1].replace(',', '.'));
-          const moyClasse = parseFloat(match[2].replace(',', '.'));
-          let appreciation = match[3] ? match[3].trim().replace(/\s+/g, ' ') : '';
+          const moyClasse = parseFloat(match[3].replace(',', '.'));
+          let appreciation = match[5] ? match[5].trim().replace(/\s+/g, ' ') : '';
           
           // Nettoyer l'appréciation
-          appreciation = appreciation.replace(/^[:\s]+/, '');
+          appreciation = appreciation.replace(/^[:\s]+/, '').replace(/\s+$/, '');
           
           // Déterminer le pôle selon la matière
           let pole = '';
@@ -231,7 +237,7 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
             pole = 'Artistique et culturelle';
           }
           
-          if (moyEleve >= 0 && moyEleve <= 20) {
+          if (moyEleve >= 0 && moyEleve <= 20 && moyClasse >= 0 && moyClasse <= 20) {
             matieres.push({
               nom: nomMatiere,
               moyenneEleve: moyEleve,
@@ -239,7 +245,7 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
               appreciation: appreciation,
               pole: pole
             });
-            console.log('✓ Matière détectée:', nomMatiere, '| Élève:', moyEleve, '| Classe:', moyClasse);
+            console.log('✓ Matière détectée:', nomMatiere, '| Élève:', moyEleve, '| Classe:', moyClasse, '| App:', appreciation.substring(0, 30) + '...');
             break; // Sortir de la boucle des variations si une correspondance est trouvée
           }
         }

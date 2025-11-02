@@ -14,32 +14,116 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
+import { ClasseDataCSV } from "@/utils/csvParser";
 
 interface AnalyseTabProps {
   onNext: () => void;
+  data?: {
+    bulletinClasse?: BulletinClasseData;
+    bulletinsEleves?: BulletinEleveData[];
+    classeCSV?: ClasseDataCSV;
+  };
 }
 
-const gradeDistribution = [
-  { name: "Excellent (≥16)", value: 3, color: "hsl(var(--success))" },
-  { name: "Très bien (14-16)", value: 5, color: "hsl(var(--success-light))" },
-  { name: "Bien (12-14)", value: 8, color: "hsl(var(--accent))" },
-  { name: "Moyen (10-12)", value: 6, color: "hsl(var(--warning))" },
-  { name: "Insuffisant (<10)", value: 3, color: "hsl(var(--destructive))" },
-];
+const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
+  // Calculer les statistiques depuis les données réelles
+  const eleves = data?.bulletinsEleves || [];
+  const classeCSV = data?.classeCSV;
+  
+  // Calcul de la moyenne générale de la classe depuis les bulletins élèves
+  const classAverage = eleves.length > 0
+    ? eleves.reduce((sum, eleve) => {
+        const moyEleve = eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length;
+        return sum + moyEleve;
+      }, 0) / eleves.length
+    : classeCSV?.statistiques.moyenneClasse || 0;
 
-const subjectAverages = [
-  { subject: "Maths", average: 12.5, previous: 11.8 },
-  { subject: "Français", average: 13.2, previous: 13.5 },
-  { subject: "Anglais", average: 14.1, previous: 13.8 },
-  { subject: "Histoire", average: 11.8, previous: 12.2 },
-  { subject: "SVT", average: 13.5, previous: 12.9 },
-  { subject: "Physique", average: 11.2, previous: 11.5 },
-];
-
-const AnalyseTab = ({ onNext }: AnalyseTabProps) => {
-  const classAverage = 12.8;
-  const previousAverage = 12.5;
+  const previousAverage = classeCSV?.statistiques.moyenneClasse || classAverage;
   const trend = classAverage > previousAverage ? "up" : classAverage < previousAverage ? "down" : "stable";
+
+  // Distribution des notes
+  const gradeDistribution = [
+    { 
+      name: "Excellent (≥16)", 
+      value: eleves.filter(e => {
+        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+        return moy >= 16;
+      }).length,
+      color: "hsl(var(--success))" 
+    },
+    { 
+      name: "Très bien (14-16)", 
+      value: eleves.filter(e => {
+        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+        return moy >= 14 && moy < 16;
+      }).length,
+      color: "hsl(var(--success-light))" 
+    },
+    { 
+      name: "Bien (12-14)", 
+      value: eleves.filter(e => {
+        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+        return moy >= 12 && moy < 14;
+      }).length,
+      color: "hsl(var(--accent))" 
+    },
+    { 
+      name: "Moyen (10-12)", 
+      value: eleves.filter(e => {
+        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+        return moy >= 10 && moy < 12;
+      }).length,
+      color: "hsl(var(--warning))" 
+    },
+    { 
+      name: "Insuffisant (<10)", 
+      value: eleves.filter(e => {
+        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+        return moy < 10;
+      }).length,
+      color: "hsl(var(--destructive))" 
+    },
+  ];
+
+  // Calcul des moyennes par matière
+  const matieresStats = new Map<string, { total: number; count: number }>();
+  eleves.forEach(eleve => {
+    eleve.matieres.forEach(matiere => {
+      const current = matieresStats.get(matiere.nom) || { total: 0, count: 0 };
+      matieresStats.set(matiere.nom, {
+        total: current.total + matiere.moyenneEleve,
+        count: current.count + 1
+      });
+    });
+  });
+
+  const subjectAverages = Array.from(matieresStats.entries())
+    .map(([nom, stats]) => ({
+      subject: nom.split(' ')[0], // Prendre le premier mot pour l'affichage
+      average: stats.total / stats.count,
+      previous: stats.total / stats.count // Pas de données précédentes pour l'instant
+    }))
+    .slice(0, 6); // Limiter à 6 matières
+
+  // Top 3 élèves
+  const top3Eleves = [...eleves]
+    .map(eleve => ({
+      nom: `${eleve.prenom} ${eleve.nom}`,
+      moyenne: eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length
+    }))
+    .sort((a, b) => b.moyenne - a.moyenne)
+    .slice(0, 3);
+
+  const elevesPlusDe12 = eleves.filter(e => {
+    const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+    return moy >= 12;
+  }).length;
+
+  const elevesEnDifficulte = eleves.filter(e => {
+    const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
+    return moy < 10;
+  }).length;
 
   return (
     <div className="space-y-6">
@@ -70,20 +154,28 @@ const AnalyseTab = ({ onNext }: AnalyseTabProps) => {
         <Card>
           <CardHeader>
             <CardDescription>Élèves au-dessus de 12</CardDescription>
-            <CardTitle className="text-4xl font-bold text-success">16/25</CardTitle>
+            <CardTitle className="text-4xl font-bold text-success">
+              {elevesPlusDe12}/{eleves.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">64% de la classe</p>
+            <p className="text-sm text-muted-foreground">
+              {eleves.length > 0 ? Math.round((elevesPlusDe12 / eleves.length) * 100) : 0}% de la classe
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
             <CardDescription>Élèves en difficulté</CardDescription>
-            <CardTitle className="text-4xl font-bold text-warning">3/25</CardTitle>
+            <CardTitle className="text-4xl font-bold text-warning">
+              {elevesEnDifficulte}/{eleves.length}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">12% de la classe</p>
+            <p className="text-sm text-muted-foreground">
+              {eleves.length > 0 ? Math.round((elevesEnDifficulte / eleves.length) * 100) : 0}% de la classe
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -150,18 +242,21 @@ const AnalyseTab = ({ onNext }: AnalyseTabProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-              <span className="font-medium">🏆 MARTIN Clara</span>
-              <span className="text-lg font-bold text-success">17.2</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-              <span className="font-medium">🥈 DUBOIS Thomas</span>
-              <span className="text-lg font-bold text-success">16.8</span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg border bg-card p-3">
-              <span className="font-medium">🥉 BERNARD Sophie</span>
-              <span className="text-lg font-bold text-success">16.5</span>
-            </div>
+            {top3Eleves.map((eleve, index) => (
+              <div key={index} className="flex items-center justify-between rounded-lg border bg-card p-3">
+                <span className="font-medium">
+                  {index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'} {eleve.nom}
+                </span>
+                <span className="text-lg font-bold text-success">
+                  {eleve.moyenne.toFixed(2)}
+                </span>
+              </div>
+            ))}
+            {top3Eleves.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Aucune donnée disponible. Veuillez charger des bulletins élèves.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>

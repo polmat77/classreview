@@ -8,9 +8,16 @@ import AppreciationsTab from "@/components/tabs/AppreciationsTab";
 import ExportTab from "@/components/tabs/ExportTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileUp, BarChart3, BookOpen, FileText, Download } from "lucide-react";
+import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
+import { ClasseDataCSV } from "@/utils/csvParser";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("import");
+  const [classeData, setClasseData] = useState<{
+    bulletinClasse?: BulletinClasseData;
+    bulletinsEleves?: BulletinEleveData[];
+    classeCSV?: ClasseDataCSV;
+  }>({});
 
   const tabs = [
     { value: "import", label: "Import", icon: FileUp },
@@ -50,15 +57,24 @@ const Index = () => {
 
           <div className="mt-8">
             <TabsContent value="import" className="mt-0">
-              <ImportTab onNext={() => setActiveTab("analyse")} />
+              <ImportTab 
+                onNext={() => setActiveTab("analyse")} 
+                onDataLoaded={setClasseData}
+              />
             </TabsContent>
 
             <TabsContent value="analyse" className="mt-0">
-              <AnalyseTab onNext={() => setActiveTab("matieres")} />
+              <AnalyseTab 
+                onNext={() => setActiveTab("matieres")} 
+                data={classeData}
+              />
             </TabsContent>
 
             <TabsContent value="matieres" className="mt-0">
-              <MatieresTab onNext={() => setActiveTab("appreciations")} />
+              <MatieresTab 
+                onNext={() => setActiveTab("appreciations")} 
+                data={classeData}
+              />
             </TabsContent>
 
             <TabsContent value="appreciations" className="mt-0">
