@@ -154,17 +154,17 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     let nom = '', prenom = '';
     
     // Pattern principal: "NOM Prenom Né(e) le"
-    const nomCompletMatch = normalizedText.match(/([A-Z]{2,})\s+([A-Z][a-zéèàêîôçù]+)\s+Née?\s+le/);
+    const nomCompletMatch = normalizedText.match(/([A-Z]{2,})\s+([A-ZÉÈÀÊÎÔÇÙa-zéèàêîôçùïü]+)\s+Née?\s+le/);
     if (nomCompletMatch) {
       nom = nomCompletMatch[1];
       prenom = nomCompletMatch[2];
     } else {
       // Fallback: chercher nom en majuscules suivi d'un prénom
       const nomsAIgnorer = ['WAZIERS', 'ROLLAND', 'COLLEGE', 'ROMAIN', 'ALLEE', 'GEORGES', 'LARUE', 'TRIMESTRE', 'BULLETIN', 'POLE', 'SCIENCES'];
-      const nomsMatch = normalizedText.match(/\b([A-Z]{3,})\s+([A-Z][a-zéèàêîôçù]+)\b/g);
+      const nomsMatch = normalizedText.match(/\b([A-Z]{3,})\s+([A-ZÉÈÀÊÎÔÇÙa-zéèàêîôçùïü]+)\b/g);
       if (nomsMatch) {
         for (const match of nomsMatch) {
-          const parts = match.match(/([A-Z]{3,})\s+([A-Z][a-zéèàêîôçù]+)/);
+          const parts = match.match(/([A-Z]{3,})\s+([A-ZÉÈÀÊÎÔÇÙa-zéèàêîôçùïü]+)/);
           if (parts && !nomsAIgnorer.includes(parts[1])) {
             nom = parts[1];
             prenom = parts[2];
@@ -183,71 +183,92 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     
     const matieres: BulletinEleveData['matieres'] = [];
     
-    // Liste des matières avec leurs variations possibles
-    const matieresMap = {
-      'MATHEMATIQUES': ['MATHEMATIQUES', 'MATHS'],
-      'PHYSIQUE-CHIMIE': ['PHYSIQUE-CHIMIE', 'PHYSIQUE CHIMIE', 'SC.PHYSIQUES', 'SCIENCES PHYSIQUES'],
-      'SCIENCES VIE & TERRE': ['SCIENCES VIE & TERRE', 'SCIENCES VIE ET TERRE', 'SVT', 'SC.VIE & TERRE'],
-      'TECHNOLOGIE': ['TECHNOLOGIE', 'TECHNO'],
-      'ANGLAIS LV1': ['ANGLAIS LV1', 'ANGLAIS'],
-      'FRANCAIS': ['FRANCAIS', 'FRANÇAIS'],
-      'HISTOIRE-GEOGRAPHIE': ['HISTOIRE-GEOGRAPHIE', 'HISTOIRE GEOGRAPHIE', 'HIST-GEO', 'HISTOIRE-GEO'],
-      'ESPAGNOL LV2': ['ESPAGNOL LV2', 'ESPAGNOL'],
-      'ITALIEN LV2': ['ITALIEN LV2', 'ITALIEN'],
-      'ARTS PLASTIQUES': ['ARTS PLASTIQUES', 'ARTS PLAST.'],
-      'ED.PHYSIQUE & SPORT.': ['ED.PHYSIQUE & SPORT.', 'ED PHYSIQUE', 'EPS', 'EDUCATION PHYSIQUE'],
-      'EDUCATION MUSICALE': ['EDUCATION MUSICALE', 'ED.MUSICALE', 'MUSIQUE'],
-      'ATELIER SCIENTIFIQUE': ['ATELIER SCIENTIFIQUE', 'ATELIER SCIENT.']
-    };
+    // Liste des matières connues
+    const matieresConnues = [
+      'MATHEMATIQUES',
+      'PHYSIQUE-CHIMIE',
+      'SCIENCES VIE & TERRE',
+      'TECHNOLOGIE',
+      'ANGLAIS LV1',
+      'FRANCAIS',
+      'HISTOIRE-GEOGRAPHIE',
+      'ESPAGNOL LV2',
+      'ITALIEN LV2',
+      'ARTS PLASTIQUES',
+      'ED.PHYSIQUE & SPORT.',
+      'EDUCATION MUSICALE',
+      'ATELIER SCIENTIFIQUE'
+    ];
     
-    // Pour chaque matière, chercher ses occurrences
-    // Le format PRONOTE est: MATIERE [PROF] NOTE1_ELEVE NOTE2_ELEVE NOTE1_CLASSE NOTE2_CLASSE APPRECIATION
-    for (const [nomMatiere, variations] of Object.entries(matieresMap)) {
-      for (const variation of variations) {
-        // Pattern pour capturer 4 notes (2 élève + 2 classe) puis l'appréciation
-        const pattern = new RegExp(
-          `${variation.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s+` +
-          `(?:M\\.|Mme|Mlle)?\\s*[A-Z]*\\s*` + // Prof optionnel
-          `(\\d+[,\\.]\\d+)\\s+` + // Note 1 élève
-          `(\\d+[,\\.]\\d+)\\s+` + // Note 2 élève
-          `(\\d+[,\\.]\\d+)\\s+` + // Note 1 classe
-          `(\\d+[,\\.]\\d+)\\s+` + // Note 2 classe
-          `([A-Za-zÀ-ÿ\\'\\-\\s]{10,}?)(?=(?:MATHEMATIQUES|PHYSIQUE|SCIENCES|TECHNOLOGIE|ANGLAIS|FRANCAIS|HISTOIRE|ESPAGNOL|ITALIEN|ARTS|EDUCATION|ATELIER|ED\\.|POLE|Moyennes|Absences|Appréciation|Vie scolaire)|$)`,
-          'i'
-        );
+    // Pattern simplifié: MATIERE [PROF] NOMBRE NOMBRE (puis appréciation)
+    // Le format extrait par pdf.js est: "MATHEMATIQUES M. ROBINEAU 9,30 5,75 11,85 10,40 Ensemble..."
+    // ou parfois: "MATHEMATIQUES 9,30 5,75 11,85 10,40 Ensemble..."
+    for (const matiere of matieresConnues) {
+      // Créer un pattern qui capture:
+      // 1. La matière (échappée pour les caractères spéciaux)
+      // 2. Optionnellement le prof (M./Mme + nom)
+      // 3. 2 à 4 nombres décimaux
+      // 4. L'appréciation (texte jusqu'à la prochaine matière ou fin)
+      const matiereEscaped = matiere.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Pattern plus flexible pour capturer les notes (peut y avoir 2, 3 ou 4 nombres)
+      const pattern = new RegExp(
+        matiereEscaped + 
+        '(?:\\s+(?:M\\.|Mme|Mlle)\\s*[A-Z]+)?' + // Prof optionnel
+        '\\s+' +
+        '(\\d+[,\\.]\\d+)\\s+' + // Premier nombre (moyenne élève ou première sous-note)
+        '(\\d+[,\\.]\\d+)' + // Deuxième nombre
+        '(?:\\s+(\\d+[,\\.]\\d+))?' + // Troisième nombre optionnel
+        '(?:\\s+(\\d+[,\\.]\\d+))?' + // Quatrième nombre optionnel
+        '\\s+' +
+        "([A-Za-z\\u00C0-\\u017F'\\-\\.!?,;:\\s]+?)" + // Appréciation
+        '(?=\\s+(?:' + matieresConnues.map(m => m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + '|POLE|Moyennes|Absences|Vie scolaire|Appréciation|$))',
+        'i'
+      );
+      
+      const match = normalizedText.match(pattern);
+      
+      if (match) {
+        const nums = [match[1], match[2], match[3], match[4]].filter(Boolean).map(n => parseFloat(n.replace(',', '.')));
         
-        const match = normalizedText.match(pattern);
+        let moyEleve: number, moyClasse: number;
         
-        if (match) {
-          // Prendre la première note de chaque paire (ou faire la moyenne)
-          const moyEleve = parseFloat(match[1].replace(',', '.'));
-          const moyClasse = parseFloat(match[3].replace(',', '.'));
-          let appreciation = match[5] ? match[5].trim().replace(/\s+/g, ' ') : '';
-          
-          // Nettoyer l'appréciation
-          appreciation = appreciation.replace(/^[:\s]+/, '').replace(/\s+$/, '');
-          
-          // Déterminer le pôle selon la matière
-          let pole = '';
-          if (['MATHEMATIQUES', 'PHYSIQUE-CHIMIE', 'SCIENCES VIE & TERRE', 'TECHNOLOGIE', 'ATELIER SCIENTIFIQUE'].includes(nomMatiere)) {
-            pole = 'Sciences';
-          } else if (['ANGLAIS LV1', 'FRANCAIS', 'HISTOIRE-GEOGRAPHIE', 'ESPAGNOL LV2', 'ITALIEN LV2'].includes(nomMatiere)) {
-            pole = 'Littéraire';
-          } else if (['ARTS PLASTIQUES', 'ED.PHYSIQUE & SPORT.', 'EDUCATION MUSICALE'].includes(nomMatiere)) {
-            pole = 'Artistique et culturelle';
-          }
-          
-          if (moyEleve >= 0 && moyEleve <= 20 && moyClasse >= 0 && moyClasse <= 20) {
-            matieres.push({
-              nom: nomMatiere,
-              moyenneEleve: moyEleve,
-              moyenneClasse: moyClasse,
-              appreciation: appreciation,
-              pole: pole
-            });
-            console.log('✓ Matière détectée:', nomMatiere, '| Élève:', moyEleve, '| Classe:', moyClasse, '| App:', appreciation.substring(0, 30) + '...');
-            break; // Sortir de la boucle des variations si une correspondance est trouvée
-          }
+        // Si on a 4 nombres: les 2 premiers sont pour l'élève, les 2 derniers pour la classe
+        // Si on a 2 nombres: le 1er est élève, le 2ème est classe
+        if (nums.length >= 4) {
+          moyEleve = nums[0]; // ou (nums[0] + nums[1]) / 2 si ce sont des sous-notes
+          moyClasse = nums[2]; // ou (nums[2] + nums[3]) / 2
+        } else if (nums.length >= 2) {
+          moyEleve = nums[0];
+          moyClasse = nums[1];
+        } else {
+          continue;
+        }
+        
+        let appreciation = match[5] ? match[5].trim().replace(/\s+/g, ' ') : '';
+        
+        // Nettoyer l'appréciation - ne garder que le texte pertinent
+        appreciation = appreciation.replace(/^[:\s]+/, '').replace(/\s+$/, '');
+        
+        // Déterminer le pôle selon la matière
+        let pole = '';
+        if (['MATHEMATIQUES', 'PHYSIQUE-CHIMIE', 'SCIENCES VIE & TERRE', 'TECHNOLOGIE', 'ATELIER SCIENTIFIQUE'].includes(matiere)) {
+          pole = 'Sciences';
+        } else if (['ANGLAIS LV1', 'FRANCAIS', 'HISTOIRE-GEOGRAPHIE', 'ESPAGNOL LV2', 'ITALIEN LV2'].includes(matiere)) {
+          pole = 'Littéraire';
+        } else if (['ARTS PLASTIQUES', 'ED.PHYSIQUE & SPORT.', 'EDUCATION MUSICALE'].includes(matiere)) {
+          pole = 'Artistique et culturelle';
+        }
+        
+        if (moyEleve >= 0 && moyEleve <= 20 && moyClasse >= 0 && moyClasse <= 20) {
+          matieres.push({
+            nom: matiere,
+            moyenneEleve: moyEleve,
+            moyenneClasse: moyClasse,
+            appreciation: appreciation,
+            pole: pole
+          });
+          console.log('✓ Matière détectée:', matiere, '| Élève:', moyEleve, '| Classe:', moyClasse, '| Nums:', nums.length);
         }
       }
     }
@@ -275,18 +296,18 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
       retards = 0;
     }
     
-    // Validation: besoin d'au moins un nom et des matières
+    // Validation: besoin d'au moins un nom
     if (!nom) {
       console.log('❌ Bulletin invalide - nom manquant');
       return null;
     }
     
+    // Validation assouplie: accepter même sans matières (données peuvent venir du CSV)
     if (matieres.length === 0) {
-      console.log('❌ Bulletin invalide pour', nom, '- aucune matière extraite');
-      return null;
+      console.log('⚠️ Bulletin pour', nom, prenom, '- aucune matière extraite du PDF, mais bulletin accepté');
+    } else {
+      console.log('✓ Bulletin valide pour', nom, prenom, '-', matieres.length, 'matières');
     }
-    
-    console.log('✓ Bulletin valide pour', nom, prenom, '-', matieres.length, 'matières');
     
     return {
       nom,
