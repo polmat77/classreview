@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { extractTextFromPDF, parseBulletinClasse, parseBulletinsElevesFromPDF, BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
-import { parseCSVClasse, ClasseDataCSV } from "@/utils/csvParser";
+import { parseCSVClasse, parseTableauMoyennesPDF, ClasseDataCSV } from "@/utils/csvParser";
 
 interface ImportTabProps {
   onNext: () => void;
@@ -23,14 +23,17 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
   const [classeCSV, setClasseCSV] = useState<ClasseDataCSV | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const handleCSVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTableauResultatsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.csv')) {
+    const isCSV = file.name.endsWith('.csv');
+    const isPDF = file.name.endsWith('.pdf');
+
+    if (!isCSV && !isPDF) {
       toast({
         title: "Format invalide",
-        description: "Seuls les fichiers CSV sont acceptés",
+        description: "Seuls les fichiers CSV et PDF sont acceptés",
         variant: "destructive",
       });
       return;
@@ -39,23 +42,29 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
     setIsProcessing(true);
     
     try {
-      const data = await parseCSVClasse(file);
+      let data: ClasseDataCSV | null = null;
+
+      if (isCSV) {
+        data = await parseCSVClasse(file);
+      } else if (isPDF) {
+        data = await parseTableauMoyennesPDF(file);
+      }
       
-      if (data) {
+      if (data && data.eleves.length > 0) {
         setClasseCSV(data);
         toast({
-          title: "✓ Fichier CSV chargé",
+          title: "✓ Tableau de résultats chargé",
           description: `${data.statistiques.totalEleves} élèves • ${data.matieres.length} matières`,
         });
         onDataLoaded?.({ bulletinClasse, bulletinsEleves, classeCSV: data });
       } else {
-        throw new Error("Impossible de parser le fichier CSV");
+        throw new Error("Impossible de parser le fichier. Vérifiez le format.");
       }
     } catch (error) {
-      console.error('Erreur lors du traitement du CSV:', error);
+      console.error('Erreur lors du traitement:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de lire le fichier CSV",
+        description: error instanceof Error ? error.message : "Impossible de lire le fichier",
         variant: "destructive",
       });
     } finally {
@@ -134,7 +143,7 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
         <AlertDescription>
           <strong>3 types de fichiers nécessaires :</strong>
           <br />
-          <strong>1. CSV Résultats de classe</strong> : PRONOTE → Notes → Tableau des moyennes → Exporter (CSV)
+          <strong>1. Tableau de résultats de la classe</strong> : PRONOTE → Notes → Tableau des moyennes → Exporter (CSV ou PDF)
           <br />
           <strong>2. PDF Bulletin de classe</strong> : PRONOTE → Bulletins → Exporter (PDF classe)
           <br />
@@ -154,8 +163,8 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
                 )}
               </div>
               <div>
-                <CardTitle className="text-lg">Résultats CSV</CardTitle>
-                <CardDescription>Tableau des moyennes</CardDescription>
+                <CardTitle className="text-lg">Tableau de résultats de la classe</CardTitle>
+                <CardDescription>Tableau des moyennes (CSV ou PDF)</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -163,18 +172,18 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
             <label className={`flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 transition-smooth ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'border-muted-foreground/25 hover:border-primary hover:bg-primary/5'}`}>
               <Upload className="h-8 w-8 text-muted-foreground" />
               <span className="text-sm font-medium text-muted-foreground">
-                {isProcessing ? 'Traitement...' : 'Charger le CSV'}
+                {isProcessing ? 'Traitement...' : 'Charger le fichier (CSV ou PDF)'}
               </span>
               {classeCSV && (
                 <span className="text-xs text-success font-medium">
-                  ✓ {classeCSV.statistiques.totalEleves} élèves
+                  ✓ {classeCSV.statistiques.totalEleves} élèves • {classeCSV.matieres.length} matières
                 </span>
               )}
               <input 
                 type="file" 
                 className="hidden" 
-                accept=".csv" 
-                onChange={handleCSVUpload}
+                accept=".csv,.pdf" 
+                onChange={handleTableauResultatsUpload}
                 disabled={isProcessing}
               />
             </label>
@@ -270,7 +279,7 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
                   <div className="flex items-center gap-3">
                     <Table2 className="h-5 w-5 text-success" />
                     <div>
-                      <p className="text-sm font-medium">Résultats CSV - Classe entière</p>
+                      <p className="text-sm font-medium">Tableau de résultats de la classe</p>
                       <p className="text-xs text-muted-foreground">
                         {classeCSV.statistiques.totalEleves} élèves • {classeCSV.matieres.length} matières • Moy: {classeCSV.statistiques.moyenneClasse.toFixed(2)}
                       </p>
@@ -319,7 +328,7 @@ const ImportTab = ({ onNext, onDataLoaded }: ImportTabProps) => {
           <AlertCircle className="h-4 w-4 text-warning" />
           <AlertTitle>Aucun fichier chargé</AlertTitle>
           <AlertDescription>
-            Veuillez charger au minimum le fichier CSV des résultats pour pouvoir effectuer l'analyse de classe.
+            Veuillez charger au minimum le tableau de résultats de la classe (CSV ou PDF) pour pouvoir effectuer l'analyse.
           </AlertDescription>
         </Alert>
       )}
