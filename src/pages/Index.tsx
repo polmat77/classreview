@@ -78,7 +78,10 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="appreciations" className="mt-0">
-              <AppreciationsTab onNext={() => setActiveTab("export")} />
+              <AppreciationsTab 
+                onNext={() => setActiveTab("export")} 
+                data={classeData}
+              />
             </TabsContent>
 
             <TabsContent value="export" className="mt-0">
