@@ -42,40 +42,71 @@ serve(async (req) => {
     if (type === 'general') {
       systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation générale du conseil de classe pour un bulletin scolaire français.
 
-Consignes:
-- Maximum 255 caractères
+RÈGLES STRICTES :
+- Entre 200 et 255 caractères (strict)
+- Rédaction impersonnelle à la troisième personne (parler de "la classe", "le groupe")
 - Ton professionnel et bienveillant
-- Mentionner les points positifs et axes d'amélioration
-- Utiliser un vocabulaire adapté au contexte scolaire français`;
+- Synthétiser la dynamique générale, l'ambiance de travail et les axes de progression
+- Ne pas lister les matières, mais donner une vision globale`;
 
-      userPrompt = `Génère une appréciation générale de classe pour:
-- Classe: ${classData?.className || '3ème'}
-- Trimestre: ${classData?.trimester || '1er trimestre'}
-- Moyenne de classe: ${classData?.averageClass || 'N/A'}/20
-${classData?.subjects ? `- Matières fortes: ${classData.subjects.filter(s => s.average >= 14).map(s => s.name).join(', ')}` : ''}
-${classData?.subjects ? `- Matières à renforcer: ${classData.subjects.filter(s => s.average < 10).map(s => s.name).join(', ')}` : ''}`;
+      // Déterminer les tendances et points de vigilance
+      const tendancesPositives = classData?.subjects?.filter(s => s.average >= 12).map(s => s.name).join(', ') || 'Non disponible';
+      const pointsVigilance = classData?.subjects?.filter(s => s.average < 10).map(s => s.name).join(', ') || 'Aucun';
+      const ambiance = classData?.averageClass && classData.averageClass >= 12 ? 'studieuse' : 'en progression';
+
+      userPrompt = `Rédige l'appréciation générale du conseil de classe :
+- Classe : ${classData?.className || '3ème'}
+- Trimestre : ${classData?.trimester || '1er trimestre'}
+- Moyenne de classe : ${classData?.averageClass || 'N/A'}/20
+- Tendances positives observées : ${tendancesPositives}
+- Points de vigilance : ${pointsVigilance}
+- Ambiance générale : ${ambiance}`;
 
     } else {
-      systemPrompt = `Tu es un professeur principal expérimenté rédigeant des appréciations individuelles pour des bulletins scolaires français.
+      systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation du conseil de classe pour un bulletin scolaire français.
 
-Consignes:
-- Maximum 500 caractères
+RÈGLES STRICTES :
+- Entre 250 et 450 caractères (obligatoire)
+- Commencer OBLIGATOIREMENT par le prénom de l'élève
+- Rédaction à la troisième personne (ne jamais s'adresser directement à l'élève avec "tu" ou "vous")
+- Ne PAS mentionner la moyenne chiffrée
+- Synthétiser les appréciations des différents professeurs en un bilan cohérent
 - Ton bienveillant et constructif
-- Personnaliser selon le profil de l'élève
-- Mentionner points forts et conseils d'amélioration
-- Adapter le ton selon le niveau (encourager les élèves en difficulté, féliciter les excellents)`;
+- Mentionner : attitude en classe, qualité du travail, points forts, axes de progression
+- Terminer par une perspective ou un encouragement`;
 
-      const subjectsInfo = student?.subjects?.map(s => 
-        `${s.name}: ${s.grade}/20${s.classAverage ? ` (moy. classe: ${s.classAverage})` : ''}`
-      ).join(', ') || 'Non disponibles';
+      // Extraire le prénom (premier mot du nom)
+      const prenom = student?.name?.split(' ')[0] || 'L\'élève';
+      
+      // Déterminer le profil
+      let profil = 'Satisfaisant';
+      if (student?.average && student.average >= 16) profil = 'Excellent';
+      else if (student?.average && student.average >= 12) profil = 'Satisfaisant';
+      else if (student?.average && student.average >= 8) profil = 'Fragile';
+      else if (student?.average) profil = 'En difficulté';
 
-      userPrompt = `Génère une appréciation individuelle pour:
-- Élève: ${student?.name}
-- Moyenne générale: ${student?.average}/20
-- Notes par matière: ${subjectsInfo}
-${student?.average && student.average >= 16 ? '- Profil: Excellent élève' : ''}
-${student?.average && student.average >= 12 && student.average < 16 ? '- Profil: Bon élève' : ''}
-${student?.average && student.average < 12 ? '- Profil: Élève nécessitant un accompagnement' : ''}`;
+      // Synthèse des matières
+      const pointsForts = student?.subjects?.filter(s => s.grade >= 14).map(s => s.name).join(', ') || 'À identifier';
+      const axesAmelioration = student?.subjects?.filter(s => s.grade < 10).map(s => s.name).join(', ') || 'Maintenir les efforts';
+      
+      const syntheseAppreciations = student?.subjects?.map(s => {
+        if (s.grade >= 16) return `${s.name}: excellent travail`;
+        if (s.grade >= 14) return `${s.name}: bon niveau`;
+        if (s.grade >= 10) return `${s.name}: résultats corrects`;
+        return `${s.name}: des efforts nécessaires`;
+      }).join(', ') || 'Synthèse non disponible';
+
+      userPrompt = `Rédige l'appréciation du conseil de classe pour cet élève :
+- Prénom : ${prenom}
+- Classe : ${classData?.className || '3ème'}
+- Trimestre : ${classData?.trimester || '1er trimestre'}
+- Profil général : ${profil}
+
+Synthèse des appréciations des professeurs :
+${syntheseAppreciations}
+
+Points forts relevés : ${pointsForts}
+Axes d'amélioration : ${axesAmelioration}`;
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
