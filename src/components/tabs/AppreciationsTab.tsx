@@ -1,19 +1,22 @@
 import { useState } from "react";
-import { Sparkles, User, Edit2, Loader2 } from "lucide-react";
+import { Sparkles, User, Edit2, Loader2, FileSpreadsheet, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
+import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
+import FileUploadZone from "@/components/FileUploadZone";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface StudentData {
   name: string;
   average: number;
-  subjects?: { name: string; grade: number; classAverage?: number }[];
+  subjects?: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
   status: "excellent" | "good" | "needs-improvement";
 }
 
@@ -24,62 +27,97 @@ interface AppreciationsTabProps {
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
   };
+  onDataLoaded?: (data: { bulletinsEleves: BulletinEleveData[] }) => void;
 }
 
-const generalAppreciation = `Trimestre satisfaisant dans l'ensemble. La classe montre une bonne dynamique de travail avec une moyenne générale en progression (+0.3 points). Les résultats sont particulièrement encourageants en anglais et SVT. Toutefois, un accompagnement renforcé est nécessaire en physique-chimie.`;
-
-const studentAppreciations = [
-  {
-    name: "MARTIN Clara",
-    average: 17.2,
-    text: "Excellent trimestre ! Clara maintient un niveau remarquable dans toutes les matières, avec une participation active et des travaux de grande qualité. Son sérieux et sa rigueur sont exemplaires. Continue ainsi, tu es sur la bonne voie pour réussir brillamment ton orientation.",
-    status: "excellent",
-  },
-  {
-    name: "DUBOIS Thomas",
-    average: 16.8,
-    text: "Très bon trimestre. Thomas s'investit pleinement dans son travail et obtient d'excellents résultats, particulièrement en français et physique. Sa curiosité intellectuelle est un atout majeur. Garde cette motivation pour la suite de l'année.",
-    status: "excellent",
-  },
-  {
-    name: "BERNARD Sophie",
-    average: 16.5,
-    text: "Trimestre très satisfaisant. Sophie progresse constamment grâce à sa persévérance et son organisation exemplaire. Ses résultats en anglais sont remarquables. Continue sur cette lancée, tes efforts portent leurs fruits !",
-    status: "excellent",
-  },
-  {
-    name: "PETIT Lucas",
-    average: 14.3,
-    text: "Bon trimestre. Lucas montre de belles capacités, notamment en sciences où il excelle. Quelques efforts supplémentaires en méthodologie lui permettraient de progresser encore. Pense à soigner davantage la présentation de tes devoirs.",
-    status: "good",
-  },
-  {
-    name: "MOREAU Emma",
-    average: 11.8,
-    text: "Trimestre en demi-teinte. Emma possède du potentiel mais manque de régularité dans son travail. Il est impératif de fournir un effort constant pour progresser, notamment en mathématiques. Une meilleure organisation et plus de sérieux sont attendus au prochain trimestre.",
-    status: "needs-improvement",
-  },
-];
-
-const AppreciationsTab = ({ onNext, data }: AppreciationsTabProps) => {
+const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps) => {
   const { toast } = useToast();
-  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
+
+  const bulletinsEleves = data?.bulletinsEleves?.length ? data.bulletinsEleves : localBulletinsEleves;
+  const classeCSV = data?.classeCSV;
+
+  const handleBulletinsElevesUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.pdf')) {
+      toast({
+        title: "Format invalide",
+        description: "Seuls les fichiers PDF sont acceptés",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const bulletins = await parseBulletinsElevesFromPDF(file);
+      if (bulletins.length > 0) {
+        const newBulletins = [...localBulletinsEleves, ...bulletins];
+        setLocalBulletinsEleves(newBulletins);
+        onDataLoaded?.({ bulletinsEleves: newBulletins });
+        toast({
+          title: "✓ Bulletins élèves chargés",
+          description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''} du PDF`,
+        });
+      } else {
+        throw new Error("Aucun bulletin élève trouvé dans le PDF");
+      }
+    } catch (error) {
+      console.error('Erreur lors du traitement du PDF:', error);
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de lire le fichier PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      event.target.value = '';
+    }
+  };
+
   // Build students list from data
   const buildStudentsList = (): StudentData[] => {
-    if (data?.classeCSV?.eleves) {
-      return data.classeCSV.eleves.map(eleve => {
+    // Priority: bulletinsEleves with subject details
+    if (bulletinsEleves.length > 0) {
+      return bulletinsEleves.map(eleve => {
+        const totalMoyenne = eleve.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
+        const average = eleve.matieres.length > 0 ? totalMoyenne / eleve.matieres.length : 0;
+        let status: "excellent" | "good" | "needs-improvement" = "good";
+        if (average >= 16) status = "excellent";
+        else if (average < 12) status = "needs-improvement";
+
+        return {
+          name: `${eleve.prenom} ${eleve.nom}`,
+          average,
+          subjects: eleve.matieres.map(m => ({
+            name: m.nom,
+            grade: m.moyenneEleve,
+            classAverage: m.moyenneClasse,
+            appreciation: m.appreciation,
+          })),
+          status,
+        };
+      });
+    }
+
+    // Fallback to CSV data (less detailed, no subject appreciations)
+    if (classeCSV?.eleves) {
+      return classeCSV.eleves.map(eleve => {
         const average = eleve.moyenneGenerale;
         let status: "excellent" | "good" | "needs-improvement" = "good";
         if (average >= 16) status = "excellent";
         else if (average < 12) status = "needs-improvement";
-        
-        // Convert moyennesParMatiere Record to array of subjects
+
         const subjects = Object.entries(eleve.moyennesParMatiere).map(([matiere, note]) => ({
           name: matiere,
           grade: note,
-          classAverage: undefined // Not available in this format
+          classAverage: undefined,
         }));
-        
+
         return {
           name: eleve.nom,
           average,
@@ -88,54 +126,31 @@ const AppreciationsTab = ({ onNext, data }: AppreciationsTabProps) => {
         };
       });
     }
-    
-    if (data?.bulletinsEleves) {
-      return data.bulletinsEleves.map(eleve => {
-        // Calculate average from subjects
-        const totalMoyenne = eleve.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
-        const average = eleve.matieres.length > 0 ? totalMoyenne / eleve.matieres.length : 0;
-        let status: "excellent" | "good" | "needs-improvement" = "good";
-        if (average >= 16) status = "excellent";
-        else if (average < 12) status = "needs-improvement";
-        
-        return {
-          name: `${eleve.nom} ${eleve.prenom}`,
-          average,
-          subjects: eleve.matieres.map(m => ({ 
-            name: m.nom, 
-            grade: m.moyenneEleve,
-            classAverage: m.moyenneClasse
-          })),
-          status,
-        };
-      });
-    }
-    
-    // Fallback sample data
-    return [
-      { name: "MARTIN Clara", average: 17.2, status: "excellent" },
-      { name: "DUBOIS Thomas", average: 16.8, status: "excellent" },
-      { name: "BERNARD Sophie", average: 16.5, status: "excellent" },
-      { name: "PETIT Lucas", average: 14.3, status: "good" },
-      { name: "MOREAU Emma", average: 11.8, status: "needs-improvement" },
-    ];
+
+    return [];
   };
 
   const students = buildStudentsList();
-  
+  const hasBulletinsEleves = bulletinsEleves.length > 0;
+
   const [generalText, setGeneralText] = useState("");
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
-  const [studentTexts, setStudentTexts] = useState<string[]>(students.map(() => ""));
+  const [studentTexts, setStudentTexts] = useState<string[]>([]);
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
 
+  // Initialize student texts when students change
+  if (studentTexts.length !== students.length) {
+    setStudentTexts(students.map(() => ""));
+  }
+
   const generateAppreciation = async (type: 'general' | 'individual', student?: StudentData): Promise<string> => {
-    const classData = data?.classeCSV ? {
+    const classData = classeCSV ? {
       className: "3ème",
       trimester: "1er trimestre",
-      averageClass: data.classeCSV.statistiques.moyenneClasse,
-      subjects: data.classeCSV.matieres.map(m => ({ name: m, average: 0 })), // matieres is string[]
+      averageClass: classeCSV.statistiques.moyenneClasse,
+      subjects: classeCSV.matieres.map(m => ({ name: m, average: 0 })),
     } : data?.bulletinClasse ? {
       className: data.bulletinClasse.classe || "3ème",
       trimester: data.bulletinClasse.trimestre || "1er trimestre",
@@ -185,18 +200,16 @@ const AppreciationsTab = ({ onNext, data }: AppreciationsTabProps) => {
   const handleRegenerateAll = async () => {
     setIsLoadingAll(true);
     try {
-      // Generate general appreciation
       const generalAppreciation = await generateAppreciation('general');
       setGeneralText(generalAppreciation);
 
-      // Generate all student appreciations
       const newTexts = [...studentTexts];
       for (let i = 0; i < students.length; i++) {
         const appreciation = await generateAppreciation('individual', students[i]);
         newTexts[i] = appreciation;
         setStudentTexts([...newTexts]);
       }
-      
+
       toast({ title: "Toutes les appréciations générées", description: "Les appréciations ont été générées avec succès." });
     } catch (error) {
       console.error('Error generating all appreciations:', error);
@@ -208,181 +221,212 @@ const AppreciationsTab = ({ onNext, data }: AppreciationsTabProps) => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Appréciations</h2>
-        <p className="text-muted-foreground">Générale et individuelles pour chaque élève</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Appréciations</h2>
+          <p className="text-muted-foreground">Générale et individuelles pour chaque élève</p>
+        </div>
+        <PronoteHelpTooltip type="individuels" />
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="general">Appréciation générale</TabsTrigger>
-          <TabsTrigger value="students">Appréciations individuelles</TabsTrigger>
-        </TabsList>
+      {/* Upload zone for individual bulletins */}
+      <FileUploadZone
+        title="Bulletins individuels"
+        description="PDF - Un fichier contenant tous les élèves"
+        accept=".pdf"
+        isLoading={isProcessing}
+        isLoaded={hasBulletinsEleves}
+        loadedInfo={hasBulletinsEleves ? `${bulletinsEleves.length} élève(s) chargé(s)` : undefined}
+        onUpload={handleBulletinsElevesUpload}
+        icon={<FileSpreadsheet className="h-5 w-5" />}
+        accentColor="accent"
+      />
 
-        <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Appréciation générale de la classe</CardTitle>
-                  <CardDescription>Synthèse du trimestre (max 255 caractères)</CardDescription>
-                </div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="gap-2"
-                  onClick={handleRegenerateGeneral}
-                  disabled={isLoadingGeneral || isLoadingAll}
-                >
-                  {isLoadingGeneral ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
-                  Régénérer avec IA
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Textarea
-                  value={generalText}
-                  onChange={(e) => setGeneralText(e.target.value)}
-                  className="min-h-[120px] resize-none"
-                  maxLength={255}
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {generalText.length}/255 caractères
-                  </span>
-                  <Badge variant={generalText.length > 240 ? "destructive" : "secondary"}>
-                    {255 - generalText.length} restants
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+      {!hasBulletinsEleves && students.length === 0 && (
+        <Alert variant="default" className="border-warning/50 bg-warning/10">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertTitle>Bulletins individuels recommandés</AlertTitle>
+          <AlertDescription>
+            Pour générer des appréciations personnalisées de qualité, chargez les bulletins individuels des élèves. 
+            Les appréciations des professeurs seront prises en compte pour la synthèse.
+          </AlertDescription>
+        </Alert>
+      )}
 
-        <TabsContent value="students" className="space-y-4">
-          <div className="grid gap-4">
-            {students.map((student, index) => (
-              <Card key={index} className="hover:shadow-md transition-smooth">
+      {students.length > 0 && (
+        <>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="general">Appréciation générale</TabsTrigger>
+              <TabsTrigger value="students">Appréciations individuelles ({students.length})</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general" className="space-y-4">
+              <Card>
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{student.name}</CardTitle>
-                        <CardDescription>Moyenne: {student.average}/20</CardDescription>
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Appréciation générale de la classe</CardTitle>
+                      <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {student.status === "excellent" && (
-                        <Badge className="bg-success text-success-foreground">Excellent</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                      onClick={handleRegenerateGeneral}
+                      disabled={isLoadingGeneral || isLoadingAll}
+                    >
+                      {isLoadingGeneral ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
                       )}
-                      {student.status === "good" && (
-                        <Badge className="bg-accent text-accent-foreground">Bien</Badge>
-                      )}
-                      {student.status === "needs-improvement" && (
-                        <Badge className="bg-warning text-warning-foreground">À améliorer</Badge>
-                      )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRegenerateStudent(index)}
-                        disabled={loadingStudentIndex === index || isLoadingAll}
-                      >
-                        {loadingStudentIndex === index ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          setEditingStudent(editingStudent === index ? null : index)
-                        }
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                      Régénérer avec IA
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {editingStudent === index ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={studentTexts[index]}
-                        onChange={(e) => {
-                          const newTexts = [...studentTexts];
-                          newTexts[index] = e.target.value;
-                          setStudentTexts(newTexts);
-                        }}
-                        className="min-h-[120px] resize-none"
-                        maxLength={500}
-                      />
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          {studentTexts[index].length}/500 caractères
-                        </span>
-                        <div className="flex gap-2">
+                  <div className="space-y-3">
+                    <Textarea
+                      value={generalText}
+                      onChange={(e) => setGeneralText(e.target.value)}
+                      className="min-h-[120px] resize-none"
+                      maxLength={255}
+                      placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        {generalText.length}/255 caractères
+                      </span>
+                      <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
+                        {255 - generalText.length} restants
+                      </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="students" className="space-y-4">
+              <div className="grid gap-4">
+                {students.map((student, index) => (
+                  <Card key={index} className="hover:shadow-md transition-smooth">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                            <User className="h-5 w-5 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">{student.name}</CardTitle>
+                            <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {student.status === "excellent" && (
+                            <Badge className="bg-success text-success-foreground">Excellent</Badge>
+                          )}
+                          {student.status === "good" && (
+                            <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
+                          )}
+                          {student.status === "needs-improvement" && (
+                            <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                          )}
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => setEditingStudent(null)}
+                            variant="ghost"
+                            onClick={() => handleRegenerateStudent(index)}
+                            disabled={loadingStudentIndex === index || isLoadingAll}
                           >
-                            Annuler
+                            {loadingStudentIndex === index ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4" />
+                            )}
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => setEditingStudent(null)}
+                            variant="ghost"
+                            onClick={() =>
+                              setEditingStudent(editingStudent === index ? null : index)
+                            }
                           >
-                            Enregistrer
+                            <Edit2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed text-foreground">
-                      {studentTexts[index]}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                    </CardHeader>
+                    <CardContent>
+                      {editingStudent === index ? (
+                        <div className="space-y-3">
+                          <Textarea
+                            value={studentTexts[index] || ""}
+                            onChange={(e) => {
+                              const newTexts = [...studentTexts];
+                              newTexts[index] = e.target.value;
+                              setStudentTexts(newTexts);
+                            }}
+                            className="min-h-[120px] resize-none"
+                            maxLength={450}
+                            placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
+                          />
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">
+                              {(studentTexts[index] || "").length}/450 caractères
+                            </span>
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEditingStudent(null)}
+                              >
+                                Fermer
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
+                          {studentTexts[index] || (
+                            <span className="text-muted-foreground italic">
+                              Aucune appréciation générée. Cliquez sur ✨ pour générer.
+                            </span>
+                          )}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
 
-      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <div>
-            <p className="text-sm font-medium">IA disponible</p>
-            <p className="text-xs text-muted-foreground">
-              Régénérez automatiquement les appréciations avec des suggestions personnalisées
-            </p>
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-center gap-3">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <div>
+                <p className="text-sm font-medium">IA disponible</p>
+                <p className="text-xs text-muted-foreground">
+                  Régénérez automatiquement les appréciations avec des suggestions personnalisées
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleRegenerateAll}
+              disabled={isLoadingAll}
+            >
+              {isLoadingAll ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Régénérer tout
+            </Button>
           </div>
-        </div>
-        <Button 
-          variant="outline" 
-          className="gap-2"
-          onClick={handleRegenerateAll}
-          disabled={isLoadingAll}
-        >
-          {isLoadingAll ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          Régénérer tout
-        </Button>
-      </div>
+        </>
+      )}
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">

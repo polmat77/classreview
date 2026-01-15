@@ -1,6 +1,8 @@
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, TrendingDown, Minus, Table2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   BarChart,
   Bar,
@@ -15,7 +17,10 @@ import {
   Legend,
 } from "recharts";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
-import { ClasseDataCSV } from "@/utils/csvParser";
+import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF } from "@/utils/csvParser";
+import { useToast } from "@/hooks/use-toast";
+import FileUploadZone from "@/components/FileUploadZone";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -24,14 +29,104 @@ interface AnalyseTabProps {
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
   };
+  onDataLoaded?: (data: { classeCSV: ClasseDataCSV }) => void;
 }
 
-const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
-  // Calculer les statistiques depuis les données réelles
+const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [localClasseCSV, setLocalClasseCSV] = useState<ClasseDataCSV | null>(null);
+
+  const classeCSV = data?.classeCSV || localClasseCSV;
+
+  const handleTableauResultatsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const isCSV = file.name.endsWith('.csv');
+    const isPDF = file.name.endsWith('.pdf');
+
+    if (!isCSV && !isPDF) {
+      toast({
+        title: "Format invalide",
+        description: "Seuls les fichiers CSV et PDF sont acceptés",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      let parsedData: ClasseDataCSV | null = null;
+
+      if (isCSV) {
+        parsedData = await parseCSVClasse(file);
+      } else if (isPDF) {
+        parsedData = await parseTableauMoyennesPDF(file);
+      }
+
+      if (parsedData && parsedData.eleves.length > 0) {
+        setLocalClasseCSV(parsedData);
+        onDataLoaded?.({ classeCSV: parsedData });
+        toast({
+          title: "✓ Tableau de résultats chargé",
+          description: `${parsedData.statistiques.totalEleves} élèves • ${parsedData.matieres.length} matières`,
+        });
+      } else {
+        throw new Error("Impossible de parser le fichier. Vérifiez le format.");
+      }
+    } catch (error) {
+      console.error('Erreur lors du traitement:', error);
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de lire le fichier",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      event.target.value = '';
+    }
+  };
+
+  // If no data loaded, show upload zone
+  if (!classeCSV) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Analyse globale</h2>
+            <p className="text-muted-foreground">Vue d'ensemble des performances de la classe</p>
+          </div>
+          <PronoteHelpTooltip type="resultats" />
+        </div>
+
+        <Alert variant="default" className="border-warning/50 bg-warning/10">
+          <AlertCircle className="h-4 w-4 text-warning" />
+          <AlertTitle>Fichier requis</AlertTitle>
+          <AlertDescription>
+            Veuillez charger le tableau de résultats de la classe pour accéder à l'analyse.
+          </AlertDescription>
+        </Alert>
+
+        <FileUploadZone
+          title="Tableau de résultats de la classe"
+          description="Tableau des moyennes (CSV ou PDF)"
+          accept=".csv,.pdf"
+          isLoading={isProcessing}
+          isLoaded={false}
+          onUpload={handleTableauResultatsUpload}
+          icon={<Table2 className="h-5 w-5" />}
+          accentColor="primary"
+        />
+      </div>
+    );
+  }
+
+  // Calculate statistics from real data
   const eleves = data?.bulletinsEleves || [];
-  const classeCSV = data?.classeCSV;
   
-  // Calcul de la moyenne générale de la classe depuis les bulletins élèves
+  // Calculate class average from student bulletins or CSV
   const classAverage = eleves.length > 0
     ? eleves.reduce((sum, eleve) => {
         const moyEleve = eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length;
@@ -42,95 +137,80 @@ const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
   const previousAverage = classeCSV?.statistiques.moyenneClasse || classAverage;
   const trend = classAverage > previousAverage ? "up" : classAverage < previousAverage ? "down" : "stable";
 
-  // Distribution des notes
-  const gradeDistribution = [
+  // Grade distribution
+  const gradeDistribution = classeCSV ? [
     { 
       name: "Excellent (≥16)", 
-      value: eleves.filter(e => {
-        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-        return moy >= 16;
-      }).length,
+      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 16).length,
       color: "hsl(var(--success))" 
     },
     { 
       name: "Très bien (14-16)", 
-      value: eleves.filter(e => {
-        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-        return moy >= 14 && moy < 16;
-      }).length,
+      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 14 && e.moyenneGenerale < 16).length,
       color: "hsl(var(--success-light))" 
     },
     { 
       name: "Bien (12-14)", 
-      value: eleves.filter(e => {
-        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-        return moy >= 12 && moy < 14;
-      }).length,
+      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 12 && e.moyenneGenerale < 14).length,
       color: "hsl(var(--accent))" 
     },
     { 
       name: "Moyen (10-12)", 
-      value: eleves.filter(e => {
-        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-        return moy >= 10 && moy < 12;
-      }).length,
+      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 10 && e.moyenneGenerale < 12).length,
       color: "hsl(var(--warning))" 
     },
     { 
       name: "Insuffisant (<10)", 
-      value: eleves.filter(e => {
-        const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-        return moy < 10;
-      }).length,
+      value: classeCSV.eleves.filter(e => e.moyenneGenerale < 10).length,
       color: "hsl(var(--destructive))" 
     },
-  ];
+  ] : [];
 
-  // Calcul des moyennes par matière
-  const matieresStats = new Map<string, { total: number; count: number }>();
-  eleves.forEach(eleve => {
-    eleve.matieres.forEach(matiere => {
-      const current = matieresStats.get(matiere.nom) || { total: 0, count: 0 };
-      matieresStats.set(matiere.nom, {
-        total: current.total + matiere.moyenneEleve,
-        count: current.count + 1
-      });
-    });
-  });
+  // Subject averages
+  const subjectAverages = classeCSV?.matieres.map(matiere => {
+    const notes = classeCSV.eleves
+      .map(e => e.moyennesParMatiere[matiere])
+      .filter(n => n !== undefined);
+    const avg = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
+    return {
+      subject: matiere.split(' ')[0],
+      average: avg,
+      previous: avg,
+    };
+  }).slice(0, 6) || [];
 
-  const subjectAverages = Array.from(matieresStats.entries())
-    .map(([nom, stats]) => ({
-      subject: nom.split(' ')[0], // Prendre le premier mot pour l'affichage
-      average: stats.total / stats.count,
-      previous: stats.total / stats.count // Pas de données précédentes pour l'instant
-    }))
-    .slice(0, 6); // Limiter à 6 matières
-
-  // Top 3 élèves
-  const top3Eleves = [...eleves]
-    .map(eleve => ({
-      nom: `${eleve.prenom} ${eleve.nom}`,
-      moyenne: eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length
-    }))
+  // Top 3 students
+  const top3Eleves = classeCSV?.eleves
+    .map(e => ({ nom: e.nom, moyenne: e.moyenneGenerale }))
     .sort((a, b) => b.moyenne - a.moyenne)
-    .slice(0, 3);
+    .slice(0, 3) || [];
 
-  const elevesPlusDe12 = eleves.filter(e => {
-    const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-    return moy >= 12;
-  }).length;
-
-  const elevesEnDifficulte = eleves.filter(e => {
-    const moy = e.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / e.matieres.length;
-    return moy < 10;
-  }).length;
+  const elevesPlusDe12 = classeCSV?.eleves.filter(e => e.moyenneGenerale >= 12).length || 0;
+  const elevesEnDifficulte = classeCSV?.eleves.filter(e => e.moyenneGenerale < 10).length || 0;
+  const totalEleves = classeCSV?.eleves.length || 0;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Analyse globale</h2>
-        <p className="text-muted-foreground">Vue d'ensemble des performances de la classe</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Analyse globale</h2>
+          <p className="text-muted-foreground">Vue d'ensemble des performances de la classe</p>
+        </div>
+        <PronoteHelpTooltip type="resultats" />
       </div>
+
+      {/* Compact upload zone when file is loaded */}
+      <FileUploadZone
+        title="Tableau de résultats de la classe"
+        description="Tableau des moyennes (CSV ou PDF)"
+        accept=".csv,.pdf"
+        isLoading={isProcessing}
+        isLoaded={true}
+        loadedInfo={`${classeCSV.statistiques.totalEleves} élèves • ${classeCSV.matieres.length} matières • Moy: ${classeCSV.statistiques.moyenneClasse.toFixed(2)}`}
+        onUpload={handleTableauResultatsUpload}
+        icon={<Table2 className="h-5 w-5" />}
+        accentColor="primary"
+      />
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="bg-gradient-primary text-primary-foreground">
@@ -155,12 +235,12 @@ const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
           <CardHeader>
             <CardDescription>Élèves au-dessus de 12</CardDescription>
             <CardTitle className="text-4xl font-bold text-success">
-              {elevesPlusDe12}/{eleves.length}
+              {elevesPlusDe12}/{totalEleves}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {eleves.length > 0 ? Math.round((elevesPlusDe12 / eleves.length) * 100) : 0}% de la classe
+              {totalEleves > 0 ? Math.round((elevesPlusDe12 / totalEleves) * 100) : 0}% de la classe
             </p>
           </CardContent>
         </Card>
@@ -169,12 +249,12 @@ const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
           <CardHeader>
             <CardDescription>Élèves en difficulté</CardDescription>
             <CardTitle className="text-4xl font-bold text-warning">
-              {elevesEnDifficulte}/{eleves.length}
+              {elevesEnDifficulte}/{totalEleves}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {eleves.length > 0 ? Math.round((elevesEnDifficulte / eleves.length) * 100) : 0}% de la classe
+              {totalEleves > 0 ? Math.round((elevesEnDifficulte / totalEleves) * 100) : 0}% de la classe
             </p>
           </CardContent>
         </Card>
@@ -254,7 +334,7 @@ const AnalyseTab = ({ onNext, data }: AnalyseTabProps) => {
             ))}
             {top3Eleves.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Aucune donnée disponible. Veuillez charger des bulletins élèves.
+                Aucune donnée disponible.
               </p>
             )}
           </div>
