@@ -19,10 +19,10 @@ const Index = () => {
   }>({});
 
   const tabs = [
-    { value: "analyse", label: "Analyse", icon: BarChart3 },
-    { value: "matieres", label: "Matières", icon: BookOpen },
-    { value: "appreciations", label: "Appréciations", icon: FileText },
-    { value: "export", label: "Export", icon: Download },
+    { value: "analyse", label: "Résultats de la classe", icon: BarChart3 },
+    { value: "matieres", label: "Appréciation de la Classe", icon: BookOpen },
+    { value: "appreciations", label: "Appréciations individuelles", icon: FileText },
+    { value: "export", label: "Bilan", icon: Download },
   ];
 
   const getStepNumber = () => {
