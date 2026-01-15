@@ -19,6 +19,7 @@ interface TabUploadPlaceholderProps {
   isLoading: boolean;
   onUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
+  helpTooltip?: ReactNode;
 }
 
 const TabUploadPlaceholder = ({
@@ -33,6 +34,7 @@ const TabUploadPlaceholder = ({
   isLoading,
   onUpload,
   error,
+  helpTooltip,
 }: TabUploadPlaceholderProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -70,13 +72,16 @@ const TabUploadPlaceholder = ({
   return (
     <div className="animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          {icon}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            {icon}
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">{title}</h2>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">{title}</h2>
-        </div>
+        {helpTooltip}
       </div>
 
       {/* Main Card */}

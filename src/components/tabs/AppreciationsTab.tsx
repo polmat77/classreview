@@ -11,6 +11,7 @@ import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } fr
 import { ClasseDataCSV } from "@/utils/csvParser";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface StudentData {
   name: string;
@@ -234,6 +235,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         ]}
         isLoading={isProcessing}
         onUpload={handleBulletinsElevesUpload}
+        helpTooltip={<PronoteHelpTooltip type="individuels" />}
       />
     );
   }
@@ -254,11 +256,14 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             </p>
           </div>
         </div>
-        <ModifyFileButton
-          accept=".pdf"
-          isLoading={isProcessing}
-          onUpload={handleBulletinsElevesUpload}
-        />
+        <div className="flex items-center gap-2">
+          <PronoteHelpTooltip type="individuels" />
+          <ModifyFileButton
+            accept=".pdf"
+            isLoading={isProcessing}
+            onUpload={handleBulletinsElevesUpload}
+          />
+        </div>
       </div>
 
       {/* Appreciation tabs */}

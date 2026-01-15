@@ -20,6 +20,7 @@ import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF } from "@/utils/
 import { useToast } from "@/hooks/use-toast";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -105,6 +106,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         ]}
         isLoading={isProcessing}
         onUpload={handleTableauResultatsUpload}
+        helpTooltip={<PronoteHelpTooltip type="resultats" />}
       />
     );
   }
@@ -186,11 +188,14 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
             </p>
           </div>
         </div>
-        <ModifyFileButton
-          accept=".csv,.pdf"
-          isLoading={isProcessing}
-          onUpload={handleTableauResultatsUpload}
-        />
+        <div className="flex items-center gap-2">
+          <PronoteHelpTooltip type="resultats" />
+          <ModifyFileButton
+            accept=".csv,.pdf"
+            isLoading={isProcessing}
+            onUpload={handleTableauResultatsUpload}
+          />
+        </div>
       </div>
 
       {/* Stats cards */}
