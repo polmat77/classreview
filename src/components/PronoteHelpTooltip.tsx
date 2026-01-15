@@ -75,12 +75,47 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
         );
       case "individuels":
         return (
-          <>
-            <p className="font-semibold mb-2">Comment exporter les bulletins individuels ?</p>
-            <p className="text-muted-foreground text-sm">
-              PRONOTE → Bulletins → Exporter → PDF (un fichier par élève ou tous les élèves)
-            </p>
-          </>
+          <div className="space-y-3">
+            <p className="font-semibold">📄 Exporter les bulletins individuels en PDF</p>
+            <div className="space-y-2 text-sm">
+              <div>
+                <p className="font-medium text-foreground">1️⃣ Allez dans Bulletins → Saisie des appréciations</p>
+                <p className="text-muted-foreground">Sélectionnez votre classe et la période concernée.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">2️⃣ Cliquez sur l'icône imprimante (ou CTRL + P)</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">3️⃣ Documents à imprimer :</p>
+                <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                  <li>✅ Cochez <strong>"Bulletin élève"</strong></li>
+                  <li>✅ Cochez <strong>"élèves des classes sélectionnées"</strong></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">4️⃣ Type de sortie :</p>
+                <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                  <li>✅ Sélectionnez <strong>PDF</strong></li>
+                  <li>✅ Cochez "Un document .pdf par ressource"</li>
+                  <li>✅ Cochez "Ouvrir le dossier à l'issue de la génération"</li>
+                </ul>
+              </div>
+              <div className="bg-destructive/10 p-2 rounded-md border border-destructive/20">
+                <p className="font-medium text-destructive">⚠️ Important : NE PAS cocher "Protégé"</p>
+                <p className="text-muted-foreground text-xs">Un fichier protégé limite la réimpression et l'annotation.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">🛠 Astuces (onglet Page) :</p>
+                <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                  <li>✅ "Remonter le pied" pour l'appréciation en bas</li>
+                  <li>✅ "Hauteur adaptée aux appréciations"</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">5️⃣ Cliquez sur "Générer"</p>
+              </div>
+            </div>
+          </div>
         );
       default:
         return (
