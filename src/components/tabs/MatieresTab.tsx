@@ -8,6 +8,7 @@ import { ClasseDataCSV } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface MatieresTabProps {
   onNext: () => void;
@@ -129,6 +130,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         ]}
         isLoading={isProcessing}
         onUpload={handleBulletinClasseUpload}
+        helpTooltip={<PronoteHelpTooltip type="bulletin" />}
       />
     );
   }
@@ -152,11 +154,14 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
             </p>
           </div>
         </div>
-        <ModifyFileButton
-          accept=".pdf"
-          isLoading={isProcessing}
-          onUpload={handleBulletinClasseUpload}
-        />
+        <div className="flex items-center gap-2">
+          <PronoteHelpTooltip type="bulletin" />
+          <ModifyFileButton
+            accept=".pdf"
+            isLoading={isProcessing}
+            onUpload={handleBulletinClasseUpload}
+          />
+        </div>
       </div>
 
       {/* Subject cards */}
