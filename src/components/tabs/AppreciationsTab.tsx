@@ -1,17 +1,16 @@
 import { useState } from "react";
-import { Sparkles, User, Edit2, Loader2, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { PenLine, Sparkles, User, Edit2, Loader2, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
-import FileUploadZone from "@/components/FileUploadZone";
-import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
+import ModifyFileButton from "@/components/ModifyFileButton";
 
 interface StudentData {
   name: string;
@@ -81,7 +80,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
 
   // Build students list from data
   const buildStudentsList = (): StudentData[] => {
-    // Priority: bulletinsEleves with subject details
     if (bulletinsEleves.length > 0) {
       return bulletinsEleves.map(eleve => {
         const totalMoyenne = eleve.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
@@ -104,7 +102,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       });
     }
 
-    // Fallback to CSV data (less detailed, no subject appreciations)
     if (classeCSV?.eleves) {
       return classeCSV.eleves.map(eleve => {
         const average = eleve.moyenneGenerale;
@@ -132,6 +129,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
 
   const students = buildStudentsList();
   const hasBulletinsEleves = bulletinsEleves.length > 0;
+  const hasStudents = students.length > 0;
 
   const [generalText, setGeneralText] = useState("");
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
@@ -140,8 +138,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
 
-  // Initialize student texts when students change
-  if (studentTexts.length !== students.length) {
+  if (studentTexts.length !== students.length && students.length > 0) {
     setStudentTexts(students.map(() => ""));
   }
 
@@ -219,218 +216,227 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     }
   };
 
+  // STATE A: No data loaded - Show upload placeholder
+  if (!hasBulletinsEleves && !hasStudents) {
+    return (
+      <TabUploadPlaceholder
+        title="Génération des appréciations"
+        icon={<PenLine className="h-6 w-6" />}
+        description="Générez automatiquement les appréciations du conseil de classe grâce à l'intelligence artificielle : une appréciation générale pour la classe et une appréciation personnalisée pour chaque élève."
+        fileLabel="📁 Fichier requis : Bulletins individuels des élèves (PDF)"
+        fileHelper="Exportez depuis PRONOTE → Bulletins → Exporter (PDF par élève)"
+        accept=".pdf"
+        featuresTitle="Fonctionnalités disponibles :"
+        features={[
+          { text: "Appréciation générale de classe (200-255 caractères) → Synthèse de la dynamique du groupe" },
+          { text: "Appréciations individuelles (250-450 caractères par élève) → Rédigées à la 3ᵉ personne, commençant par le prénom" },
+          { text: "Vous pourrez relire, modifier et valider chaque appréciation avant export" },
+        ]}
+        isLoading={isProcessing}
+        onUpload={handleBulletinsElevesUpload}
+      />
+    );
+  }
+
+  // STATE B: Data loaded - Show appreciation generation
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Appréciations</h2>
-          <p className="text-muted-foreground">Générale et individuelles pour chaque élève</p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header with modify button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <PenLine className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Génération des appréciations</h2>
+            <p className="text-muted-foreground">
+              {students.length} élève{students.length > 1 ? 's' : ''} chargé{students.length > 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
-        <PronoteHelpTooltip type="individuels" />
+        <ModifyFileButton
+          accept=".pdf"
+          isLoading={isProcessing}
+          onUpload={handleBulletinsElevesUpload}
+        />
       </div>
 
-      {/* Upload zone for individual bulletins */}
-      <FileUploadZone
-        title="Bulletins individuels"
-        description="PDF - Un fichier contenant tous les élèves"
-        accept=".pdf"
-        isLoading={isProcessing}
-        isLoaded={hasBulletinsEleves}
-        loadedInfo={hasBulletinsEleves ? `${bulletinsEleves.length} élève(s) chargé(s)` : undefined}
-        onUpload={handleBulletinsElevesUpload}
-        icon={<FileSpreadsheet className="h-5 w-5" />}
-        accentColor="accent"
-      />
+      {/* Appreciation tabs */}
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="general">Appréciation générale</TabsTrigger>
+          <TabsTrigger value="students">Appréciations individuelles ({students.length})</TabsTrigger>
+        </TabsList>
 
-      {!hasBulletinsEleves && students.length === 0 && (
-        <Alert variant="default" className="border-warning/50 bg-warning/10">
-          <AlertCircle className="h-4 w-4 text-warning" />
-          <AlertTitle>Bulletins individuels recommandés</AlertTitle>
-          <AlertDescription>
-            Pour générer des appréciations personnalisées de qualité, chargez les bulletins individuels des élèves. 
-            Les appréciations des professeurs seront prises en compte pour la synthèse.
-          </AlertDescription>
-        </Alert>
-      )}
+        <TabsContent value="general" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Appréciation générale de la classe</CardTitle>
+                  <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2"
+                  onClick={handleRegenerateGeneral}
+                  disabled={isLoadingGeneral || isLoadingAll}
+                >
+                  {isLoadingGeneral ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  Régénérer avec IA
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Textarea
+                  value={generalText}
+                  onChange={(e) => setGeneralText(e.target.value)}
+                  className="min-h-[120px] resize-none"
+                  maxLength={255}
+                  placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    {generalText.length}/255 caractères
+                  </span>
+                  <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
+                    {255 - generalText.length} restants
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {students.length > 0 && (
-        <>
-          <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="general">Appréciation générale</TabsTrigger>
-              <TabsTrigger value="students">Appréciations individuelles ({students.length})</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general" className="space-y-4">
-              <Card>
+        <TabsContent value="students" className="space-y-4">
+          <div className="grid gap-4">
+            {students.map((student, index) => (
+              <Card key={index} className="hover:shadow-md transition-all duration-200">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle>Appréciation générale de la classe</CardTitle>
-                      <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{student.name}</CardTitle>
+                        <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="gap-2"
-                      onClick={handleRegenerateGeneral}
-                      disabled={isLoadingGeneral || isLoadingAll}
-                    >
-                      {isLoadingGeneral ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4" />
+                    <div className="flex items-center gap-2">
+                      {student.status === "excellent" && (
+                        <Badge className="bg-success text-success-foreground">Excellent</Badge>
                       )}
-                      Régénérer avec IA
-                    </Button>
+                      {student.status === "good" && (
+                        <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
+                      )}
+                      {student.status === "needs-improvement" && (
+                        <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRegenerateStudent(index)}
+                        disabled={loadingStudentIndex === index || isLoadingAll}
+                      >
+                        {loadingStudentIndex === index ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Sparkles className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setEditingStudent(editingStudent === index ? null : index)
+                        }
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    <Textarea
-                      value={generalText}
-                      onChange={(e) => setGeneralText(e.target.value)}
-                      className="min-h-[120px] resize-none"
-                      maxLength={255}
-                      placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
-                    />
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        {generalText.length}/255 caractères
-                      </span>
-                      <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
-                        {255 - generalText.length} restants
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="students" className="space-y-4">
-              <div className="grid gap-4">
-                {students.map((student, index) => (
-                  <Card key={index} className="hover:shadow-md transition-smooth">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                            <User className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">{student.name}</CardTitle>
-                            <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {student.status === "excellent" && (
-                            <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                          )}
-                          {student.status === "good" && (
-                            <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                          )}
-                          {student.status === "needs-improvement" && (
-                            <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                          )}
+                  {editingStudent === index ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={studentTexts[index] || ""}
+                        onChange={(e) => {
+                          const newTexts = [...studentTexts];
+                          newTexts[index] = e.target.value;
+                          setStudentTexts(newTexts);
+                        }}
+                        className="min-h-[120px] resize-none"
+                        maxLength={450}
+                        placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">
+                          {(studentTexts[index] || "").length}/450 caractères
+                        </span>
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
-                            variant="ghost"
-                            onClick={() => handleRegenerateStudent(index)}
-                            disabled={loadingStudentIndex === index || isLoadingAll}
+                            variant="outline"
+                            onClick={() => setEditingStudent(null)}
                           >
-                            {loadingStudentIndex === index ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-4 w-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              setEditingStudent(editingStudent === index ? null : index)
-                            }
-                          >
-                            <Edit2 className="h-4 w-4" />
+                            Fermer
                           </Button>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      {editingStudent === index ? (
-                        <div className="space-y-3">
-                          <Textarea
-                            value={studentTexts[index] || ""}
-                            onChange={(e) => {
-                              const newTexts = [...studentTexts];
-                              newTexts[index] = e.target.value;
-                              setStudentTexts(newTexts);
-                            }}
-                            className="min-h-[120px] resize-none"
-                            maxLength={450}
-                            placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
-                          />
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              {(studentTexts[index] || "").length}/450 caractères
-                            </span>
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setEditingStudent(null)}
-                              >
-                                Fermer
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
-                          {studentTexts[index] || (
-                            <span className="text-muted-foreground italic">
-                              Aucune appréciation générée. Cliquez sur ✨ pour générer.
-                            </span>
-                          )}
-                        </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
+                      {studentTexts[index] || (
+                        <span className="text-muted-foreground italic">
+                          Aucune appréciation générée. Cliquez sur ✨ pour générer.
+                        </span>
                       )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-center gap-3">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-medium">IA disponible</p>
-                <p className="text-xs text-muted-foreground">
-                  Régénérez automatiquement les appréciations avec des suggestions personnalisées
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={handleRegenerateAll}
-              disabled={isLoadingAll}
-            >
-              {isLoadingAll ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              Régénérer tout
-            </Button>
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </>
-      )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Generate all button */}
+      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <div>
+            <p className="text-sm font-medium">IA disponible</p>
+            <p className="text-xs text-muted-foreground">
+              Régénérez automatiquement les appréciations avec des suggestions personnalisées
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={handleRegenerateAll}
+          disabled={isLoadingAll}
+        >
+          {isLoadingAll ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          Tout générer
+        </Button>
+      </div>
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
-          Préparer l'export PDF
+          Exporter le bilan
         </Button>
       </div>
     </div>

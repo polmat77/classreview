@@ -1,14 +1,13 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Trophy, FileSpreadsheet, AlertCircle } from "lucide-react";
+import { BookOpen, TrendingUp, TrendingDown, Trophy, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BulletinClasseData, BulletinEleveData, extractTextFromPDF, parseBulletinClasse } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
-import FileUploadZone from "@/components/FileUploadZone";
-import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
+import ModifyFileButton from "@/components/ModifyFileButton";
 
 interface MatieresTabProps {
   onNext: () => void;
@@ -26,7 +25,6 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
-  const eleves = data?.bulletinsEleves || [];
   const classeCSV = data?.classeCSV;
 
   const handleBulletinClasseUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -72,7 +70,6 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
 
   // Build subjects from available data
   const buildSubjects = () => {
-    // Priority: bulletinClasse > classeCSV
     if (bulletinClasse) {
       return bulletinClasse.matieres.map(matiere => ({
         name: matiere.nom,
@@ -93,7 +90,6 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         const moyenne = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
         const needsHelp = notes.filter(n => n < 10).length;
         
-        // Find top student for this subject
         const topEleve = classeCSV.eleves
           .filter(e => e.moyennesParMatiere[matiere] !== undefined)
           .sort((a, b) => (b.moyennesParMatiere[matiere] || 0) - (a.moyennesParMatiere[matiere] || 0))[0];
@@ -116,44 +112,59 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const subjects = buildSubjects();
   const hasData = subjects.length > 0;
 
+  // STATE A: No file loaded - Show upload placeholder
+  if (!bulletinClasse && !classeCSV) {
+    return (
+      <TabUploadPlaceholder
+        title="Analyse par matière"
+        icon={<BookOpen className="h-6 w-6" />}
+        description="Visualisez les performances de la classe dans chaque discipline pour identifier les points forts et les matières à renforcer."
+        fileLabel="📁 Fichier requis : Bulletin de classe (PDF)"
+        fileHelper="Exportez depuis PRONOTE → Bulletins → Exporter (PDF classe)"
+        accept=".pdf"
+        features={[
+          { text: "Les moyennes de classe par matière" },
+          { text: "La comparaison avec les moyennes de l'établissement (si disponibles)" },
+          { text: "Un classement des disciplines par réussite" },
+        ]}
+        isLoading={isProcessing}
+        onUpload={handleBulletinClasseUpload}
+      />
+    );
+  }
+
+  // STATE B: Data loaded - Show subject analysis
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Analyse par matière</h2>
-          <p className="text-muted-foreground">Détail des performances dans chaque discipline</p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header with modify button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <BookOpen className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Analyse par matière</h2>
+            <p className="text-muted-foreground">
+              {bulletinClasse 
+                ? `${bulletinClasse.classe} • ${bulletinClasse.matieres.length} matières`
+                : `${subjects.length} matières analysées`
+              }
+            </p>
+          </div>
         </div>
-        <PronoteHelpTooltip type="bulletin" />
+        <ModifyFileButton
+          accept=".pdf"
+          isLoading={isProcessing}
+          onUpload={handleBulletinClasseUpload}
+        />
       </div>
 
-      {/* Upload zone */}
-      <FileUploadZone
-        title="Bulletin de classe"
-        description="PDF - Moyennes générales par matière"
-        accept=".pdf"
-        isLoading={isProcessing}
-        isLoaded={!!bulletinClasse}
-        loadedInfo={bulletinClasse ? `${bulletinClasse.classe} - ${bulletinClasse.matieres.length} matières` : undefined}
-        onUpload={handleBulletinClasseUpload}
-        icon={<FileSpreadsheet className="h-5 w-5" />}
-        accentColor="primary"
-      />
-
-      {!hasData && !bulletinClasse && (
-        <Alert variant="default" className="border-muted">
-          <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          <AlertTitle>Aucune donnée disponible</AlertTitle>
-          <AlertDescription>
-            Chargez un bulletin de classe PDF pour voir les moyennes par matière, ou assurez-vous d'avoir chargé le tableau de résultats dans l'onglet Analyse.
-          </AlertDescription>
-        </Alert>
-      )}
-
+      {/* Subject cards */}
       {hasData && (
         <>
           <div className="grid gap-4">
             {subjects.map((subject, index) => (
-              <Card key={index} className="hover:shadow-md transition-smooth">
+              <Card key={index} className="hover:shadow-md transition-all duration-200">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
