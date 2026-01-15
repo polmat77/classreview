@@ -15,12 +15,34 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
     switch (type) {
       case "resultats":
         return (
-          <>
-            <p className="font-semibold mb-2">Comment exporter le tableau de résultats ?</p>
-            <p className="text-muted-foreground text-sm">
-              PRONOTE → Notes → Tableau des moyennes → Exporter (CSV ou PDF)
-            </p>
-          </>
+          <div className="space-y-3">
+            <p className="font-semibold">📄 Exporter un tableau de résultats en PDF</p>
+            <div className="space-y-2 text-sm">
+              <div>
+                <p className="font-medium text-foreground">1️⃣ Menu Résultats → Tableau des moyennes par classe</p>
+                <p className="text-muted-foreground">Sélectionnez la classe et la période concernées.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">2️⃣ Cliquez sur l'icône imprimante (ou CTRL + P)</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">3️⃣ Dans la fenêtre d'impression :</p>
+                <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                  <li>Cochez <strong>PDF</strong> comme type de sortie</li>
+                  <li>Format A4, orientation Portrait ou Paysage</li>
+                  <li>✅ Avec la moyenne générale</li>
+                  <li>✅ Avec le nom du professeur</li>
+                </ul>
+              </div>
+              <div className="bg-destructive/10 p-2 rounded-md border border-destructive/20">
+                <p className="font-medium text-destructive">4️⃣ 🔒 Important : NE PAS cocher "Protégé"</p>
+                <p className="text-muted-foreground text-xs">Sinon le PDF sera verrouillé et inutilisable.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">5️⃣ Cliquez sur "Générer" pour créer le PDF</p>
+              </div>
+            </div>
+          </div>
         );
       case "bulletin":
         return (
