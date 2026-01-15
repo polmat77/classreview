@@ -46,12 +46,32 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
         );
       case "bulletin":
         return (
-          <>
-            <p className="font-semibold mb-2">Comment exporter le bulletin de classe ?</p>
-            <p className="text-muted-foreground text-sm">
-              PRONOTE → Bulletins → Exporter → PDF (bulletin de classe)
-            </p>
-          </>
+          <div className="space-y-3">
+            <p className="font-semibold">📄 Exporter le bulletin de classe en PDF</p>
+            <div className="space-y-2 text-sm">
+              <div>
+                <p className="font-medium text-foreground">1️⃣ Rendez-vous dans PRONOTE</p>
+                <p className="text-muted-foreground">Allez dans <strong>Bulletins → Saisie des appréciations</strong>. Sélectionnez la classe et la période concernées.</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">2️⃣ Ouvrez la fenêtre d'impression</p>
+                <p className="text-muted-foreground">Cliquez sur l'icône imprimante (ou CTRL + P).</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">3️⃣ Paramétrez votre export :</p>
+                <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                  <li><strong>Documents à imprimer :</strong> Cochez "Bulletin des classes sélectionnées"</li>
+                  <li><strong>Destinataires :</strong> Cochez "Professeurs principaux"</li>
+                  <li><strong>Type de sortie :</strong> Choisissez <strong>PDF</strong></li>
+                  <li>✅ Cochez "Ouvrir le dossier à l'issue de la génération"</li>
+                </ul>
+              </div>
+              <div className="bg-destructive/10 p-2 rounded-md border border-destructive/20">
+                <p className="font-medium text-destructive">⚠️ Important : NE PAS cocher "Protégé"</p>
+                <p className="text-muted-foreground text-xs">Cela garantit que les bulletins PDF seront librement lisibles, imprimables et annotables.</p>
+              </div>
+            </div>
+          </div>
         );
       case "individuels":
         return (
