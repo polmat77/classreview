@@ -6,7 +6,7 @@ import MatieresTab from "@/components/tabs/MatieresTab";
 import AppreciationsTab from "@/components/tabs/AppreciationsTab";
 import ExportTab from "@/components/tabs/ExportTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart3, BookOpen, FileText, Download } from "lucide-react";
+import { BarChart3, BookOpen, PenLine, Download } from "lucide-react";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 
@@ -21,7 +21,7 @@ const Index = () => {
   const tabs = [
     { value: "analyse", label: "Résultats de la classe", icon: BarChart3 },
     { value: "matieres", label: "Appréciation de la Classe", icon: BookOpen },
-    { value: "appreciations", label: "Appréciations individuelles", icon: FileText },
+    { value: "appreciations", label: "Appréciations individuelles", icon: PenLine },
     { value: "export", label: "Bilan", icon: Download },
   ];
 
@@ -41,14 +41,19 @@ const Index = () => {
         <ProgressIndicator currentStep={getStepNumber()} totalSteps={4} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="grid w-full grid-cols-4 h-auto gap-2 bg-muted/50 p-2">
+          <TabsList className="grid w-full grid-cols-4 h-auto gap-2 bg-transparent p-0">
             {tabs.map((tab) => {
               const Icon = tab.icon;
+              const isActive = activeTab === tab.value;
               return (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="flex flex-col items-center gap-2 py-3 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground transition-smooth"
+                  className={`flex flex-col items-center gap-2 py-3 px-4 rounded-xl border transition-all duration-200 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md border-primary"
+                      : "bg-transparent text-muted-foreground border-transparent hover:bg-primary/5 hover:border-primary/20"
+                  }`}
                 >
                   <Icon className="h-5 w-5" />
                   <span className="text-xs font-medium">{tab.label}</span>
@@ -83,7 +88,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="export" className="mt-0">
-              <ExportTab />
+              <ExportTab data={classeData} />
             </TabsContent>
           </div>
         </Tabs>

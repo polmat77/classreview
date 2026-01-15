@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Minus, Table2, AlertCircle } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, Minus, Table2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   BarChart,
   Bar,
@@ -19,8 +18,8 @@ import {
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
-import FileUploadZone from "@/components/FileUploadZone";
-import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
+import ModifyFileButton from "@/components/ModifyFileButton";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -89,44 +88,30 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     }
   };
 
-  // If no data loaded, show upload zone
+  // STATE A: No file loaded - Show upload placeholder
   if (!classeCSV) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Analyse globale</h2>
-            <p className="text-muted-foreground">Vue d'ensemble des performances de la classe</p>
-          </div>
-          <PronoteHelpTooltip type="resultats" />
-        </div>
-
-        <Alert variant="default" className="border-warning/50 bg-warning/10">
-          <AlertCircle className="h-4 w-4 text-warning" />
-          <AlertTitle>Fichier requis</AlertTitle>
-          <AlertDescription>
-            Veuillez charger le tableau de résultats de la classe pour accéder à l'analyse.
-          </AlertDescription>
-        </Alert>
-
-        <FileUploadZone
-          title="Tableau de résultats de la classe"
-          description="Tableau des moyennes (CSV ou PDF)"
-          accept=".csv,.pdf"
-          isLoading={isProcessing}
-          isLoaded={false}
-          onUpload={handleTableauResultatsUpload}
-          icon={<Table2 className="h-5 w-5" />}
-          accentColor="primary"
-        />
-      </div>
+      <TabUploadPlaceholder
+        title="Analyse des résultats de la classe"
+        icon={<BarChart3 className="h-6 w-6" />}
+        description="Obtenez une vue d'ensemble des performances de votre classe : moyenne générale, répartition des notes, élèves en difficulté ou en réussite."
+        fileLabel="📁 Fichier requis : Tableau de résultats de la classe"
+        fileHelper="Exportez depuis PRONOTE → Notes → Tableau des moyennes → Exporter (CSV ou PDF)"
+        accept=".csv,.pdf"
+        features={[
+          { text: "La moyenne générale et sa comparaison avec le trimestre précédent" },
+          { text: "La répartition des élèves par tranche de moyenne" },
+          { text: "L'identification des profils (excellents, satisfaisants, en difficulté)" },
+        ]}
+        isLoading={isProcessing}
+        onUpload={handleTableauResultatsUpload}
+      />
     );
   }
 
-  // Calculate statistics from real data
+  // STATE B: File loaded - Show analysis dashboard
   const eleves = data?.bulletinsEleves || [];
   
-  // Calculate class average from student bulletins or CSV
   const classAverage = eleves.length > 0
     ? eleves.reduce((sum, eleve) => {
         const moyEleve = eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length;
@@ -137,7 +122,6 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   const previousAverage = classeCSV?.statistiques.moyenneClasse || classAverage;
   const trend = classAverage > previousAverage ? "up" : classAverage < previousAverage ? "down" : "stable";
 
-  // Grade distribution
   const gradeDistribution = classeCSV ? [
     { 
       name: "Excellent (≥16)", 
@@ -166,7 +150,6 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     },
   ] : [];
 
-  // Subject averages
   const subjectAverages = classeCSV?.matieres.map(matiere => {
     const notes = classeCSV.eleves
       .map(e => e.moyennesParMatiere[matiere])
@@ -179,7 +162,6 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     };
   }).slice(0, 6) || [];
 
-  // Top 3 students
   const top3Eleves = classeCSV?.eleves
     .map(e => ({ nom: e.nom, moyenne: e.moyenneGenerale }))
     .sort((a, b) => b.moyenne - a.moyenne)
@@ -190,28 +172,28 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   const totalEleves = classeCSV?.eleves.length || 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Analyse globale</h2>
-          <p className="text-muted-foreground">Vue d'ensemble des performances de la classe</p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Header with modify button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <BarChart3 className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">Analyse des résultats de la classe</h2>
+            <p className="text-muted-foreground">
+              {classeCSV.statistiques.totalEleves} élèves • {classeCSV.matieres.length} matières
+            </p>
+          </div>
         </div>
-        <PronoteHelpTooltip type="resultats" />
+        <ModifyFileButton
+          accept=".csv,.pdf"
+          isLoading={isProcessing}
+          onUpload={handleTableauResultatsUpload}
+        />
       </div>
 
-      {/* Compact upload zone when file is loaded */}
-      <FileUploadZone
-        title="Tableau de résultats de la classe"
-        description="Tableau des moyennes (CSV ou PDF)"
-        accept=".csv,.pdf"
-        isLoading={isProcessing}
-        isLoaded={true}
-        loadedInfo={`${classeCSV.statistiques.totalEleves} élèves • ${classeCSV.matieres.length} matières • Moy: ${classeCSV.statistiques.moyenneClasse.toFixed(2)}`}
-        onUpload={handleTableauResultatsUpload}
-        icon={<Table2 className="h-5 w-5" />}
-        accentColor="primary"
-      />
-
+      {/* Stats cards */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="bg-gradient-primary text-primary-foreground">
           <CardHeader>
@@ -260,6 +242,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         </Card>
       </div>
 
+      {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -316,6 +299,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         </Card>
       </div>
 
+      {/* Top 3 */}
       <Card className="bg-muted/30">
         <CardHeader>
           <CardTitle className="text-base">Top 3 élèves</CardTitle>
@@ -343,7 +327,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
-          Voir les matières
+          Voir l'appréciation de classe
         </Button>
       </div>
     </div>
