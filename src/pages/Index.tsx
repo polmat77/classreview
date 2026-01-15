@@ -1,18 +1,17 @@
 import { useState } from "react";
 import AppHeader from "@/components/AppHeader";
 import ProgressIndicator from "@/components/ProgressIndicator";
-import ImportTab from "@/components/tabs/ImportTab";
 import AnalyseTab from "@/components/tabs/AnalyseTab";
 import MatieresTab from "@/components/tabs/MatieresTab";
 import AppreciationsTab from "@/components/tabs/AppreciationsTab";
 import ExportTab from "@/components/tabs/ExportTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileUp, BarChart3, BookOpen, FileText, Download } from "lucide-react";
+import { BarChart3, BookOpen, FileText, Download } from "lucide-react";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState("import");
+  const [activeTab, setActiveTab] = useState("analyse");
   const [classeData, setClasseData] = useState<{
     bulletinClasse?: BulletinClasseData;
     bulletinsEleves?: BulletinEleveData[];
@@ -20,7 +19,6 @@ const Index = () => {
   }>({});
 
   const tabs = [
-    { value: "import", label: "Import", icon: FileUp },
     { value: "analyse", label: "Analyse", icon: BarChart3 },
     { value: "matieres", label: "Matières", icon: BookOpen },
     { value: "appreciations", label: "Appréciations", icon: FileText },
@@ -31,15 +29,19 @@ const Index = () => {
     return tabs.findIndex((tab) => tab.value === activeTab) + 1;
   };
 
+  const handleDataUpdate = (newData: Partial<typeof classeData>) => {
+    setClasseData(prev => ({ ...prev, ...newData }));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
       
       <main className="container mx-auto px-4 py-8">
-        <ProgressIndicator currentStep={getStepNumber()} totalSteps={5} />
+        <ProgressIndicator currentStep={getStepNumber()} totalSteps={4} />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-          <TabsList className="grid w-full grid-cols-5 h-auto gap-2 bg-muted/50 p-2">
+          <TabsList className="grid w-full grid-cols-4 h-auto gap-2 bg-muted/50 p-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -56,17 +58,11 @@ const Index = () => {
           </TabsList>
 
           <div className="mt-8">
-            <TabsContent value="import" className="mt-0">
-              <ImportTab 
-                onNext={() => setActiveTab("analyse")} 
-                onDataLoaded={setClasseData}
-              />
-            </TabsContent>
-
             <TabsContent value="analyse" className="mt-0">
               <AnalyseTab 
                 onNext={() => setActiveTab("matieres")} 
                 data={classeData}
+                onDataLoaded={handleDataUpdate}
               />
             </TabsContent>
 
@@ -74,6 +70,7 @@ const Index = () => {
               <MatieresTab 
                 onNext={() => setActiveTab("appreciations")} 
                 data={classeData}
+                onDataLoaded={handleDataUpdate}
               />
             </TabsContent>
 
@@ -81,6 +78,7 @@ const Index = () => {
               <AppreciationsTab 
                 onNext={() => setActiveTab("export")} 
                 data={classeData}
+                onDataLoaded={handleDataUpdate}
               />
             </TabsContent>
 
