@@ -5,14 +5,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+type AppreciationTone = 'severe' | 'standard' | 'caring' | 'praising';
+
+const toneInstructions: Record<AppreciationTone, string> = {
+  severe: `Adopte un ton SÉVÈRE : constat direct des difficultés, vocabulaire ferme avec notion d'avertissement, accent sur les lacunes et attentes non satisfaites, appel explicite à un changement. Utilise des formulations comme "insuffisant", "doit impérativement", "le conseil met en garde".`,
+  
+  standard: `Adopte un ton STANDARD : neutre et factuel, équilibre entre points positifs et axes d'amélioration, formulations institutionnelles classiques. Utilise des formulations comme "correct", "satisfaisant", "des efforts à poursuivre".`,
+  
+  caring: `Adopte un ton BIENVEILLANT : valorise les efforts même modestes, encourage explicitement, formule les critiques de manière positive (comme des conseils), reconnais le potentiel et la progression. Utilise des formulations comme "des efforts remarqués", "en progression", "nous croyons en tes capacités".`,
+  
+  praising: `Adopte un ton ÉLOGIEUX : célèbre les réussites et l'excellence, vocabulaire laudatif et enthousiaste, mise en avant des qualités remarquables, félicitations explicites. Utilise des formulations comme "félicitations du conseil", "excellent", "remarquable", "exemplaire".`
+};
+
 interface StudentData {
   name: string;
   average: number;
-  subjects?: { name: string; grade: number; classAverage?: number }[];
+  subjects?: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
 }
 
 interface RequestBody {
   type: 'general' | 'individual';
+  tone?: AppreciationTone;
   classData?: {
     className: string;
     trimester: string;
@@ -28,13 +41,15 @@ serve(async (req) => {
   }
 
   try {
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
-    if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY is not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     const body: RequestBody = await req.json();
-    const { type, classData, student } = body;
+    const { type, tone = 'standard', classData, student } = body;
+
+    const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
 
     let systemPrompt: string;
     let userPrompt: string;
@@ -45,11 +60,13 @@ serve(async (req) => {
 RÈGLES STRICTES :
 - Entre 200 et 255 caractères (strict)
 - Rédaction impersonnelle à la troisième personne (parler de "la classe", "le groupe")
-- Ton professionnel et bienveillant
+- Ton professionnel
 - Synthétiser la dynamique générale, l'ambiance de travail et les axes de progression
-- Ne pas lister les matières, mais donner une vision globale`;
+- Ne pas lister les matières, mais donner une vision globale
 
-      // Déterminer les tendances et points de vigilance
+TONALITÉ À ADOPTER :
+${toneInstruction}`;
+
       const tendancesPositives = classData?.subjects?.filter(s => s.average >= 12).map(s => s.name).join(', ') || 'Non disponible';
       const pointsVigilance = classData?.subjects?.filter(s => s.average < 10).map(s => s.name).join(', ') || 'Aucun';
       const ambiance = classData?.averageClass && classData.averageClass >= 12 ? 'studieuse' : 'en progression';
@@ -71,29 +88,29 @@ RÈGLES STRICTES :
 - Rédaction à la troisième personne (ne jamais s'adresser directement à l'élève avec "tu" ou "vous")
 - Ne PAS mentionner la moyenne chiffrée
 - Synthétiser les appréciations des différents professeurs en un bilan cohérent
-- Ton bienveillant et constructif
 - Mentionner : attitude en classe, qualité du travail, points forts, axes de progression
-- Terminer par une perspective ou un encouragement`;
+- Terminer par une perspective ou un encouragement
 
-      // Extraire le prénom (premier mot du nom)
+TONALITÉ À ADOPTER :
+${toneInstruction}`;
+
       const prenom = student?.name?.split(' ')[0] || 'L\'élève';
       
-      // Déterminer le profil
       let profil = 'Satisfaisant';
       if (student?.average && student.average >= 16) profil = 'Excellent';
       else if (student?.average && student.average >= 12) profil = 'Satisfaisant';
       else if (student?.average && student.average >= 8) profil = 'Fragile';
       else if (student?.average) profil = 'En difficulté';
 
-      // Synthèse des matières
       const pointsForts = student?.subjects?.filter(s => s.grade >= 14).map(s => s.name).join(', ') || 'À identifier';
       const axesAmelioration = student?.subjects?.filter(s => s.grade < 10).map(s => s.name).join(', ') || 'Maintenir les efforts';
       
       const syntheseAppreciations = student?.subjects?.map(s => {
-        if (s.grade >= 16) return `${s.name}: excellent travail`;
-        if (s.grade >= 14) return `${s.name}: bon niveau`;
-        if (s.grade >= 10) return `${s.name}: résultats corrects`;
-        return `${s.name}: des efforts nécessaires`;
+        const appreciation = s.appreciation ? ` (${s.appreciation})` : '';
+        if (s.grade >= 16) return `${s.name}: excellent travail${appreciation}`;
+        if (s.grade >= 14) return `${s.name}: bon niveau${appreciation}`;
+        if (s.grade >= 10) return `${s.name}: résultats corrects${appreciation}`;
+        return `${s.name}: des efforts nécessaires${appreciation}`;
       }).join(', ') || 'Synthèse non disponible';
 
       userPrompt = `Rédige l'appréciation du conseil de classe pour cet élève :
@@ -109,15 +126,14 @@ Points forts relevés : ${pointsForts}
 Axes d'amélioration : ${axesAmelioration}`;
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_completion_tokens: 300,
+        model: 'google/gemini-3-flash-preview',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -127,9 +143,21 @@ Axes d'amélioration : ${axesAmelioration}`;
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Limite de requêtes atteinte, veuillez réessayer dans quelques instants." }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Crédits IA épuisés, veuillez ajouter des crédits à votre espace." }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('AI Gateway error:', response.status, errorText);
+      throw new Error(`AI Gateway error: ${response.status}`);
     }
 
     const data = await response.json();
