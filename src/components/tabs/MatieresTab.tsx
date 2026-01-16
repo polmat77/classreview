@@ -58,8 +58,34 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         onDataLoaded?.({ bulletinClasse: parsedData });
         toast({
           title: "✓ Bulletin de classe chargé",
-          description: `${parsedData.matieres.length} matières détectées`,
+          description: `${parsedData.matieres.length} matières détectées. Génération de l'appréciation en cours...`,
         });
+        
+        // Auto-generate appreciation with standard tone
+        setTimeout(async () => {
+          setIsLoadingGeneral(true);
+          try {
+            const classData = {
+              className: parsedData.classe || "3ème",
+              trimester: parsedData.trimestre || "1er trimestre",
+              averageClass: parsedData.matieres.reduce((sum, m) => sum + m.moyenne, 0) / (parsedData.matieres.length || 1),
+              subjects: parsedData.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
+            };
+            
+            const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
+              body: { type: 'general', tone: 'standard', classData },
+            });
+            
+            if (!error && result?.appreciation) {
+              setGeneralText(result.appreciation);
+              toast({ title: "✓ Appréciation générée", description: "L'appréciation générale a été générée automatiquement." });
+            }
+          } catch (err) {
+            console.error('Auto-generate error:', err);
+          } finally {
+            setIsLoadingGeneral(false);
+          }
+        }, 100);
       } else {
         throw new Error("Impossible de parser le bulletin de classe");
       }
