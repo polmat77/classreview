@@ -1,4 +1,4 @@
-import { GraduationCap } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const AppHeader = () => {
   return (
@@ -6,11 +6,13 @@ const AppHeader = () => {
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
-            </div>
+            <img 
+              src={logo} 
+              alt="ClassCouncil AI Logo" 
+              className="h-10 w-10 object-contain"
+            />
             <div>
-              <h1 className="text-xl font-bold text-foreground">Class Review Master</h1>
+              <h1 className="text-xl font-bold text-foreground">ClassCouncil AI</h1>
               <p className="text-xs text-muted-foreground">Analyse de bulletins scolaires</p>
             </div>
           </div>
