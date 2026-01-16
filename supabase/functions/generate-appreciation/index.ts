@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,22 +18,119 @@ const toneInstructions: Record<AppreciationTone, string> = {
   praising: `Adopte un ton ÉLOGIEUX : célèbre les réussites et l'excellence, vocabulaire laudatif et enthousiaste, mise en avant des qualités remarquables, félicitations explicites. Utilise des formulations comme "félicitations du conseil", "excellent", "remarquable", "exemplaire".`
 };
 
-interface StudentData {
-  name: string;
-  average: number;
-  subjects?: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
+// Input validation functions
+function isValidTone(tone: unknown): tone is AppreciationTone {
+  return typeof tone === 'string' && ['severe', 'standard', 'caring', 'praising'].includes(tone);
 }
 
-interface RequestBody {
+function isValidType(type: unknown): type is 'general' | 'individual' {
+  return typeof type === 'string' && ['general', 'individual'].includes(type);
+}
+
+function sanitizeString(str: unknown, maxLength: number): string {
+  if (typeof str !== 'string') return '';
+  // Remove potential prompt injection patterns and limit length
+  return str.slice(0, maxLength).replace(/[<>{}]/g, '').trim();
+}
+
+function validateNumber(num: unknown, min: number, max: number): number {
+  if (typeof num !== 'number' || isNaN(num)) return 0;
+  return Math.max(min, Math.min(max, num));
+}
+
+interface SubjectInput {
+  name: string;
+  average?: number;
+  grade?: number;
+  classAverage?: number;
+  appreciation?: string;
+}
+
+interface ClassDataInput {
+  className?: string;
+  trimester?: string;
+  averageClass?: number;
+  subjects?: SubjectInput[];
+}
+
+interface StudentInput {
+  name?: string;
+  average?: number;
+  subjects?: SubjectInput[];
+}
+
+interface ValidatedRequest {
   type: 'general' | 'individual';
-  tone?: AppreciationTone;
+  tone: AppreciationTone;
   classData?: {
     className: string;
     trimester: string;
     averageClass: number;
-    subjects?: { name: string; average: number }[];
+    subjects: { name: string; average: number }[];
   };
-  student?: StudentData;
+  student?: {
+    name: string;
+    average: number;
+    subjects: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
+  };
+}
+
+function validateRequest(body: unknown): ValidatedRequest | null {
+  if (!body || typeof body !== 'object') return null;
+  
+  const rawBody = body as Record<string, unknown>;
+  
+  // Validate type (required)
+  if (!isValidType(rawBody.type)) return null;
+  
+  // Validate tone (optional, defaults to standard)
+  const tone: AppreciationTone = isValidTone(rawBody.tone) ? rawBody.tone : 'standard';
+  
+  const result: ValidatedRequest = {
+    type: rawBody.type,
+    tone,
+  };
+  
+  // Validate classData if provided
+  if (rawBody.classData && typeof rawBody.classData === 'object') {
+    const cd = rawBody.classData as ClassDataInput;
+    result.classData = {
+      className: sanitizeString(cd.className, 50) || '3ème',
+      trimester: sanitizeString(cd.trimester, 50) || '1er trimestre',
+      averageClass: validateNumber(cd.averageClass, 0, 20),
+      subjects: [],
+    };
+    
+    if (Array.isArray(cd.subjects)) {
+      result.classData.subjects = cd.subjects.slice(0, 30).map(s => ({
+        name: sanitizeString(s?.name, 100),
+        average: validateNumber(s?.average, 0, 20),
+      })).filter(s => s.name);
+    }
+  }
+  
+  // Validate student if provided (required for individual type)
+  if (rawBody.type === 'individual') {
+    if (!rawBody.student || typeof rawBody.student !== 'object') return null;
+    
+    const st = rawBody.student as StudentInput;
+    result.student = {
+      name: sanitizeString(st.name, 100) || 'Élève',
+      average: validateNumber(st.average, 0, 20),
+      subjects: [],
+    };
+    
+    if (Array.isArray(st.subjects)) {
+      result.student.subjects = st.subjects.slice(0, 30).map(s => ({
+        name: sanitizeString(s?.name, 100),
+        grade: validateNumber(s?.grade, 0, 20),
+        classAverage: s?.classAverage !== undefined ? validateNumber(s.classAverage, 0, 20) : undefined,
+        appreciation: s?.appreciation ? sanitizeString(s.appreciation, 500) : undefined,
+      })).filter(s => s.name);
+    }
+  }
+  
+  return result;
 }
 
 serve(async (req) => {
@@ -41,15 +139,52 @@ serve(async (req) => {
   }
 
   try {
+    // Authentication check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé - Token manquant' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verify the JWT using Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getUser(token);
+    
+    if (claimsError || !claimsData?.user) {
+      return new Response(
+        JSON.stringify({ error: 'Non autorisé - Token invalide' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate API key
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const body: RequestBody = await req.json();
-    const { type, tone = 'standard', classData, student } = body;
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const validatedRequest = validateRequest(rawBody);
+    
+    if (!validatedRequest) {
+      return new Response(
+        JSON.stringify({ error: 'Données invalides' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
+    const { type, tone, classData, student } = validatedRequest;
+    const toneInstruction = toneInstructions[tone];
 
     let systemPrompt: string;
     let userPrompt: string;
