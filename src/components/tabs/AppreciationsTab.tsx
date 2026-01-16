@@ -11,12 +11,15 @@ import { ClasseDataCSV } from "@/utils/csvParser";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+import ToneSelector from "@/components/ToneSelector";
+import { AppreciationTone } from "@/types/appreciation";
 
 interface StudentData {
   name: string;
   average: number;
   subjects?: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
   status: "excellent" | "good" | "needs-improvement";
+  tone: AppreciationTone;
 }
 
 interface AppreciationsTabProps {
@@ -33,6 +36,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
+  const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
 
   const bulletinsEleves = data?.bulletinsEleves?.length ? data.bulletinsEleves : localBulletinsEleves;
   const classeCSV = data?.classeCSV;
@@ -81,7 +85,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   // Build students list from data
   const buildStudentsList = (): StudentData[] => {
     if (bulletinsEleves.length > 0) {
-      return bulletinsEleves.map(eleve => {
+      return bulletinsEleves.map((eleve, index) => {
         const totalMoyenne = eleve.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
         const average = eleve.matieres.length > 0 ? totalMoyenne / eleve.matieres.length : 0;
         let status: "excellent" | "good" | "needs-improvement" = "good";
@@ -98,12 +102,13 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             appreciation: m.appreciation,
           })),
           status,
+          tone: studentTones[index] || 'standard',
         };
       });
     }
 
     if (classeCSV?.eleves) {
-      return classeCSV.eleves.map(eleve => {
+      return classeCSV.eleves.map((eleve, index) => {
         const average = eleve.moyenneGenerale;
         let status: "excellent" | "good" | "needs-improvement" = "good";
         if (average >= 16) status = "excellent";
@@ -120,6 +125,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           average,
           subjects,
           status,
+          tone: studentTones[index] || 'standard',
         };
       });
     }
@@ -140,7 +146,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setStudentTexts(students.map(() => ""));
   }
 
-  const generateAppreciation = async (student: StudentData): Promise<string> => {
+  const handleToneChange = (index: number, tone: AppreciationTone) => {
+    setStudentTones(prev => ({ ...prev, [index]: tone }));
+  };
+
+  const generateAppreciation = async (student: StudentData, tone: AppreciationTone): Promise<string> => {
     const classData = classeCSV ? {
       className: "3ème",
       trimester: "1er trimestre",
@@ -154,7 +164,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     } : undefined;
 
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'individual', classData, student },
+      body: { type: 'individual', tone, classData, student },
     });
 
     if (error) throw error;
@@ -165,7 +175,8 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setLoadingStudentIndex(index);
     try {
       const student = students[index];
-      const appreciation = await generateAppreciation(student);
+      const tone = studentTones[index] || 'standard';
+      const appreciation = await generateAppreciation(student, tone);
       const newTexts = [...studentTexts];
       newTexts[index] = appreciation;
       setStudentTexts(newTexts);
@@ -183,7 +194,8 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     try {
       const newTexts = [...studentTexts];
       for (let i = 0; i < students.length; i++) {
-        const appreciation = await generateAppreciation(students[i]);
+        const tone = studentTones[i] || 'standard';
+        const appreciation = await generateAppreciation(students[i], tone);
         newTexts[i] = appreciation;
         setStudentTexts([...newTexts]);
       }
@@ -250,7 +262,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         {students.map((student, index) => (
           <Card key={index} className="hover:shadow-md transition-all duration-200">
             <CardHeader>
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                     <User className="h-5 w-5 text-primary" />
@@ -260,37 +272,45 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {student.status === "excellent" && (
-                    <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                  )}
-                  {student.status === "good" && (
-                    <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                  )}
-                  {student.status === "needs-improvement" && (
-                    <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleRegenerateStudent(index)}
-                    disabled={loadingStudentIndex === index || isLoadingAll}
-                  >
-                    {loadingStudentIndex === index ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-4 w-4" />
+                <div className="flex items-center gap-3">
+                  {/* Compact Tone Selector */}
+                  <ToneSelector 
+                    value={studentTones[index] || 'standard'} 
+                    onChange={(tone) => handleToneChange(index, tone)}
+                    compact
+                  />
+                  <div className="flex items-center gap-1">
+                    {student.status === "excellent" && (
+                      <Badge className="bg-success text-success-foreground">Excellent</Badge>
                     )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() =>
-                      setEditingStudent(editingStudent === index ? null : index)
-                    }
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
+                    {student.status === "good" && (
+                      <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
+                    )}
+                    {student.status === "needs-improvement" && (
+                      <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleRegenerateStudent(index)}
+                      disabled={loadingStudentIndex === index || isLoadingAll}
+                    >
+                      {loadingStudentIndex === index ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        setEditingStudent(editingStudent === index ? null : index)
+                      }
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>

@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+import ToneSelector from "@/components/ToneSelector";
+import { AppreciationTone } from "@/types/appreciation";
 
 interface MatieresTabProps {
   onNext: () => void;
@@ -28,6 +30,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
   const [generalText, setGeneralText] = useState("");
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
+  const [classTone, setClassTone] = useState<AppreciationTone>('standard');
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
   const classeCSV = data?.classeCSV;
@@ -87,7 +90,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     } : undefined;
 
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'general', classData },
+      body: { type: 'general', tone: classTone, classData },
     });
 
     if (error) throw error;
@@ -158,6 +161,17 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           />
         </div>
       </div>
+
+      {/* Tone Selector */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Tonalité de l'appréciation</CardTitle>
+          <CardDescription>Choisissez le ton adapté à la dynamique de la classe</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ToneSelector value={classTone} onChange={setClassTone} />
+        </CardContent>
+      </Card>
 
       {/* Class Appreciation Card */}
       <Card>
