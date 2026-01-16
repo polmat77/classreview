@@ -224,8 +224,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         title="Génération des appréciations"
         icon={<PenLine className="h-6 w-6" />}
         description="Générez automatiquement les appréciations du conseil de classe grâce à l'intelligence artificielle : une appréciation générale pour la classe et une appréciation personnalisée pour chaque élève."
-        fileLabel="📁 Fichier requis : Bulletins individuels des élèves (PDF)"
-        fileHelper="Exportez depuis PRONOTE → Bulletins → Exporter (PDF par élève)"
         accept=".pdf"
         featuresTitle="Fonctionnalités disponibles :"
         features={[

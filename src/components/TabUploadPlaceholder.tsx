@@ -11,8 +11,6 @@ interface TabUploadPlaceholderProps {
   title: string;
   icon: ReactNode;
   description: string;
-  fileLabel: string;
-  fileHelper: string;
   accept: string;
   features: FeatureItem[];
   featuresTitle?: string;
@@ -26,8 +24,6 @@ const TabUploadPlaceholder = ({
   title,
   icon,
   description,
-  fileLabel,
-  fileHelper,
   accept,
   features,
   featuresTitle = "Une fois le fichier chargé, vous accéderez à :",
@@ -91,17 +87,6 @@ const TabUploadPlaceholder = ({
           <p className="text-base text-muted-foreground leading-relaxed mb-6">
             {description}
           </p>
-
-          {/* Required file box */}
-          <div className="bg-warning/10 border-l-4 border-warning rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <FileText className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-warning">{fileLabel}</p>
-                <p className="text-sm text-warning/80 italic mt-1">{fileHelper}</p>
-              </div>
-            </div>
-          </div>
 
           {/* Upload dropzone */}
           <label
