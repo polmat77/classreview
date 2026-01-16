@@ -29,8 +29,25 @@ function isValidType(type: unknown): type is 'general' | 'individual' {
 
 function sanitizeString(str: unknown, maxLength: number): string {
   if (typeof str !== 'string') return '';
+  
   // Remove potential prompt injection patterns and limit length
-  return str.slice(0, maxLength).replace(/[<>{}]/g, '').trim();
+  let clean = str.slice(0, maxLength)
+    // Remove HTML-like and template characters
+    .replace(/[<>{}]/g, '')
+    // Remove prompt injection patterns (case insensitive)
+    .replace(/\b(ignore|oublie|oublier|disregard|forget)\s+(previous|précédent|précédente|all|tout|toute|les|the|above|ci-dessus)\s+(instructions?|consignes?|règles?|rules?)/gi, '')
+    .replace(/\b(system|système|assistant|user|utilisateur)\s*:/gi, '')
+    .replace(/\b(new|nouvelle?|change|modifier?)\s+(instruction|consigne|prompt|règle|rule)/gi, '')
+    .replace(/\b(pretend|fais\s+comme\s+si|act\s+as|agis\s+comme|you\s+are\s+now|tu\s+es\s+maintenant)/gi, '')
+    .replace(/\b(reveal|révèle|show|montre|display|affiche)\s+(system|your|ton|ta|the|le|la)\s+(prompt|instruction|consigne|règle)/gi, '')
+    .replace(/\b(override|bypass|contourne|ignore)\s+(safety|sécurité|filter|filtre|restriction|rule|règle)/gi, '')
+    // Remove excessive newlines (potential formatting attacks)
+    .replace(/\n{3,}/g, '\n\n')
+    // Remove control characters
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .trim();
+  
+  return clean;
 }
 
 function validateNumber(num: unknown, min: number, max: number): number {
