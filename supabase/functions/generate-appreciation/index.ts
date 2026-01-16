@@ -272,10 +272,19 @@ Axes d'amélioration : ${axesAmelioration}`;
     }
 
     const data = await response.json();
-    const appreciation = data.choices?.[0]?.message?.content?.trim();
-
+    console.log('AI Gateway response:', JSON.stringify(data, null, 2));
+    
+    // Handle different response formats
+    let appreciation = data.choices?.[0]?.message?.content?.trim();
+    
+    // Fallback: some models return in different formats
+    if (!appreciation && data.choices?.[0]?.text) {
+      appreciation = data.choices[0].text.trim();
+    }
+    
     if (!appreciation) {
-      throw new Error('No appreciation generated');
+      console.error('No appreciation in response:', JSON.stringify(data));
+      throw new Error('No appreciation generated - empty response from AI');
     }
 
     return new Response(
