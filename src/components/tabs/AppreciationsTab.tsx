@@ -13,6 +13,12 @@ import ModifyFileButton from "@/components/ModifyFileButton";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface StudentData {
   name: string;
@@ -310,61 +316,84 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {/* Compact Tone Selector */}
-                  <ToneSelector 
-                    value={studentTones[index] || 'standard'} 
-                    onChange={(tone) => handleToneChange(index, tone)}
-                    compact
-                  />
-                  <div className="flex items-center gap-1">
-                    {student.status === "excellent" && (
-                      <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                    )}
-                    {student.status === "good" && (
-                      <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                    )}
-                    {student.status === "needs-improvement" && (
-                      <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
-                      disabled={!studentTexts[index]}
-                      title="Copier l'appréciation"
-                    >
-                      {copiedIndex === index ? (
-                        <Check className="h-4 w-4 text-success" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
+                <TooltipProvider delayDuration={200}>
+                  <div className="flex items-center gap-3">
+                    {/* Compact Tone Selector with label */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground hidden sm:inline">Ton :</span>
+                      <ToneSelector 
+                        value={studentTones[index] || 'standard'} 
+                        onChange={(tone) => handleToneChange(index, tone)}
+                        compact
+                      />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {student.status === "excellent" && (
+                        <Badge className="bg-success text-success-foreground">Excellent</Badge>
                       )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleRegenerateStudent(index)}
-                      disabled={loadingStudentIndex === index || isLoadingAll}
-                      title="Régénérer l'appréciation"
-                    >
-                      {loadingStudentIndex === index ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4" />
+                      {student.status === "good" && (
+                        <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
                       )}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() =>
-                        setEditingStudent(editingStudent === index ? null : index)
-                      }
-                      title="Modifier l'appréciation"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
+                      {student.status === "needs-improvement" && (
+                        <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                      )}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
+                            disabled={!studentTexts[index]}
+                          >
+                            {copiedIndex === index ? (
+                              <Check className="h-4 w-4 text-success" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Copier l'appréciation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleRegenerateStudent(index)}
+                            disabled={loadingStudentIndex === index || isLoadingAll}
+                          >
+                            {loadingStudentIndex === index ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Sparkles className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Générer l'appréciation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setEditingStudent(editingStudent === index ? null : index)
+                            }
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                          <p>Modifier l'appréciation</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
-                </div>
+                </TooltipProvider>
               </div>
             </CardHeader>
             <CardContent>
