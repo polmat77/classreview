@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PenLine, Sparkles, User, Edit2, Loader2 } from "lucide-react";
+import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +39,19 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
   const [studentTexts, setStudentTexts] = useState<string[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+
+  const handleCopyToClipboard = async (text: string, index: number) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIndex(index);
+      toast({ title: "Copié !", description: "L'appréciation a été copiée dans le presse-papiers." });
+      setTimeout(() => setCopiedIndex(null), 2000);
+    } catch (err) {
+      toast({ title: "Erreur", description: "Impossible de copier le texte.", variant: "destructive" });
+    }
+  };
 
   const bulletinsEleves = data?.bulletinsEleves?.length ? data.bulletinsEleves : localBulletinsEleves;
   const classeCSV = data?.classeCSV;
@@ -317,8 +330,22 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     <Button
                       size="sm"
                       variant="ghost"
+                      onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
+                      disabled={!studentTexts[index]}
+                      title="Copier l'appréciation"
+                    >
+                      {copiedIndex === index ? (
+                        <Check className="h-4 w-4 text-success" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
                       onClick={() => handleRegenerateStudent(index)}
                       disabled={loadingStudentIndex === index || isLoadingAll}
+                      title="Régénérer l'appréciation"
                     >
                       {loadingStudentIndex === index ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -332,6 +359,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                       onClick={() =>
                         setEditingStudent(editingStudent === index ? null : index)
                       }
+                      title="Modifier l'appréciation"
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
