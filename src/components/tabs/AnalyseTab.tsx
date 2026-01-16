@@ -167,8 +167,8 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     .sort((a, b) => b.moyenne - a.moyenne)
     .slice(0, 3) || [];
 
-  const elevesPlusDe12 = classeCSV?.eleves.filter(e => e.moyenneGenerale >= 12).length || 0;
-  const elevesEnDifficulte = classeCSV?.eleves.filter(e => e.moyenneGenerale < 10).length || 0;
+  const elevesAuDessusDe10 = classeCSV?.eleves.filter(e => e.moyenneGenerale >= 10).length || 0;
+  const elevesEnDessousDe10 = classeCSV?.eleves.filter(e => e.moyenneGenerale < 10).length || 0;
   const totalEleves = classeCSV?.eleves.length || 0;
 
   return (
@@ -218,28 +218,28 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
         <Card>
           <CardHeader>
-            <CardDescription>Élèves au-dessus de 12</CardDescription>
+            <CardDescription>Élèves au-dessus de 10</CardDescription>
             <CardTitle className="text-4xl font-bold text-success">
-              {elevesPlusDe12}/{totalEleves}
+              {elevesAuDessusDe10}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {totalEleves > 0 ? Math.round((elevesPlusDe12 / totalEleves) * 100) : 0}% de la classe
+              {totalEleves > 0 ? Math.round((elevesAuDessusDe10 / totalEleves) * 100) : 0}% de la classe
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardDescription>Élèves en difficulté</CardDescription>
+            <CardDescription>Élèves en dessous de 10</CardDescription>
             <CardTitle className="text-4xl font-bold text-warning">
-              {elevesEnDifficulte}/{totalEleves}
+              {elevesEnDessousDe10}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {totalEleves > 0 ? Math.round((elevesEnDifficulte / totalEleves) * 100) : 0}% de la classe
+              {totalEleves > 0 ? Math.round((elevesEnDessousDe10 / totalEleves) * 100) : 0}% de la classe
             </p>
           </CardContent>
         </Card>

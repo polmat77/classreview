@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { BookOpen, TrendingUp, TrendingDown, Trophy, FileSpreadsheet } from "lucide-react";
+import { BookOpen, Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { BulletinClasseData, BulletinEleveData, extractTextFromPDF, parseBulletinClasse } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import ModifyFileButton from "@/components/ModifyFileButton";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
@@ -24,6 +26,8 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
+  const [generalText, setGeneralText] = useState("");
+  const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
   const classeCSV = data?.classeCSV;
@@ -69,62 +73,55 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     }
   };
 
-  // Build subjects from available data
-  const buildSubjects = () => {
-    if (bulletinClasse) {
-      return bulletinClasse.matieres.map(matiere => ({
-        name: matiere.nom,
-        average: matiere.moyenne,
-        trend: 0,
-        top: "",
-        needsHelp: 0,
-        comments: matiere.appreciation || 'Pas d\'appréciation disponible',
-        color: matiere.moyenne >= 14 ? "success" : matiere.moyenne >= 12 ? "accent" : matiere.moyenne >= 10 ? "warning" : "destructive",
-      }));
-    }
+  const generateAppreciation = async (): Promise<string> => {
+    const classData = classeCSV ? {
+      className: "3ème",
+      trimester: "1er trimestre",
+      averageClass: classeCSV.statistiques.moyenneClasse,
+      subjects: classeCSV.matieres.map(m => ({ name: m, average: 0 })),
+    } : bulletinClasse ? {
+      className: bulletinClasse.classe || "3ème",
+      trimester: bulletinClasse.trimestre || "1er trimestre",
+      averageClass: bulletinClasse.matieres.reduce((sum, m) => sum + m.moyenne, 0) / (bulletinClasse.matieres.length || 1),
+      subjects: bulletinClasse.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
+    } : undefined;
 
-    if (classeCSV) {
-      return classeCSV.matieres.map(matiere => {
-        const notes = classeCSV.eleves
-          .map(e => e.moyennesParMatiere[matiere])
-          .filter(n => n !== undefined);
-        const moyenne = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
-        const needsHelp = notes.filter(n => n < 10).length;
-        
-        const topEleve = classeCSV.eleves
-          .filter(e => e.moyennesParMatiere[matiere] !== undefined)
-          .sort((a, b) => (b.moyennesParMatiere[matiere] || 0) - (a.moyennesParMatiere[matiere] || 0))[0];
-        
-        return {
-          name: matiere,
-          average: moyenne,
-          trend: 0,
-          top: topEleve ? `${topEleve.nom} (${topEleve.moyennesParMatiere[matiere]?.toFixed(2)}/20)` : "",
-          needsHelp,
-          comments: 'Données issues du tableau de résultats',
-          color: moyenne >= 14 ? "success" : moyenne >= 12 ? "accent" : moyenne >= 10 ? "warning" : "destructive",
-        };
-      });
-    }
+    const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
+      body: { type: 'general', classData },
+    });
 
-    return [];
+    if (error) throw error;
+    return result.appreciation;
   };
 
-  const subjects = buildSubjects();
-  const hasData = subjects.length > 0;
+  const handleRegenerateGeneral = async () => {
+    setIsLoadingGeneral(true);
+    try {
+      const appreciation = await generateAppreciation();
+      setGeneralText(appreciation);
+      toast({ title: "Appréciation générée", description: "L'appréciation générale a été générée avec succès." });
+    } catch (error) {
+      console.error('Error generating general appreciation:', error);
+      toast({ title: "Erreur", description: "Impossible de générer l'appréciation.", variant: "destructive" });
+    } finally {
+      setIsLoadingGeneral(false);
+    }
+  };
+
+  const hasData = bulletinClasse || classeCSV;
 
   // STATE A: No file loaded - Show upload placeholder
-  if (!bulletinClasse && !classeCSV) {
+  if (!hasData) {
     return (
       <TabUploadPlaceholder
-        title="Analyse par matière"
+        title="Appréciation de la classe"
         icon={<BookOpen className="h-6 w-6" />}
-        description="Visualisez les performances de la classe dans chaque discipline pour identifier les points forts et les matières à renforcer."
+        description="Générez automatiquement l'appréciation générale du conseil de classe grâce à l'intelligence artificielle : une synthèse de la dynamique du groupe et des axes de progression."
         accept=".pdf"
         features={[
-          { text: "Les moyennes de classe par matière" },
-          { text: "La comparaison avec les moyennes de l'établissement (si disponibles)" },
-          { text: "Un classement des disciplines par réussite" },
+          { text: "Appréciation générale de classe (200-255 caractères)" },
+          { text: "Synthèse de la dynamique du groupe et des axes de progression" },
+          { text: "Vous pourrez relire, modifier et valider l'appréciation avant export" },
         ]}
         isLoading={isProcessing}
         onUpload={handleBulletinClasseUpload}
@@ -133,7 +130,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     );
   }
 
-  // STATE B: Data loaded - Show subject analysis
+  // STATE B: Data loaded - Show class appreciation generation
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header with modify button */}
@@ -143,11 +140,11 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
             <BookOpen className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Analyse par matière</h2>
+            <h2 className="text-2xl font-bold text-foreground">Appréciation de la classe</h2>
             <p className="text-muted-foreground">
               {bulletinClasse 
                 ? `${bulletinClasse.classe} • ${bulletinClasse.matieres.length} matières`
-                : `${subjects.length} matières analysées`
+                : `${classeCSV?.matieres.length || 0} matières analysées`
               }
             </p>
           </div>
@@ -162,95 +159,84 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         </div>
       </div>
 
-      {/* Subject cards */}
-      {hasData && (
-        <>
-          <div className="grid gap-4">
-            {subjects.map((subject, index) => (
-              <Card key={index} className="hover:shadow-md transition-all duration-200">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-lg">{subject.name}</CardTitle>
-                      <CardDescription className="mt-1">{subject.comments}</CardDescription>
-                    </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <span className={`text-3xl font-bold text-${subject.color}`}>
-                        {subject.average.toFixed(1)}
-                      </span>
-                      {subject.trend !== 0 && (
-                        <div className="flex items-center gap-1">
-                          {subject.trend > 0 ? (
-                            <>
-                              <TrendingUp className="h-4 w-4 text-success" />
-                              <span className="text-sm font-medium text-success">
-                                +{subject.trend.toFixed(1)}
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <TrendingDown className="h-4 w-4 text-destructive" />
-                              <span className="text-sm font-medium text-destructive">
-                                {subject.trend.toFixed(1)}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4">
-                    {subject.top && (
-                      <div className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4 text-warning" />
-                        <span className="text-sm text-muted-foreground">Meilleur·e:</span>
-                        <span className="text-sm font-medium">{subject.top}</span>
-                      </div>
-                    )}
-                    {subject.needsHelp > 0 && (
-                      <Badge variant="outline" className="border-warning text-warning">
-                        {subject.needsHelp} élève{subject.needsHelp > 1 ? "s" : ""} à accompagner
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Class Appreciation Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Appréciation générale de la classe</CardTitle>
+              <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2"
+              onClick={handleRegenerateGeneral}
+              disabled={isLoadingGeneral}
+            >
+              {isLoadingGeneral ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Régénérer avec IA
+            </Button>
           </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <Textarea
+              value={generalText}
+              onChange={(e) => setGeneralText(e.target.value)}
+              className="min-h-[120px] resize-none"
+              maxLength={255}
+              placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
+            />
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                {generalText.length}/255 caractères
+              </span>
+              <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
+                {255 - generalText.length} restants
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Card className="bg-muted/30">
-            <CardHeader>
-              <CardTitle className="text-base">Recommandations</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
-                <span className="text-lg">💡</span>
-                <div>
-                  <p className="text-sm font-medium">Matières en difficulté</p>
+      {/* Subject Summary Card */}
+      {bulletinClasse && (
+        <Card className="bg-muted/30">
+          <CardHeader>
+            <CardTitle className="text-base">Résumé par matière</CardTitle>
+            <CardDescription>Appréciations des professeurs extraites du bulletin</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {bulletinClasse.matieres.slice(0, 5).map((matiere, index) => (
+              <div key={index} className="flex items-start gap-3 rounded-lg border bg-card p-3">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{matiere.nom}</p>
                   <p className="text-sm text-muted-foreground">
-                    Prévoir des séances de soutien pour les matières avec moyenne inférieure à 10
+                    {matiere.appreciation || "Pas d'appréciation disponible"}
                   </p>
                 </div>
+                <Badge variant={matiere.moyenne >= 14 ? "default" : matiere.moyenne >= 10 ? "secondary" : "destructive"}>
+                  {matiere.moyenne.toFixed(1)}
+                </Badge>
               </div>
-              <div className="flex items-start gap-3 rounded-lg border bg-card p-3">
-                <span className="text-lg">🎯</span>
-                <div>
-                  <p className="text-sm font-medium">Points forts</p>
-                  <p className="text-sm text-muted-foreground">
-                    Continuer les encouragements dans les matières avec de bons résultats
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </>
+            ))}
+            {bulletinClasse.matieres.length > 5 && (
+              <p className="text-sm text-muted-foreground text-center py-2">
+                + {bulletinClasse.matieres.length - 5} autres matières
+              </p>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
-          Générer les appréciations
+          Passer aux appréciations individuelles
         </Button>
       </div>
     </div>

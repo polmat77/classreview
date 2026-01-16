@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { PenLine, Sparkles, User, Edit2, Loader2, FileSpreadsheet } from "lucide-react";
+import { PenLine, Sparkles, User, Edit2, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } from "@/utils/pdfParser";
@@ -132,10 +131,8 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const hasBulletinsEleves = bulletinsEleves.length > 0;
   const hasStudents = students.length > 0;
 
-  const [generalText, setGeneralText] = useState("");
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
   const [studentTexts, setStudentTexts] = useState<string[]>([]);
-  const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
 
@@ -143,7 +140,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setStudentTexts(students.map(() => ""));
   }
 
-  const generateAppreciation = async (type: 'general' | 'individual', student?: StudentData): Promise<string> => {
+  const generateAppreciation = async (student: StudentData): Promise<string> => {
     const classData = classeCSV ? {
       className: "3ème",
       trimester: "1er trimestre",
@@ -157,32 +154,18 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     } : undefined;
 
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type, classData, student },
+      body: { type: 'individual', classData, student },
     });
 
     if (error) throw error;
     return result.appreciation;
   };
 
-  const handleRegenerateGeneral = async () => {
-    setIsLoadingGeneral(true);
-    try {
-      const appreciation = await generateAppreciation('general');
-      setGeneralText(appreciation);
-      toast({ title: "Appréciation générée", description: "L'appréciation générale a été générée avec succès." });
-    } catch (error) {
-      console.error('Error generating general appreciation:', error);
-      toast({ title: "Erreur", description: "Impossible de générer l'appréciation.", variant: "destructive" });
-    } finally {
-      setIsLoadingGeneral(false);
-    }
-  };
-
   const handleRegenerateStudent = async (index: number) => {
     setLoadingStudentIndex(index);
     try {
       const student = students[index];
-      const appreciation = await generateAppreciation('individual', student);
+      const appreciation = await generateAppreciation(student);
       const newTexts = [...studentTexts];
       newTexts[index] = appreciation;
       setStudentTexts(newTexts);
@@ -198,12 +181,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const handleRegenerateAll = async () => {
     setIsLoadingAll(true);
     try {
-      const generalAppreciation = await generateAppreciation('general');
-      setGeneralText(generalAppreciation);
-
       const newTexts = [...studentTexts];
       for (let i = 0; i < students.length; i++) {
-        const appreciation = await generateAppreciation('individual', students[i]);
+        const appreciation = await generateAppreciation(students[i]);
         newTexts[i] = appreciation;
         setStudentTexts([...newTexts]);
       }
@@ -221,14 +201,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   if (!hasBulletinsEleves && !hasStudents) {
     return (
       <TabUploadPlaceholder
-        title="Génération des appréciations"
+        title="Appréciations individuelles"
         icon={<PenLine className="h-6 w-6" />}
-        description="Générez automatiquement les appréciations du conseil de classe grâce à l'intelligence artificielle : une appréciation générale pour la classe et une appréciation personnalisée pour chaque élève."
+        description="Générez automatiquement une appréciation personnalisée pour chaque élève grâce à l'intelligence artificielle, basée sur les appréciations des professeurs."
         accept=".pdf"
         featuresTitle="Fonctionnalités disponibles :"
         features={[
-          { text: "Appréciation générale de classe (200-255 caractères) → Synthèse de la dynamique du groupe" },
-          { text: "Appréciations individuelles (250-450 caractères par élève) → Rédigées à la 3ᵉ personne, commençant par le prénom" },
+          { text: "Appréciations individuelles (250-450 caractères par élève)" },
+          { text: "Rédigées à la 3ᵉ personne, commençant par le prénom" },
+          { text: "Basées sur la synthèse des appréciations des professeurs" },
           { text: "Vous pourrez relire, modifier et valider chaque appréciation avant export" },
         ]}
         isLoading={isProcessing}
@@ -238,7 +219,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     );
   }
 
-  // STATE B: Data loaded - Show appreciation generation
+  // STATE B: Data loaded - Show individual appreciation generation
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header with modify button */}
@@ -248,7 +229,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             <PenLine className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Génération des appréciations</h2>
+            <h2 className="text-2xl font-bold text-foreground">Appréciations individuelles</h2>
             <p className="text-muted-foreground">
               {students.length} élève{students.length > 1 ? 's' : ''} chargé{students.length > 1 ? 's' : ''}
             </p>
@@ -264,152 +245,97 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         </div>
       </div>
 
-      {/* Appreciation tabs */}
-      <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="general">Appréciation générale</TabsTrigger>
-          <TabsTrigger value="students">Appréciations individuelles ({students.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="general" className="space-y-4">
-          <Card>
+      {/* Student Cards */}
+      <div className="grid gap-4">
+        {students.map((student, index) => (
+          <Card key={index} className="hover:shadow-md transition-all duration-200">
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Appréciation générale de la classe</CardTitle>
-                  <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                    <User className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">{student.name}</CardTitle>
+                    <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
+                  </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="gap-2"
-                  onClick={handleRegenerateGeneral}
-                  disabled={isLoadingGeneral || isLoadingAll}
-                >
-                  {isLoadingGeneral ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  {student.status === "excellent" && (
+                    <Badge className="bg-success text-success-foreground">Excellent</Badge>
                   )}
-                  Régénérer avec IA
-                </Button>
+                  {student.status === "good" && (
+                    <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
+                  )}
+                  {student.status === "needs-improvement" && (
+                    <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRegenerateStudent(index)}
+                    disabled={loadingStudentIndex === index || isLoadingAll}
+                  >
+                    {loadingStudentIndex === index ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      setEditingStudent(editingStudent === index ? null : index)
+                    }
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <Textarea
-                  value={generalText}
-                  onChange={(e) => setGeneralText(e.target.value)}
-                  className="min-h-[120px] resize-none"
-                  maxLength={255}
-                  placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {generalText.length}/255 caractères
-                  </span>
-                  <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
-                    {255 - generalText.length} restants
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="students" className="space-y-4">
-          <div className="grid gap-4">
-            {students.map((student, index) => (
-              <Card key={index} className="hover:shadow-md transition-all duration-200">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{student.name}</CardTitle>
-                        <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {student.status === "excellent" && (
-                        <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                      )}
-                      {student.status === "good" && (
-                        <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                      )}
-                      {student.status === "needs-improvement" && (
-                        <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                      )}
+              {editingStudent === index ? (
+                <div className="space-y-3">
+                  <Textarea
+                    value={studentTexts[index] || ""}
+                    onChange={(e) => {
+                      const newTexts = [...studentTexts];
+                      newTexts[index] = e.target.value;
+                      setStudentTexts(newTexts);
+                    }}
+                    className="min-h-[120px] resize-none"
+                    maxLength={450}
+                    placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
+                  />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {(studentTexts[index] || "").length}/450 caractères
+                    </span>
+                    <div className="flex gap-2">
                       <Button
                         size="sm"
-                        variant="ghost"
-                        onClick={() => handleRegenerateStudent(index)}
-                        disabled={loadingStudentIndex === index || isLoadingAll}
+                        variant="outline"
+                        onClick={() => setEditingStudent(null)}
                       >
-                        {loadingStudentIndex === index ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Sparkles className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          setEditingStudent(editingStudent === index ? null : index)
-                        }
-                      >
-                        <Edit2 className="h-4 w-4" />
+                        Fermer
                       </Button>
                     </div>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  {editingStudent === index ? (
-                    <div className="space-y-3">
-                      <Textarea
-                        value={studentTexts[index] || ""}
-                        onChange={(e) => {
-                          const newTexts = [...studentTexts];
-                          newTexts[index] = e.target.value;
-                          setStudentTexts(newTexts);
-                        }}
-                        className="min-h-[120px] resize-none"
-                        maxLength={450}
-                        placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
-                      />
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          {(studentTexts[index] || "").length}/450 caractères
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingStudent(null)}
-                          >
-                            Fermer
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
-                      {studentTexts[index] || (
-                        <span className="text-muted-foreground italic">
-                          Aucune appréciation générée. Cliquez sur ✨ pour générer.
-                        </span>
-                      )}
-                    </p>
+                </div>
+              ) : (
+                <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
+                  {studentTexts[index] || (
+                    <span className="text-muted-foreground italic">
+                      Aucune appréciation générée. Cliquez sur ✨ pour générer.
+                    </span>
                   )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
       {/* Generate all button */}
       <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
@@ -439,7 +365,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
-          Exporter le bilan
+          Voir le bilan
         </Button>
       </div>
     </div>
