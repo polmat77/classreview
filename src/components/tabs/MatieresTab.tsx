@@ -111,10 +111,9 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     }
   };
 
-  const hasData = bulletinClasse || classeCSV;
-
-  // STATE A: No file loaded - Show upload placeholder
-  if (!hasData) {
+  // STATE A: No bulletin de classe loaded - Show upload placeholder
+  // Note: We specifically need the bulletin PDF for class appreciation, not just CSV data
+  if (!bulletinClasse) {
     return (
       <TabUploadPlaceholder
         title="Appréciation de la classe"

@@ -209,8 +209,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     }
   };
 
-  // STATE A: No data loaded - Show upload placeholder
-  if (!hasBulletinsEleves && !hasStudents) {
+  // STATE A: No individual bulletins loaded - Show upload placeholder
+  // Note: We specifically need individual bulletins PDF, not just CSV data
+  if (!hasBulletinsEleves) {
     return (
       <TabUploadPlaceholder
         title="Appréciations individuelles"
