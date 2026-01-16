@@ -37,6 +37,8 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
   const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
+  const [studentTexts, setStudentTexts] = useState<string[]>([]);
+  const [isLoadingAll, setIsLoadingAll] = useState(false);
 
   const bulletinsEleves = data?.bulletinsEleves?.length ? data.bulletinsEleves : localBulletinsEleves;
   const classeCSV = data?.classeCSV;
@@ -190,13 +192,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const hasStudents = students.length > 0;
 
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
-  const [studentTexts, setStudentTexts] = useState<string[]>([]);
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
-  const [isLoadingAll, setIsLoadingAll] = useState(false);
-
-  if (studentTexts.length !== students.length && students.length > 0) {
-    setStudentTexts(students.map(() => ""));
-  }
 
   const handleToneChange = (index: number, tone: AppreciationTone) => {
     setStudentTones(prev => ({ ...prev, [index]: tone }));
