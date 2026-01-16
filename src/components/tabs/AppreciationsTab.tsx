@@ -69,57 +69,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''}. Génération des appréciations en cours...`,
         });
         
-        // Auto-generate appreciations with standard tone for all students
-        setTimeout(async () => {
-          setIsLoadingAll(true);
-          try {
-            const studentsFromBulletins = bulletins.map((eleve) => {
-              const totalMoyenne = eleve.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
-              const average = eleve.matieres.length > 0 ? totalMoyenne / eleve.matieres.length : 0;
-              return {
-                name: `${eleve.prenom} ${eleve.nom}`,
-                average,
-                subjects: eleve.matieres.map(m => ({
-                  name: m.nom,
-                  grade: m.moyenneEleve,
-                  classAverage: m.moyenneClasse,
-                  appreciation: m.appreciation,
-                })),
-              };
-            });
-            
-            const classData = data?.bulletinClasse ? {
-              className: data.bulletinClasse.classe || "3ème",
-              trimester: data.bulletinClasse.trimestre || "1er trimestre",
-              averageClass: data.bulletinClasse.matieres.reduce((sum, m) => sum + m.moyenne, 0) / (data.bulletinClasse.matieres.length || 1),
-              subjects: data.bulletinClasse.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
-            } : undefined;
-            
-            const newTexts: string[] = [];
-            for (const student of studentsFromBulletins) {
-              try {
-                const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-                  body: { type: 'individual', tone: 'standard', classData, student },
-                });
-                
-                if (!error && result?.appreciation) {
-                  newTexts.push(result.appreciation);
-                } else {
-                  newTexts.push("");
-                }
-              } catch {
-                newTexts.push("");
-              }
-              setStudentTexts([...newTexts]);
-            }
-            
-            toast({ title: "✓ Appréciations générées", description: "Les appréciations ont été générées automatiquement." });
-          } catch (err) {
-            console.error('Auto-generate error:', err);
-          } finally {
-            setIsLoadingAll(false);
-          }
-        }, 100);
+        // Appreciations will be generated manually by clicking "Tout générer"
       } else {
         throw new Error("Aucun bulletin élève trouvé dans le PDF");
       }
@@ -306,6 +256,32 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         </div>
       </div>
 
+      {/* Generate all button - moved to top */}
+      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+        <div className="flex items-center gap-3">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <div>
+            <p className="text-sm font-medium">IA disponible</p>
+            <p className="text-xs text-muted-foreground">
+              Régénérez automatiquement les appréciations avec des suggestions personnalisées
+            </p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={handleRegenerateAll}
+          disabled={isLoadingAll}
+        >
+          {isLoadingAll ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          Tout générer
+        </Button>
+      </div>
+
       {/* Student Cards */}
       <div className="grid gap-4">
         {students.map((student, index) => (
@@ -406,31 +382,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         ))}
       </div>
 
-      {/* Generate all button */}
-      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <div>
-            <p className="text-sm font-medium">IA disponible</p>
-            <p className="text-xs text-muted-foreground">
-              Régénérez automatiquement les appréciations avec des suggestions personnalisées
-            </p>
-          </div>
-        </div>
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={handleRegenerateAll}
-          disabled={isLoadingAll}
-        >
-          {isLoadingAll ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          Tout générer
-        </Button>
-      </div>
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
