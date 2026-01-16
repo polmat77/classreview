@@ -1,6 +1,12 @@
 import { AlertTriangle, Minus, Heart, Trophy } from "lucide-react";
 import { AppreciationTone, toneConfig } from "@/types/appreciation";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ToneSelectorProps {
   value: AppreciationTone;
@@ -15,14 +21,20 @@ const iconMap = {
   Trophy,
 };
 
+// Short labels for compact mode
+const shortLabels: Record<AppreciationTone, string> = {
+  severe: 'Sév.',
+  standard: 'Std.',
+  caring: 'Bien.',
+  praising: 'Élog.',
+};
+
 const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) => {
   const tones: AppreciationTone[] = ['severe', 'standard', 'caring', 'praising'];
 
   if (compact) {
-    const activeConfig = toneConfig[value];
-    
     return (
-      <div className="flex items-center gap-2">
+      <TooltipProvider delayDuration={200}>
         <div className="flex items-center gap-1">
           {tones.map((tone) => {
             const config = toneConfig[tone];
@@ -30,27 +42,30 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             const isActive = value === tone;
             
             return (
-              <button
-                key={tone}
-                type="button"
-                onClick={() => onChange(tone)}
-                className={cn(
-                  "p-1.5 rounded-md transition-all duration-200",
-                  isActive
-                    ? `${config.bgColor} text-white shadow-sm`
-                    : `bg-muted/50 hover:bg-muted ${config.color}`
-                )}
-                title={config.label}
-              >
-                <Icon className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip key={tone}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onChange(tone)}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 text-xs font-medium",
+                      isActive
+                        ? `${config.bgColor} text-white shadow-sm`
+                        : `bg-muted/50 hover:bg-muted ${config.color} opacity-60 hover:opacity-100`
+                    )}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {isActive && <span>{shortLabels[tone]}</span>}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {config.label}
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
-        <span className={cn("text-xs font-medium", activeConfig.color)}>
-          {activeConfig.label}
-        </span>
-      </div>
+      </TooltipProvider>
     );
   }
 
