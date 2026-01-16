@@ -150,14 +150,58 @@ function validateRequest(body: unknown): ValidatedRequest | null {
   return result;
 }
 
+// Rate limiting using Deno KV
+async function checkRateLimit(clientIP: string): Promise<{ allowed: boolean; remaining: number }> {
+  try {
+    const kv = await Deno.openKv();
+    const windowMs = 60000; // 1 minute window
+    const maxRequests = 15; // Max 15 requests per minute per IP
+    const currentWindow = Math.floor(Date.now() / windowMs);
+    const key = ['ratelimit', clientIP, currentWindow];
+    
+    const result = await kv.get<number>(key);
+    const count = result.value || 0;
+    
+    if (count >= maxRequests) {
+      return { allowed: false, remaining: 0 };
+    }
+    
+    await kv.set(key, count + 1, { expireIn: windowMs * 2 });
+    return { allowed: true, remaining: maxRequests - count - 1 };
+  } catch (error) {
+    // If KV fails, allow the request but log the error
+    console.error('Rate limit check failed:', error);
+    return { allowed: true, remaining: 0 };
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Note: This is a public tool without user authentication
-    // Security is maintained through input validation and rate limiting
+    // Get client IP for rate limiting
+    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                     req.headers.get('x-real-ip') || 
+                     'unknown';
+    
+    // Check rate limit
+    const rateLimit = await checkRateLimit(clientIP);
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Limite de requêtes atteinte. Veuillez patienter une minute avant de réessayer.' }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': '60',
+            'X-RateLimit-Remaining': '0'
+          } 
+        }
+      );
+    }
     
     // Validate API key
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
