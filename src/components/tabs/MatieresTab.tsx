@@ -120,8 +120,6 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         title="Analyse par matière"
         icon={<BookOpen className="h-6 w-6" />}
         description="Visualisez les performances de la classe dans chaque discipline pour identifier les points forts et les matières à renforcer."
-        fileLabel="📁 Fichier requis : Bulletin de classe (PDF)"
-        fileHelper="Exportez depuis PRONOTE → Bulletins → Exporter (PDF classe)"
         accept=".pdf"
         features={[
           { text: "Les moyennes de classe par matière" },

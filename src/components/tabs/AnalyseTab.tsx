@@ -96,8 +96,6 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         title="Analyse des résultats de la classe"
         icon={<BarChart3 className="h-6 w-6" />}
         description="Obtenez une vue d'ensemble des performances de votre classe : moyenne générale, répartition des notes, élèves en difficulté ou en réussite."
-        fileLabel="📁 Fichier requis : Tableau de résultats de la classe"
-        fileHelper="Exportez depuis PRONOTE → Notes → Tableau des moyennes → Exporter (CSV ou PDF)"
         accept=".csv,.pdf"
         features={[
           { text: "La moyenne générale et sa comparaison avec le trimestre précédent" },
