@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check, Lightbulb } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,6 +13,16 @@ import ModifyFileButton from "@/components/ModifyFileButton";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
+import { Attribution, ConductAnalysis, StudentAttribution } from "@/types/attribution";
+import { 
+  suggestAttribution, 
+  analyzeConductFromComments, 
+  suggestToneFromAttribution,
+  generateAttributionSummary 
+} from "@/utils/attributionAnalysis";
+import AttributionSelector from "@/components/AttributionSelector";
+import ConductIssuesIndicator from "@/components/ConductIssuesIndicator";
+import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
 import {
   Tooltip,
   TooltipContent,
@@ -46,6 +56,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [studentTexts, setStudentTexts] = useState<string[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  
+  // Attribution state
+  const [studentAttributions, setStudentAttributions] = useState<Record<number, StudentAttribution>>({});
+  const [showSummaryDialog, setShowSummaryDialog] = useState(false);
+  const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
 
   const handleCopyToClipboard = async (text: string, index: number) => {
     if (!text) return;
@@ -87,8 +102,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           title: "✓ Bulletins élèves chargés",
           description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''}. Génération des appréciations en cours...`,
         });
-        
-        // Appreciations will be generated manually by clicking "Tout générer"
       } else {
         throw new Error("Aucun bulletin élève trouvé dans le PDF");
       }
@@ -163,8 +176,93 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
 
+  // Analyze and suggest attributions when students change
+  useEffect(() => {
+    if (students.length > 0 && Object.keys(studentAttributions).length === 0) {
+      // Auto-analyze on first load
+      const newAttributions: Record<number, StudentAttribution> = {};
+      
+      students.forEach((student, index) => {
+        const subjects = student.subjects || [];
+        const conductAnalysis = analyzeConductFromComments(subjects);
+        const suggested = suggestAttribution(student.average, subjects);
+        
+        newAttributions[index] = {
+          attribution: suggested,
+          suggestedAttribution: suggested,
+          isManuallySet: false,
+          conductAnalysis,
+        };
+        
+        // Auto-set tone based on attribution if not manually set
+        if (!studentTones[index]) {
+          const suggestedTone = suggestToneFromAttribution(suggested);
+          setStudentTones(prev => ({ ...prev, [index]: suggestedTone }));
+        }
+      });
+      
+      setStudentAttributions(newAttributions);
+    }
+  }, [students.length]);
+
   const handleToneChange = (index: number, tone: AppreciationTone) => {
     setStudentTones(prev => ({ ...prev, [index]: tone }));
+  };
+
+  const handleAttributionChange = (index: number, attribution: Attribution | null) => {
+    setStudentAttributions(prev => ({
+      ...prev,
+      [index]: {
+        ...prev[index],
+        attribution,
+        isManuallySet: true,
+      }
+    }));
+    
+    // Auto-update tone based on new attribution
+    const suggestedTone = suggestToneFromAttribution(attribution);
+    setStudentTones(prev => ({ ...prev, [index]: suggestedTone }));
+  };
+
+  const handleAnalyzeAllAttributions = () => {
+    setIsAnalyzingAll(true);
+    
+    const newAttributions: Record<number, StudentAttribution> = {};
+    
+    students.forEach((student, index) => {
+      const subjects = student.subjects || [];
+      const conductAnalysis = analyzeConductFromComments(subjects);
+      const suggested = suggestAttribution(student.average, subjects);
+      
+      newAttributions[index] = {
+        attribution: suggested,
+        suggestedAttribution: suggested,
+        isManuallySet: false,
+        conductAnalysis,
+      };
+    });
+    
+    setStudentAttributions(newAttributions);
+    setIsAnalyzingAll(false);
+    setShowSummaryDialog(true);
+  };
+
+  const handleApplySuggestions = () => {
+    // Update tones based on attributions
+    const newTones: Record<number, AppreciationTone> = {};
+    
+    Object.entries(studentAttributions).forEach(([indexStr, attr]) => {
+      const index = parseInt(indexStr);
+      newTones[index] = suggestToneFromAttribution(attr.attribution);
+    });
+    
+    setStudentTones(prev => ({ ...prev, ...newTones }));
+    setShowSummaryDialog(false);
+    
+    toast({
+      title: "Suggestions appliquées",
+      description: "Les attributions et les tons ont été mis à jour pour tous les élèves.",
+    });
   };
 
   const generateAppreciation = async (student: StudentData, tone: AppreciationTone): Promise<string> => {
@@ -226,8 +324,13 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     }
   };
 
+  // Get summary for dialog
+  const getSummary = () => {
+    const attrs = Object.values(studentAttributions).map(a => a.attribution);
+    return generateAttributionSummary(attrs);
+  };
+
   // STATE A: No individual bulletins loaded - Show upload placeholder
-  // Note: We specifically need individual bulletins PDF, not just CSV data
   if (!hasBulletinsEleves) {
     return (
       <TabUploadPlaceholder
@@ -275,8 +378,8 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         </div>
       </div>
 
-      {/* Generate all button - moved to top */}
-      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+      {/* Action buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
         <div className="flex items-center gap-3">
           <Sparkles className="h-5 w-5 text-primary" />
           <div>
@@ -286,165 +389,214 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             </p>
           </div>
         </div>
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={handleRegenerateAll}
-          disabled={isLoadingAll}
-        >
-          {isLoadingAll ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Sparkles className="h-4 w-4" />
-          )}
-          Tout générer
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handleAnalyzeAllAttributions}
+            disabled={isAnalyzingAll}
+          >
+            <Lightbulb className="h-4 w-4" />
+            Analyser attributions
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={handleRegenerateAll}
+            disabled={isLoadingAll}
+          >
+            {isLoadingAll ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            Tout générer
+          </Button>
+        </div>
       </div>
 
       {/* Student Cards */}
       <div className="grid gap-4">
-        {students.map((student, index) => (
-          <Card key={index} className="hover:shadow-md transition-all duration-200">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                    <User className="h-5 w-5 text-primary" />
+        {students.map((student, index) => {
+          const attribution = studentAttributions[index];
+          const conductAnalysis = attribution?.conductAnalysis || {
+            hasConductIssues: false,
+            detectedKeywords: [],
+            relevantExcerpts: [],
+          };
+          
+          return (
+            <Card key={index} className="hover:shadow-md transition-all duration-200">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col gap-3">
+                  {/* Row 1: Name, average, and actions */}
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                        <User className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{student.name}</CardTitle>
+                        <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
+                      </div>
+                    </div>
+                    <TooltipProvider delayDuration={200}>
+                      <div className="flex items-center gap-1">
+                        {student.status === "excellent" && (
+                          <Badge className="bg-success text-success-foreground">Excellent</Badge>
+                        )}
+                        {student.status === "good" && (
+                          <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
+                        )}
+                        {student.status === "needs-improvement" && (
+                          <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
+                        )}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
+                              disabled={!studentTexts[index]}
+                            >
+                              {copiedIndex === index ? (
+                                <Check className="h-4 w-4 text-success" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Copier l'appréciation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleRegenerateStudent(index)}
+                              disabled={loadingStudentIndex === index || isLoadingAll}
+                            >
+                              {loadingStudentIndex === index ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Sparkles className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Générer l'appréciation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                setEditingStudent(editingStudent === index ? null : index)
+                              }
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom">
+                            <p>Modifier l'appréciation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </div>
-                  <div>
-                    <CardTitle className="text-base">{student.name}</CardTitle>
-                    <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
-                  </div>
-                </div>
-                <TooltipProvider delayDuration={200}>
-                  <div className="flex items-center gap-3">
-                    {/* Compact Tone Selector with label */}
+                  
+                  {/* Row 2: Attribution and Tone selectors */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground hidden sm:inline">Ton :</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Attribution :</span>
+                      <AttributionSelector
+                        value={attribution?.attribution || null}
+                        suggestedValue={attribution?.suggestedAttribution || null}
+                        onChange={(attr) => handleAttributionChange(index, attr)}
+                        compact
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">Ton :</span>
                       <ToneSelector 
                         value={studentTones[index] || 'standard'} 
                         onChange={(tone) => handleToneChange(index, tone)}
                         compact
                       />
                     </div>
-                    <div className="flex items-center gap-1">
-                      {student.status === "excellent" && (
-                        <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                      )}
-                      {student.status === "good" && (
-                        <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                      )}
-                      {student.status === "needs-improvement" && (
-                        <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                      )}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
-                            disabled={!studentTexts[index]}
-                          >
-                            {copiedIndex === index ? (
-                              <Check className="h-4 w-4 text-success" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>Copier l'appréciation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleRegenerateStudent(index)}
-                            disabled={loadingStudentIndex === index || isLoadingAll}
-                          >
-                            {loadingStudentIndex === index ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>Générer l'appréciation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() =>
-                              setEditingStudent(editingStudent === index ? null : index)
-                            }
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom">
-                          <p>Modifier l'appréciation</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
                   </div>
-                </TooltipProvider>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {editingStudent === index ? (
-                <div className="space-y-3">
-                  <Textarea
-                    value={studentTexts[index] || ""}
-                    onChange={(e) => {
-                      const newTexts = [...studentTexts];
-                      newTexts[index] = e.target.value;
-                      setStudentTexts(newTexts);
-                    }}
-                    className="min-h-[120px] resize-none"
-                    maxLength={450}
-                    placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      {(studentTexts[index] || "").length}/450 caractères
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setEditingStudent(null)}
-                      >
-                        Fermer
-                      </Button>
-                    </div>
+                  
+                  {/* Row 3: Conduct analysis */}
+                  <div className="pt-2">
+                    <ConductIssuesIndicator 
+                      analysis={conductAnalysis}
+                      compact
+                    />
                   </div>
                 </div>
-              ) : (
-                <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
-                  {studentTexts[index] || (
-                    <span className="text-muted-foreground italic">
-                      Aucune appréciation générée. Cliquez sur ✨ pour générer.
-                    </span>
-                  )}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent>
+                {editingStudent === index ? (
+                  <div className="space-y-3">
+                    <Textarea
+                      value={studentTexts[index] || ""}
+                      onChange={(e) => {
+                        const newTexts = [...studentTexts];
+                        newTexts[index] = e.target.value;
+                        setStudentTexts(newTexts);
+                      }}
+                      className="min-h-[120px] resize-none"
+                      maxLength={450}
+                      placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        {(studentTexts[index] || "").length}/450 caractères
+                      </span>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingStudent(null)}
+                        >
+                          Fermer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
+                    {studentTexts[index] || (
+                      <span className="text-muted-foreground italic">
+                        Aucune appréciation générée. Cliquez sur ✨ pour générer.
+                      </span>
+                    )}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
-
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
           Voir le bilan
         </Button>
       </div>
+      
+      {/* Summary Dialog */}
+      <AttributionSummaryDialog
+        open={showSummaryDialog}
+        onOpenChange={setShowSummaryDialog}
+        summary={getSummary()}
+        onConfirm={handleApplySuggestions}
+        onCancel={() => setShowSummaryDialog(false)}
+      />
     </div>
   );
 };
