@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
-import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check, Lightbulb } from "lucide-react";
+import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check, Lightbulb, Info } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } from "@/utils/pdfParser";
@@ -29,6 +31,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface StudentData {
   name: string;
@@ -59,9 +66,18 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [currentFileName, setCurrentFileName] = useState<string>("");
   
   // Attribution state
+  const [attributionsEnabled, setAttributionsEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('attributionsEnabled');
+    return saved ? JSON.parse(saved) : false;
+  });
   const [studentAttributions, setStudentAttributions] = useState<Record<number, StudentAttribution>>({});
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+
+  // Save attribution preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('attributionsEnabled', JSON.stringify(attributionsEnabled));
+  }, [attributionsEnabled]);
 
   const handleCopyToClipboard = async (text: string, index: number) => {
     if (!text) return;
@@ -191,9 +207,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
   const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
 
-  // Analyze and suggest attributions when students change
+  // Analyze and suggest attributions when students change (only if enabled)
   useEffect(() => {
-    if (students.length > 0 && Object.keys(studentAttributions).length === 0) {
+    if (attributionsEnabled && students.length > 0 && Object.keys(studentAttributions).length === 0) {
       // Auto-analyze on first load
       const newAttributions: Record<number, StudentAttribution> = {};
       
@@ -218,7 +234,14 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       
       setStudentAttributions(newAttributions);
     }
-  }, [students.length]);
+  }, [students.length, attributionsEnabled]);
+
+  // Trigger analysis when attributions are enabled
+  useEffect(() => {
+    if (attributionsEnabled && students.length > 0 && Object.keys(studentAttributions).length === 0) {
+      handleAnalyzeAllAttributions();
+    }
+  }, [attributionsEnabled]);
 
   const handleToneChange = (index: number, tone: AppreciationTone) => {
     setStudentTones(prev => ({ ...prev, [index]: tone }));
@@ -396,6 +419,65 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         </div>
       </div>
 
+      {/* Attribution toggle */}
+      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="enable-attributions"
+            checked={attributionsEnabled}
+            onCheckedChange={(checked) => setAttributionsEnabled(checked === true)}
+          />
+          <Label htmlFor="enable-attributions" className="flex items-center gap-2 cursor-pointer">
+            <span className="text-sm font-medium">Activer les attributions</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              (Avertissements, Encouragements, Félicitations...)
+            </span>
+          </Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" side="right">
+              <div className="space-y-3">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Info className="h-4 w-4 text-primary" />
+                  Attributions du conseil de classe
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Les attributions sont des mentions décernées par le conseil de classe pour valoriser ou alerter les élèves :
+                </p>
+                <div className="text-sm space-y-1.5">
+                  <p>⚠️ <strong>Avert. Travail</strong> : travail insuffisant, notes basses</p>
+                  <p>⚠️ <strong>Avert. Conduite</strong> : problèmes de comportement</p>
+                  <p>⚠️ <strong>Avert. Travail & Conduite</strong> : cumul des deux</p>
+                  <p>👍 <strong>Encouragements</strong> : efforts remarqués malgré résultats moyens</p>
+                  <p>⭐ <strong>Tableau d'honneur</strong> : bons résultats et bonne attitude</p>
+                  <p>🏆 <strong>Félicitations</strong> : excellence dans le travail et le comportement</p>
+                </div>
+                <p className="text-xs text-muted-foreground pt-2 border-t">
+                  En activant cette option, ClassCouncil AI suggérera automatiquement une attribution pour chaque élève en fonction de sa moyenne et des appréciations des professeurs.
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        {attributionsEnabled && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={handleAnalyzeAllAttributions}
+            disabled={isAnalyzingAll}
+          >
+            <Lightbulb className="h-4 w-4" />
+            <span className="hidden sm:inline">Appliquer suggestions</span>
+          </Button>
+        )}
+      </div>
+
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 rounded-lg border bg-muted/30 p-4">
         <div className="flex items-center gap-3">
@@ -408,15 +490,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            className="gap-2"
-            onClick={handleAnalyzeAllAttributions}
-            disabled={isAnalyzingAll}
-          >
-            <Lightbulb className="h-4 w-4" />
-            Analyser attributions
-          </Button>
           <Button
             variant="outline"
             className="gap-2"
@@ -529,15 +602,17 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                   
                   {/* Row 2: Attribution and Tone selectors */}
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">Attribution :</span>
-                      <AttributionSelector
-                        value={attribution?.attribution || null}
-                        suggestedValue={attribution?.suggestedAttribution || null}
-                        onChange={(attr) => handleAttributionChange(index, attr)}
-                        compact
-                      />
-                    </div>
+                    {attributionsEnabled && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">Attribution :</span>
+                        <AttributionSelector
+                          value={attribution?.attribution || null}
+                          suggestedValue={attribution?.suggestedAttribution || null}
+                          onChange={(attr) => handleAttributionChange(index, attr)}
+                          compact
+                        />
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground whitespace-nowrap">Ton :</span>
                       <ToneSelector 
@@ -548,13 +623,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     </div>
                   </div>
                   
-                  {/* Row 3: Conduct analysis */}
-                  <div className="pt-2">
-                    <ConductIssuesIndicator 
-                      analysis={conductAnalysis}
-                      compact
-                    />
-                  </div>
+                  {/* Row 3: Conduct analysis (only when attributions enabled) */}
+                  {attributionsEnabled && (
+                    <div className="pt-2">
+                      <ConductIssuesIndicator 
+                        analysis={conductAnalysis}
+                        compact
+                      />
+                    </div>
+                  )}
                 </div>
               </CardHeader>
               <CardContent>
