@@ -9,7 +9,7 @@ import { ClasseDataCSV } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
-import ModifyFileButton from "@/components/ModifyFileButton";
+import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
@@ -21,7 +21,7 @@ interface MatieresTabProps {
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
   };
-  onDataLoaded?: (data: { bulletinClasse: BulletinClasseData }) => void;
+  onDataLoaded?: (data: { bulletinClasse?: BulletinClasseData | null }) => void;
 }
 
 const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
@@ -31,6 +31,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const [generalText, setGeneralText] = useState("");
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
   const [classTone, setClassTone] = useState<AppreciationTone>('standard');
+  const [currentFileName, setCurrentFileName] = useState<string>("");
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
   const classeCSV = data?.classeCSV;
@@ -55,6 +56,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
       const parsedData = parseBulletinClasse(text);
       if (parsedData) {
         setLocalBulletinClasse(parsedData);
+        setCurrentFileName(file.name);
         onDataLoaded?.({ bulletinClasse: parsedData });
         toast({
           title: "✓ Bulletin de classe chargé",
@@ -100,6 +102,14 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
       setIsProcessing(false);
       event.target.value = '';
     }
+  };
+
+  const handleRemoveFile = () => {
+    setLocalBulletinClasse(null);
+    setCurrentFileName("");
+    setGeneralText("");
+    setClassTone('standard');
+    onDataLoaded?.({ bulletinClasse: null });
   };
 
   const generateAppreciation = async (): Promise<string> => {
@@ -161,7 +171,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   // STATE B: Data loaded - Show class appreciation generation
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with modify button */}
+      {/* Header with file action buttons */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -179,10 +189,13 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         </div>
         <div className="flex items-center gap-2">
           <PronoteHelpTooltip type="bulletin" />
-          <ModifyFileButton
+          <FileActionButtons
             accept=".pdf"
             isLoading={isProcessing}
-            onUpload={handleBulletinClasseUpload}
+            currentFileName={currentFileName || "Bulletin de classe"}
+            loadedInfo={`${bulletinClasse.matieres.length} matières détectées`}
+            onReplace={handleBulletinClasseUpload}
+            onRemove={handleRemoveFile}
           />
         </div>
       </div>
