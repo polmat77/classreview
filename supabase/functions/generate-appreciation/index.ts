@@ -252,11 +252,14 @@ ${toneInstruction}`;
 - Ambiance générale : ${ambiance}`;
 
     } else {
+      // ANONYMIZATION: Always use {prénom} placeholder in the prompt
+      // The frontend will handle reinserting the real first name based on anonymization level
       systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation du conseil de classe pour un bulletin scolaire français.
 
 RÈGLES STRICTES :
 - Entre 250 et 450 caractères (obligatoire)
-- Commencer OBLIGATOIREMENT par le prénom de l'élève
+- Commencer OBLIGATOIREMENT par {prénom} (ce placeholder sera remplacé ensuite)
+- Utilise {prénom} chaque fois que tu dois mentionner le prénom de l'élève
 - Rédaction à la troisième personne (ne jamais s'adresser directement à l'élève avec "tu" ou "vous")
 - Ne PAS mentionner la moyenne chiffrée
 - Synthétiser les appréciations des différents professeurs en un bilan cohérent
@@ -266,7 +269,8 @@ RÈGLES STRICTES :
 TONALITÉ À ADOPTER :
 ${toneInstruction}`;
 
-      const prenom = student?.name?.split(' ')[0] || 'L\'élève';
+      // Note: We no longer send the real first name to the AI for privacy
+      // The AI uses {prénom} as a placeholder
       
       let profil = 'Satisfaisant';
       if (student?.average && student.average >= 16) profil = 'Excellent';
@@ -285,8 +289,9 @@ ${toneInstruction}`;
         return `${s.name}: des efforts nécessaires${appreciation}`;
       }).join(', ') || 'Synthèse non disponible';
 
-      userPrompt = `Rédige l'appréciation du conseil de classe pour cet élève :
-- Prénom : ${prenom}
+      userPrompt = `Rédige l'appréciation du conseil de classe pour cet élève.
+IMPORTANT: Utilise {prénom} comme placeholder pour le prénom (ne PAS inventer de prénom).
+
 - Classe : ${classData?.className || '3ème'}
 - Trimestre : ${classData?.trimester || '1er trimestre'}
 - Profil général : ${profil}
