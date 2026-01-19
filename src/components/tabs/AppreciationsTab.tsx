@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BulletinClasseData, BulletinEleveData, parseBulletinsElevesFromPDF } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
-import ModifyFileButton from "@/components/ModifyFileButton";
+import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
@@ -45,7 +45,7 @@ interface AppreciationsTabProps {
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
   };
-  onDataLoaded?: (data: { bulletinsEleves: BulletinEleveData[] }) => void;
+  onDataLoaded?: (data: { bulletinsEleves?: BulletinEleveData[] | null }) => void;
 }
 
 const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps) => {
@@ -56,6 +56,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [studentTexts, setStudentTexts] = useState<string[]>([]);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string>("");
   
   // Attribution state
   const [studentAttributions, setStudentAttributions] = useState<Record<number, StudentAttribution>>({});
@@ -95,13 +96,18 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     try {
       const bulletins = await parseBulletinsElevesFromPDF(file);
       if (bulletins.length > 0) {
-        const newBulletins = [...localBulletinsEleves, ...bulletins];
-        setLocalBulletinsEleves(newBulletins);
-        onDataLoaded?.({ bulletinsEleves: newBulletins });
+        // Replace existing bulletins with new ones
+        setLocalBulletinsEleves(bulletins);
+        setCurrentFileName(file.name);
+        onDataLoaded?.({ bulletinsEleves: bulletins });
         toast({
           title: "✓ Bulletins élèves chargés",
           description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''}. Génération des appréciations en cours...`,
         });
+        // Reset related state for new file
+        setStudentTones({});
+        setStudentTexts([]);
+        setStudentAttributions({});
       } else {
         throw new Error("Aucun bulletin élève trouvé dans le PDF");
       }
@@ -116,6 +122,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       setIsProcessing(false);
       event.target.value = '';
     }
+  };
+
+  const handleRemoveFile = () => {
+    setLocalBulletinsEleves([]);
+    setCurrentFileName("");
+    setStudentTones({});
+    setStudentTexts([]);
+    setStudentAttributions({});
+    onDataLoaded?.({ bulletinsEleves: null });
   };
 
   // Build students list from data
@@ -370,10 +385,13 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         </div>
         <div className="flex items-center gap-2">
           <PronoteHelpTooltip type="individuels" />
-          <ModifyFileButton
+          <FileActionButtons
             accept=".pdf"
             isLoading={isProcessing}
-            onUpload={handleBulletinsElevesUpload}
+            currentFileName={currentFileName || "Bulletins élèves"}
+            loadedInfo={`${students.length} élève${students.length > 1 ? 's' : ''} chargé${students.length > 1 ? 's' : ''}`}
+            onReplace={handleBulletinsElevesUpload}
+            onRemove={handleRemoveFile}
           />
         </div>
       </div>

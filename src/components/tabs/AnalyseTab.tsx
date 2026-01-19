@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, TrendingUp, TrendingDown, Minus, Table2 } from "lucide-react";
+import { BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,7 @@ import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
-import ModifyFileButton from "@/components/ModifyFileButton";
+import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface AnalyseTabProps {
@@ -29,13 +29,14 @@ interface AnalyseTabProps {
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
   };
-  onDataLoaded?: (data: { classeCSV: ClasseDataCSV }) => void;
+  onDataLoaded?: (data: { classeCSV?: ClasseDataCSV | null }) => void;
 }
 
 const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localClasseCSV, setLocalClasseCSV] = useState<ClasseDataCSV | null>(null);
+  const [currentFileName, setCurrentFileName] = useState<string>("");
 
   const classeCSV = data?.classeCSV || localClasseCSV;
 
@@ -68,6 +69,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
       if (parsedData && parsedData.eleves.length > 0) {
         setLocalClasseCSV(parsedData);
+        setCurrentFileName(file.name);
         onDataLoaded?.({ classeCSV: parsedData });
         toast({
           title: "✓ Tableau de résultats chargé",
@@ -87,6 +89,12 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
       setIsProcessing(false);
       event.target.value = '';
     }
+  };
+
+  const handleRemoveFile = () => {
+    setLocalClasseCSV(null);
+    setCurrentFileName("");
+    onDataLoaded?.({ classeCSV: null });
   };
 
   // STATE A: No file loaded - Show upload placeholder
@@ -173,7 +181,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with modify button */}
+      {/* Header with file action buttons */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -188,10 +196,13 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         </div>
         <div className="flex items-center gap-2">
           <PronoteHelpTooltip type="resultats" />
-          <ModifyFileButton
+          <FileActionButtons
             accept=".csv,.pdf"
             isLoading={isProcessing}
-            onUpload={handleTableauResultatsUpload}
+            currentFileName={currentFileName || "Tableau de résultats"}
+            loadedInfo={`${classeCSV.statistiques.totalEleves} élèves • ${classeCSV.matieres.length} matières`}
+            onReplace={handleTableauResultatsUpload}
+            onRemove={handleRemoveFile}
           />
         </div>
       </div>

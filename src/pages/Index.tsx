@@ -29,8 +29,31 @@ const Index = () => {
     return tabs.findIndex((tab) => tab.value === activeTab) + 1;
   };
 
-  const handleDataUpdate = (newData: Partial<typeof classeData>) => {
-    setClasseData(prev => ({ ...prev, ...newData }));
+  const handleDataUpdate = (newData: Partial<{
+    bulletinClasse?: BulletinClasseData | null;
+    bulletinsEleves?: BulletinEleveData[] | null;
+    classeCSV?: ClasseDataCSV | null;
+  }>) => {
+    setClasseData(prev => {
+      const updated = { ...prev };
+      // Handle null values to remove data
+      if (newData.classeCSV === null) {
+        delete updated.classeCSV;
+      } else if (newData.classeCSV !== undefined) {
+        updated.classeCSV = newData.classeCSV;
+      }
+      if (newData.bulletinClasse === null) {
+        delete updated.bulletinClasse;
+      } else if (newData.bulletinClasse !== undefined) {
+        updated.bulletinClasse = newData.bulletinClasse;
+      }
+      if (newData.bulletinsEleves === null) {
+        delete updated.bulletinsEleves;
+      } else if (newData.bulletinsEleves !== undefined) {
+        updated.bulletinsEleves = newData.bulletinsEleves;
+      }
+      return updated;
+    });
   };
 
   return (
