@@ -1,5 +1,6 @@
 import { useState } from "react";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 import ProgressIndicator from "@/components/ProgressIndicator";
 import AnalyseTab from "@/components/tabs/AnalyseTab";
 import MatieresTab from "@/components/tabs/MatieresTab";
@@ -116,6 +117,7 @@ const Index = () => {
           </div>
         </Tabs>
       </main>
+      <AppFooter />
     </div>
   );
 };
