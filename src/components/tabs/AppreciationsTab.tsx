@@ -25,6 +25,10 @@ import {
 import AttributionSelector from "@/components/AttributionSelector";
 import ConductIssuesIndicator from "@/components/ConductIssuesIndicator";
 import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
+import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelector";
+import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
+import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
+import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +43,7 @@ import {
 
 interface StudentData {
   name: string;
+  firstName: string;
   average: number;
   subjects?: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
   status: "excellent" | "good" | "needs-improvement";
@@ -64,6 +69,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
+  
+  // Anonymization level
+  const [anonymizationLevel, setAnonymizationLevel] = useAnonymizationLevel();
   
   // Attribution state
   const [attributionsEnabled, setAttributionsEnabled] = useState<boolean>(() => {
@@ -161,6 +169,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
 
         return {
           name: `${eleve.prenom} ${eleve.nom}`,
+          firstName: eleve.prenom,
           average,
           subjects: eleve.matieres.map(m => ({
             name: m.nom,
@@ -187,8 +196,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           classAverage: undefined,
         }));
 
+        // Extract first name from full name (assume format "LASTNAME FirstName" or "FirstName LASTNAME")
+        const nameParts = eleve.nom.split(' ');
+        const firstName = nameParts.length > 1 
+          ? nameParts.find(p => p[0] === p[0].toUpperCase() && p.slice(1) === p.slice(1).toLowerCase()) || nameParts[0]
+          : nameParts[0];
+
         return {
           name: eleve.nom,
+          firstName,
           average,
           subjects,
           status,
@@ -303,6 +319,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     });
   };
 
+  // Helper function to reinject first name
+  const reinjectFirstName = (appreciation: string, firstName: string): string => {
+    return appreciation
+      .replace(/\{prénom\}/gi, firstName)
+      .replace(/\{prenom\}/gi, firstName)
+      .replace(/\[prénom\]/gi, firstName)
+      .replace(/\[prenom\]/gi, firstName);
+  };
+
   const generateAppreciation = async (student: StudentData, tone: AppreciationTone): Promise<string> => {
     const classData = classeCSV ? {
       className: "3ème",
@@ -321,7 +346,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     });
 
     if (error) throw error;
-    return result.appreciation;
+    
+    let appreciation = result.appreciation;
+    
+    // If standard mode, automatically reinject the first name
+    if (anonymizationLevel === 'standard') {
+      appreciation = reinjectFirstName(appreciation, student.firstName);
+    }
+    
+    return appreciation;
   };
 
   const handleRegenerateStudent = async (index: number) => {
@@ -489,7 +522,13 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <TooltipProvider delayDuration={200}>
+            <AnonymizationQuickSelector
+              value={anonymizationLevel}
+              onChange={setAnonymizationLevel}
+            />
+          </TooltipProvider>
           <Button
             variant="outline"
             className="gap-2"
@@ -663,6 +702,17 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                       </div>
                     </div>
                   </div>
+                ) : anonymizationLevel === 'maximal' && studentTexts[index]?.includes(FIRST_NAME_PLACEHOLDER) ? (
+                  <ManualFirstNameReplacer
+                    appreciation={studentTexts[index]}
+                    firstName={student.firstName}
+                    onUpdate={(updatedText) => {
+                      const newTexts = [...studentTexts];
+                      newTexts[index] = updatedText;
+                      setStudentTexts(newTexts);
+                    }}
+                    onCopy={() => setCopiedIndex(index)}
+                  />
                 ) : (
                   <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
                     {studentTexts[index] || (
