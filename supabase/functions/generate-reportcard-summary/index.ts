@@ -5,12 +5,44 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting
+const kv = await Deno.openKv();
+const RATE_LIMIT = 15;
+const RATE_WINDOW = 60 * 1000; // 1 minute
+
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const key = ["rate_limit", "reportcard_summary", ip];
+  const result = await kv.get<{ count: number; timestamp: number }>(key);
+  const now = Date.now();
+
+  if (!result.value || now - result.value.timestamp > RATE_WINDOW) {
+    await kv.set(key, { count: 1, timestamp: now }, { expireIn: RATE_WINDOW });
+    return true;
+  }
+
+  if (result.value.count >= RATE_LIMIT) {
+    return false;
+  }
+
+  await kv.set(key, { count: result.value.count + 1, timestamp: result.value.timestamp }, { expireIn: RATE_WINDOW });
+  return true;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Rate limiting
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
+    if (!(await checkRateLimit(ip))) {
+      return new Response(
+        JSON.stringify({ error: "Trop de requêtes. Veuillez patienter 1 minute." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { options, classStats, labels } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
@@ -18,22 +50,46 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `Tu es un assistant pour enseignants français. Tu génères des bilans de classe pour les conseils de classe.
+    // Determine overall class tone
+    const positiveIndicators = [
+      options.workLevel === "serious",
+      options.behavior === "respectful",
+      options.participation === "active",
+      options.progression === "improving",
+    ].filter(Boolean).length;
 
-Règles STRICTES :
-- Entre 200 et 300 caractères
-- Style professionnel et synthétique
-- Mentionne les points forts et axes d'amélioration
-- Reste constructif même pour les classes difficiles
-- Utilise un ton adapté à un conseil de classe officiel`;
+    const tone = positiveIndicators >= 3 ? "positif" : positiveIndicators >= 2 ? "nuance" : "ferme";
 
-    const userPrompt = `Génère un bilan de classe avec ces caractéristiques:
-- Niveau de travail: ${labels.workLevel}
-- Comportement: ${labels.behavior}
-- Participation: ${labels.participation}
-- Progression: ${labels.progression}
-- Nombre d'élèves: ${classStats.totalStudents}
-- Moyenne de classe: ${classStats.averageGrade.toFixed(1)}/20`;
+    const systemPrompt = `Tu es un assistant pour enseignants français. Génère un bilan de classe pour le bulletin du conseil de classe.
+
+CONTRAINTES STRICTES :
+- Entre 200 et 300 caractères exactement
+- Ton professionnel adapté au contexte officiel
+- Synthétique et percutant
+- Une seule phrase ou deux phrases courtes maximum
+
+STRUCTURE :
+- Décrire l'ambiance générale de travail
+- Mentionner le comportement collectif
+- Évoquer la participation
+- Conclure sur la progression ou les attentes
+
+TON À ADOPTER : ${tone === "positif" ? "Valorisant et encourageant" : tone === "nuance" ? "Équilibré avec points positifs et axes d'amélioration" : "Ferme et direct sur les attentes"}
+
+IMPORTANT :
+- Ne pas utiliser de formules génériques vides
+- Être concret et spécifique
+- Adapter le vocabulaire au niveau scolaire`;
+
+    const userPrompt = `Génère un bilan de classe avec ces caractéristiques :
+- Niveau de travail : ${labels.workLevel}
+- Comportement : ${labels.behavior}
+- Participation : ${labels.participation}
+- Progression : ${labels.progression}
+- Nombre d'élèves : ${classStats.totalStudents}
+- Moyenne de classe : ${classStats.averageGrade.toFixed(1)}/20
+
+Le bilan doit refléter fidèlement ces caractéristiques et être utilisable directement dans un bulletin officiel.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
