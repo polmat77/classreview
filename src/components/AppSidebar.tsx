@@ -100,18 +100,25 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
           isCollapsed ? "w-20" : "w-[280px]"
         )}
       >
-        {/* Logo Section */}
+        {/* Logo Section - seamlessly blended into navy background */}
         <div className={cn(
-          "flex-shrink-0 flex items-center justify-center pt-6 pb-4 animate-slide-in-left",
-          isCollapsed ? "px-2" : "px-5"
+          "flex-shrink-0 flex items-center justify-center pt-8 pb-6 animate-slide-in-left",
+          isCollapsed ? "px-3" : "px-6"
         )}>
           <img 
             src={logo} 
             alt="ClassCouncil AI" 
             className={cn(
-              "object-contain drop-shadow-lg transition-all duration-300 hover:scale-105",
-              isCollapsed ? "h-12 w-12" : "w-full max-w-[200px] h-auto"
+              "object-contain transition-all duration-300 hover:scale-105",
+              "mix-blend-multiply opacity-95",
+              "filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.2)]",
+              isCollapsed ? "h-12 w-12" : "w-full max-w-[180px] h-auto"
             )}
+            style={{ 
+              background: 'transparent',
+              border: 'none',
+              boxShadow: 'none'
+            }}
           />
         </div>
 
