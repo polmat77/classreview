@@ -1,0 +1,408 @@
+import { useState, useCallback } from "react";
+import { Student } from "@/types/reportcard";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { extractTextFromPDF } from "@/utils/pdfParser";
+
+interface Step1DataImportProps {
+  students: Student[];
+  onStudentsChange: (students: Student[]) => void;
+  onNext: () => void;
+}
+
+const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImportProps) => {
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [manualInput, setManualInput] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("pdf");
+
+  const parseStudentsFromText = (text: string): Student[] => {
+    // Parse format: "Nom Prénom - 14.5" or "Nom Prénom 14.5" or "Nom Prénom"
+    const lines = text.split("\n").filter((line) => line.trim());
+    const parsedStudents: Student[] = [];
+
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return;
+
+      // Try different patterns
+      let match = trimmedLine.match(/^(.+?)\s*[-–]\s*(\d+[.,]?\d*)?$/);
+      if (!match) {
+        match = trimmedLine.match(/^(.+?)\s+(\d+[.,]?\d*)$/);
+      }
+      if (!match) {
+        match = [trimmedLine, trimmedLine, null];
+      }
+
+      const namePart = match[1].trim();
+      const averageStr = match[2];
+      const average = averageStr ? parseFloat(averageStr.replace(",", ".")) : null;
+
+      // Split name into lastName and firstName (assuming "Nom Prénom" format)
+      const nameParts = namePart.split(/\s+/);
+      const lastName = nameParts[0] || "";
+      const firstName = nameParts.slice(1).join(" ") || "";
+
+      parsedStudents.push({
+        id: index + 1,
+        lastName,
+        firstName,
+        average: average && !isNaN(average) ? average : null,
+      });
+    });
+
+    // Sort alphabetically by lastName, then firstName
+    return parsedStudents.sort((a, b) => {
+      const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr");
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return a.firstName.localeCompare(b.firstName, "fr");
+    }).map((student, index) => ({ ...student, id: index + 1 }));
+  };
+
+  const parsePDFContent = (text: string): Student[] => {
+    // Similar logic to existing PDF parser but adapted for PRONOTE grade exports
+    const lines = text.split("\n");
+    const students: Student[] = [];
+    
+    // Look for student entries with grades
+    const gradePattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+)\s+([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç\-]+(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç\-]+)*)\s+.*?(\d{1,2}[.,]\d{1,2})/i;
+    
+    lines.forEach((line) => {
+      const match = line.match(gradePattern);
+      if (match) {
+        students.push({
+          id: students.length + 1,
+          lastName: match[1],
+          firstName: match[2],
+          average: parseFloat(match[3].replace(",", ".")),
+        });
+      }
+    });
+
+    // If no structured data found, try simpler parsing
+    if (students.length === 0) {
+      return parseStudentsFromText(text);
+    }
+
+    // Sort and reassign IDs
+    return students
+      .sort((a, b) => {
+        const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr");
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return a.firstName.localeCompare(b.firstName, "fr");
+      })
+      .map((student, index) => ({ ...student, id: index + 1 }));
+  };
+
+  const handlePDFUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      toast({
+        title: "Format invalide",
+        description: "Veuillez sélectionner un fichier PDF",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const text = await extractTextFromPDF(file);
+      const parsedStudents = parsePDFContent(text);
+
+      if (parsedStudents.length === 0) {
+        toast({
+          title: "Aucun élève détecté",
+          description: "Impossible d'extraire les données du PDF. Essayez la saisie manuelle.",
+          variant: "destructive",
+        });
+      } else {
+        onStudentsChange(parsedStudents);
+        toast({
+          title: "Import réussi",
+          description: `${parsedStudents.length} élève(s) importé(s)`,
+        });
+      }
+    } catch (error) {
+      console.error("PDF parsing error:", error);
+      toast({
+        title: "Erreur de lecture",
+        description: "Impossible de lire le fichier PDF. Essayez la saisie manuelle.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+      event.target.value = "";
+    }
+  }, [onStudentsChange, toast]);
+
+  const handleManualSubmit = () => {
+    if (!manualInput.trim()) {
+      toast({
+        title: "Données manquantes",
+        description: "Veuillez saisir au moins un élève",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const parsedStudents = parseStudentsFromText(manualInput);
+    if (parsedStudents.length === 0) {
+      toast({
+        title: "Format invalide",
+        description: "Impossible de parser les données. Vérifiez le format.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onStudentsChange(parsedStudents);
+    setManualInput("");
+    toast({
+      title: "Import réussi",
+      description: `${parsedStudents.length} élève(s) ajouté(s)`,
+    });
+  };
+
+  const handleRemoveStudent = (id: number) => {
+    const updated = students
+      .filter((s) => s.id !== id)
+      .map((s, index) => ({ ...s, id: index + 1 }));
+    onStudentsChange(updated);
+  };
+
+  const handleClearAll = () => {
+    onStudentsChange([]);
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
+          Import des données élèves
+        </h1>
+        <p className="text-muted-foreground">
+          Importez vos données depuis PRONOTE ou saisissez-les manuellement
+        </p>
+      </div>
+
+      {/* Help accordion */}
+      <Accordion type="single" collapsible className="bg-card rounded-xl border">
+        <AccordionItem value="help" className="border-none">
+          <AccordionTrigger className="px-6 hover:no-underline">
+            <div className="flex items-center gap-2 text-primary">
+              <HelpCircle className="w-5 h-5" />
+              <span>Comment exporter depuis PRONOTE ?</span>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-6 pb-6">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                <li>Se rendre dans l'onglet <strong className="text-foreground">"Notes"</strong></li>
+                <li>Sélectionner la classe concernée dans le panneau de gauche</li>
+                <li>Cliquer sur l'icône <strong className="text-foreground">d'imprimante</strong> (Imprimer)</li>
+                <li>Dans "Données à imprimer", choisir <strong className="text-foreground">"Le service sélectionné"</strong></li>
+                <li>Dans "Type de sortie", choisir <strong className="text-foreground">PDF</strong></li>
+                <li className="text-destructive">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  <strong>Ne surtout pas cocher "Protégé" !</strong>
+                </li>
+                <li>Cliquer sur <strong className="text-foreground">"Générer"</strong> en bas à droite</li>
+              </ol>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+      {/* Import methods */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Méthode d'import</CardTitle>
+          <CardDescription>
+            Choisissez comment vous souhaitez ajouter les élèves
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="pdf" className="gap-2">
+                <Upload className="w-4 h-4" />
+                Import PDF
+              </TabsTrigger>
+              <TabsTrigger value="manual" className="gap-2">
+                <Edit3 className="w-4 h-4" />
+                Saisie manuelle
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="pdf" className="mt-6">
+              <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePDFUpload}
+                  className="hidden"
+                  id="pdf-upload"
+                  disabled={isProcessing}
+                />
+                <label
+                  htmlFor="pdf-upload"
+                  className="cursor-pointer flex flex-col items-center gap-4"
+                >
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground mb-1">
+                      {isProcessing ? "Traitement en cours..." : "Glissez votre PDF ici"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      ou cliquez pour sélectionner un fichier
+                    </p>
+                  </div>
+                  <Button variant="outline" disabled={isProcessing}>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Choisir un fichier
+                  </Button>
+                </label>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="manual" className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="manual-input">Liste des élèves</Label>
+                <Textarea
+                  id="manual-input"
+                  value={manualInput}
+                  onChange={(e) => setManualInput(e.target.value)}
+                  placeholder={`Saisissez un élève par ligne. Formats acceptés :
+Dupont Marie - 14.5
+Martin Lucas 12
+Durand Emma`}
+                  className="min-h-[200px] font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Format : "Nom Prénom - Moyenne" ou "Nom Prénom Moyenne" ou juste "Nom Prénom"
+                </p>
+              </div>
+              <Button onClick={handleManualSubmit} className="w-full">
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Ajouter les élèves
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+
+      {/* Students list */}
+      {students.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Liste des élèves</CardTitle>
+              <CardDescription>
+                {students.length} élève(s) • Triés par ordre alphabétique
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={handleClearAll}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Tout effacer
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-16">N°</TableHead>
+                    <TableHead>Nom Prénom</TableHead>
+                    <TableHead className="w-24 text-right">Moyenne</TableHead>
+                    <TableHead className="w-16"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell>
+                        <Badge variant="secondary">{student.id}</Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {student.lastName} {student.firstName}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {student.average !== null ? (
+                          <Badge
+                            variant={
+                              student.average >= 14
+                                ? "default"
+                                : student.average >= 10
+                                ? "secondary"
+                                : "destructive"
+                            }
+                          >
+                            {student.average.toFixed(1)}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleRemoveStudent(student.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Next button */}
+      <div className="flex justify-end">
+        <Button
+          size="lg"
+          onClick={onNext}
+          disabled={students.length === 0}
+          className="min-w-[200px]"
+        >
+          Valider la liste
+          <CheckCircle2 className="w-5 h-5 ml-2" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default Step1DataImport;
