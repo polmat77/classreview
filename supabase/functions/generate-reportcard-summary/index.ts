@@ -5,44 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting
-const kv = await Deno.openKv();
-const RATE_LIMIT = 15;
-const RATE_WINDOW = 60 * 1000; // 1 minute
-
-async function checkRateLimit(ip: string): Promise<boolean> {
-  const key = ["rate_limit", "reportcard_summary", ip];
-  const result = await kv.get<{ count: number; timestamp: number }>(key);
-  const now = Date.now();
-
-  if (!result.value || now - result.value.timestamp > RATE_WINDOW) {
-    await kv.set(key, { count: 1, timestamp: now }, { expireIn: RATE_WINDOW });
-    return true;
-  }
-
-  if (result.value.count >= RATE_LIMIT) {
-    return false;
-  }
-
-  await kv.set(key, { count: result.value.count + 1, timestamp: result.value.timestamp }, { expireIn: RATE_WINDOW });
-  return true;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Rate limiting
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
-    if (!(await checkRateLimit(ip))) {
-      return new Response(
-        JSON.stringify({ error: "Trop de requêtes. Veuillez patienter 1 minute." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const { options, classStats, labels } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
@@ -109,6 +77,20 @@ Le bilan doit refléter fidèlement ces caractéristiques et être utilisable di
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI Gateway error:", response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Trop de requêtes. Veuillez patienter quelques instants." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Crédits AI épuisés. Veuillez réessayer plus tard." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 
