@@ -28,6 +28,7 @@ import TopStudents from "@/components/analysis/TopStudents";
 import StudentsMonitoring from "@/components/analysis/StudentsMonitoring";
 import SubjectAnalysis from "@/components/analysis/SubjectAnalysis";
 import AIRecommendations from "@/components/analysis/AIRecommendations";
+import GradeDistribution from "@/components/analysis/GradeDistribution";
 import { getSubjectAverages } from "@/utils/statisticsCalculations";
 
 interface AnalyseTabProps {
@@ -190,6 +191,10 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
       {/* KPI Cards */}
       <KPICards eleves={classeCSV.eleves} />
 
+      {/* Grade Distribution */}
+      <GradeDistribution eleves={classeCSV.eleves} />
+
+      {/* Charts Row */}
       {/* Charts Row */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
