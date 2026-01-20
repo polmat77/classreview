@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { BulletinClasseData, BulletinEleveData } from '@/utils/pdfParser';
 import { ClasseDataCSV } from '@/utils/csvParser';
 
@@ -230,7 +230,7 @@ function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpti
         eleve.retards || 0,
       ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Rang', 'Élève', 'Moyenne', 'Absences', 'Retards']],
       body: tableData,
@@ -274,7 +274,7 @@ function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpt
       m.appreciation || '-',
     ]);
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Matière', 'Moyenne', 'Appréciation']],
       body: tableData,
@@ -307,7 +307,7 @@ function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpt
       return [m, avg.toFixed(2), '-'];
     });
     
-    doc.autoTable({
+    autoTable(doc, {
       startY: yPos,
       head: [['Matière', 'Moyenne classe', 'Observations']],
       body: matieresList,
