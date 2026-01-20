@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary } from "@/types/reportcard";
+import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata } from "@/types/reportcard";
 import ReportCardLayout from "@/components/reportcard/ReportCardLayout";
 import ReportCardStepper from "@/components/reportcard/ReportCardStepper";
 import Step1DataImport from "@/components/reportcard/Step1DataImport";
@@ -11,6 +11,7 @@ const STORAGE_KEY = "reportcard-ai-session";
 
 const initialState: ReportCardState = {
   students: [],
+  classMetadata: null,
   observations: {
     behavior: null,
     talkative: null,
@@ -57,6 +58,10 @@ const ReportCardAI = () => {
     setState((prev) => ({ ...prev, students }));
   };
 
+  const setClassMetadata = (classMetadata: ClassMetadata | null) => {
+    setState((prev) => ({ ...prev, classMetadata }));
+  };
+
   const setObservations = (observations: StudentObservations) => {
     setState((prev) => ({ ...prev, observations }));
   };
@@ -80,7 +85,9 @@ const ReportCardAI = () => {
         return (
           <Step1DataImport
             students={state.students}
+            classMetadata={state.classMetadata}
             onStudentsChange={setStudents}
+            onClassMetadataChange={setClassMetadata}
             onNext={() => setCurrentStep(2)}
           />
         );

@@ -1,9 +1,7 @@
 import { useState, useCallback } from "react";
-import { Student } from "@/types/reportcard";
+import { Student, ClassMetadata } from "@/types/reportcard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,99 +19,29 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle } from "lucide-react";
+import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle, AlertTriangle, BookOpen, Users, Calendar } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { extractTextFromPDF } from "@/utils/pdfParser";
+import { parsePronoteGradePDF, parseStudentsFromManualInput } from "@/utils/reportcardPdfParser";
 
 interface Step1DataImportProps {
   students: Student[];
+  classMetadata: ClassMetadata | null;
   onStudentsChange: (students: Student[]) => void;
+  onClassMetadataChange: (metadata: ClassMetadata | null) => void;
   onNext: () => void;
 }
 
-const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImportProps) => {
+const Step1DataImport = ({ 
+  students, 
+  classMetadata, 
+  onStudentsChange, 
+  onClassMetadataChange, 
+  onNext 
+}: Step1DataImportProps) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualInput, setManualInput] = useState("");
   const [activeTab, setActiveTab] = useState<string>("pdf");
-
-  const parseStudentsFromText = (text: string): Student[] => {
-    // Parse format: "Nom Prénom - 14.5" or "Nom Prénom 14.5" or "Nom Prénom"
-    const lines = text.split("\n").filter((line) => line.trim());
-    const parsedStudents: Student[] = [];
-
-    lines.forEach((line, index) => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return;
-
-      // Try different patterns
-      let match = trimmedLine.match(/^(.+?)\s*[-–]\s*(\d+[.,]?\d*)?$/);
-      if (!match) {
-        match = trimmedLine.match(/^(.+?)\s+(\d+[.,]?\d*)$/);
-      }
-      if (!match) {
-        match = [trimmedLine, trimmedLine, null];
-      }
-
-      const namePart = match[1].trim();
-      const averageStr = match[2];
-      const average = averageStr ? parseFloat(averageStr.replace(",", ".")) : null;
-
-      // Split name into lastName and firstName (assuming "Nom Prénom" format)
-      const nameParts = namePart.split(/\s+/);
-      const lastName = nameParts[0] || "";
-      const firstName = nameParts.slice(1).join(" ") || "";
-
-      parsedStudents.push({
-        id: index + 1,
-        lastName,
-        firstName,
-        average: average && !isNaN(average) ? average : null,
-      });
-    });
-
-    // Sort alphabetically by lastName, then firstName
-    return parsedStudents.sort((a, b) => {
-      const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr");
-      if (lastNameCompare !== 0) return lastNameCompare;
-      return a.firstName.localeCompare(b.firstName, "fr");
-    }).map((student, index) => ({ ...student, id: index + 1 }));
-  };
-
-  const parsePDFContent = (text: string): Student[] => {
-    // Similar logic to existing PDF parser but adapted for PRONOTE grade exports
-    const lines = text.split("\n");
-    const students: Student[] = [];
-    
-    // Look for student entries with grades
-    const gradePattern = /^([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç]+)\s+([A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç\-]+(?:\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç\-]+)*)\s+.*?(\d{1,2}[.,]\d{1,2})/i;
-    
-    lines.forEach((line) => {
-      const match = line.match(gradePattern);
-      if (match) {
-        students.push({
-          id: students.length + 1,
-          lastName: match[1],
-          firstName: match[2],
-          average: parseFloat(match[3].replace(",", ".")),
-        });
-      }
-    });
-
-    // If no structured data found, try simpler parsing
-    if (students.length === 0) {
-      return parseStudentsFromText(text);
-    }
-
-    // Sort and reassign IDs
-    return students
-      .sort((a, b) => {
-        const lastNameCompare = a.lastName.localeCompare(b.lastName, "fr");
-        if (lastNameCompare !== 0) return lastNameCompare;
-        return a.firstName.localeCompare(b.firstName, "fr");
-      })
-      .map((student, index) => ({ ...student, id: index + 1 }));
-  };
 
   const handlePDFUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -130,20 +58,22 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
 
     setIsProcessing(true);
     try {
-      const text = await extractTextFromPDF(file);
-      const parsedStudents = parsePDFContent(text);
+      const result = await parsePronoteGradePDF(file);
 
-      if (parsedStudents.length === 0) {
+      if (result.students.length === 0) {
         toast({
           title: "Aucun élève détecté",
           description: "Impossible d'extraire les données du PDF. Essayez la saisie manuelle.",
           variant: "destructive",
         });
       } else {
-        onStudentsChange(parsedStudents);
+        onStudentsChange(result.students);
+        if (result.metadata) {
+          onClassMetadataChange(result.metadata);
+        }
         toast({
           title: "Import réussi",
-          description: `${parsedStudents.length} élève(s) importé(s)`,
+          description: `${result.students.length} élève(s) importé(s)${result.metadata?.className ? ` - ${result.metadata.className}` : ""}`,
         });
       }
     } catch (error) {
@@ -157,7 +87,7 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
       setIsProcessing(false);
       event.target.value = "";
     }
-  }, [onStudentsChange, toast]);
+  }, [onStudentsChange, onClassMetadataChange, toast]);
 
   const handleManualSubmit = () => {
     if (!manualInput.trim()) {
@@ -169,7 +99,7 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
       return;
     }
 
-    const parsedStudents = parseStudentsFromText(manualInput);
+    const parsedStudents = parseStudentsFromManualInput(manualInput);
     if (parsedStudents.length === 0) {
       toast({
         title: "Format invalide",
@@ -196,6 +126,21 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
 
   const handleClearAll = () => {
     onStudentsChange([]);
+    onClassMetadataChange(null);
+  };
+
+  const getAverageBadgeVariant = (average: number | null) => {
+    if (average === null) return "secondary";
+    if (average >= 14) return "default"; // green via CSS
+    if (average >= 10) return "secondary"; // orange via CSS
+    return "destructive"; // red
+  };
+
+  const getAverageBadgeClass = (average: number | null) => {
+    if (average === null) return "";
+    if (average >= 14) return "bg-success text-success-foreground";
+    if (average >= 10) return "bg-warning text-warning-foreground";
+    return "";
   };
 
   return (
@@ -237,6 +182,41 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
           </AccordionContent>
         </AccordionItem>
       </Accordion>
+
+      {/* Class metadata display */}
+      {classMetadata && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex flex-wrap gap-4">
+              {classMetadata.className && (
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">{classMetadata.className}</span>
+                </div>
+              )}
+              {classMetadata.subject && (
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">{classMetadata.subject}</span>
+                </div>
+              )}
+              {classMetadata.period && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">{classMetadata.period}</span>
+                </div>
+              )}
+              {classMetadata.classAverage && (
+                <div className="flex items-center gap-2">
+                  <Badge className={getAverageBadgeClass(classMetadata.classAverage)}>
+                    Moyenne classe : {classMetadata.classAverage.toFixed(2)}
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Import methods */}
       <Card>
@@ -294,7 +274,6 @@ const Step1DataImport = ({ students, onStudentsChange, onNext }: Step1DataImport
 
             <TabsContent value="manual" className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="manual-input">Liste des élèves</Label>
                 <Textarea
                   id="manual-input"
                   value={manualInput}
@@ -318,7 +297,7 @@ Durand Emma`}
         </CardContent>
       </Card>
 
-      {/* Students list */}
+      {/* Students list with enhanced columns */}
       {students.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -334,38 +313,74 @@ Durand Emma`}
             </Button>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border overflow-hidden">
+            <div className="rounded-lg border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead className="w-16">N°</TableHead>
+                    <TableHead className="w-14">N°</TableHead>
                     <TableHead>Nom Prénom</TableHead>
-                    <TableHead className="w-24 text-right">Moyenne</TableHead>
-                    <TableHead className="w-16"></TableHead>
+                    <TableHead className="w-20 text-center">Moyenne</TableHead>
+                    <TableHead className="w-20 text-center">Sérieux</TableHead>
+                    <TableHead className="w-24 text-center">Particip.</TableHead>
+                    <TableHead className="w-16 text-center">Abs</TableHead>
+                    <TableHead className="w-16 text-center">N.Rdu</TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.map((student) => (
                     <TableRow key={student.id}>
                       <TableCell>
-                        <Badge variant="secondary">{student.id}</Badge>
+                        <Badge variant="outline">{student.id}</Badge>
                       </TableCell>
                       <TableCell className="font-medium">
                         {student.lastName} {student.firstName}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-center">
                         {student.average !== null ? (
-                          <Badge
-                            variant={
-                              student.average >= 14
-                                ? "default"
-                                : student.average >= 10
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
+                          <Badge className={getAverageBadgeClass(student.average)}>
                             {student.average.toFixed(1)}
                           </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.seriousness !== null && student.seriousness !== undefined ? (
+                          <span className="text-sm">{student.seriousness}/20</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.participation !== null && student.participation !== undefined ? (
+                          <span className="text-sm">{student.participation}/20</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.absences && student.absences > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            {student.absences > 2 && (
+                              <AlertTriangle className="w-3 h-3 text-warning" />
+                            )}
+                            <span className={student.absences > 2 ? "text-warning font-medium" : ""}>
+                              {student.absences}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {student.nonRendus && student.nonRendus > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-destructive" />
+                            <span className="text-destructive font-medium">
+                              {student.nonRendus}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
