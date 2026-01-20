@@ -30,24 +30,44 @@ function isValidType(type: unknown): type is 'general' | 'individual' {
 function sanitizeString(str: unknown, maxLength: number): string {
   if (typeof str !== 'string') return '';
   
-  // Remove potential prompt injection patterns and limit length
-  let clean = str.slice(0, maxLength)
-    // Remove HTML-like and template characters
-    .replace(/[<>{}]/g, '')
-    // Remove prompt injection patterns (case insensitive)
-    .replace(/\b(ignore|oublie|oublier|disregard|forget)\s+(previous|précédent|précédente|all|tout|toute|les|the|above|ci-dessus)\s+(instructions?|consignes?|règles?|rules?)/gi, '')
-    .replace(/\b(system|système|assistant|user|utilisateur)\s*:/gi, '')
-    .replace(/\b(new|nouvelle?|change|modifier?)\s+(instruction|consigne|prompt|règle|rule)/gi, '')
-    .replace(/\b(pretend|fais\s+comme\s+si|act\s+as|agis\s+comme|you\s+are\s+now|tu\s+es\s+maintenant)/gi, '')
-    .replace(/\b(reveal|révèle|show|montre|display|affiche)\s+(system|your|ton|ta|the|le|la)\s+(prompt|instruction|consigne|règle)/gi, '')
-    .replace(/\b(override|bypass|contourne|ignore)\s+(safety|sécurité|filter|filtre|restriction|rule|règle)/gi, '')
-    // Remove excessive newlines (potential formatting attacks)
-    .replace(/\n{3,}/g, '\n\n')
-    // Remove control characters
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    .trim();
+  // Step 1: Unicode normalization to prevent homoglyph/lookalike attacks
+  // NFKC normalizes compatibility characters (e.g., fullwidth chars, ligatures)
+  let clean = str.normalize('NFKC');
   
-  return clean;
+  // Step 2: Remove zero-width and invisible characters that could bypass filters
+  clean = clean.replace(/[\u200B-\u200D\u2060\uFEFF\u00AD\u034F\u061C\u180E]/g, '');
+  
+  // Step 3: Limit length after normalization
+  clean = clean.slice(0, maxLength);
+  
+  // Step 4: Remove HTML-like and template characters
+  clean = clean.replace(/[<>{}]/g, '');
+  
+  // Step 5: Remove prompt injection patterns (case insensitive, multi-language)
+  // Pattern: "ignore/forget previous instructions"
+  clean = clean.replace(/\b(ignore|oublie|oublier|disregard|forget)\s+(previous|précédent|précédente|all|tout|toute|les|the|above|ci-dessus)\s+(instructions?|consignes?|règles?|rules?)/gi, '');
+  // Pattern: "system:" or "assistant:" role markers
+  clean = clean.replace(/\b(system|système|assistant|user|utilisateur)\s*:/gi, '');
+  // Pattern: "new instruction" attempts
+  clean = clean.replace(/\b(new|nouvelle?|change|modifier?)\s+(instruction|consigne|prompt|règle|rule)/gi, '');
+  // Pattern: "pretend to be" or "act as"
+  clean = clean.replace(/\b(pretend|fais\s+comme\s+si|act\s+as|agis\s+comme|you\s+are\s+now|tu\s+es\s+maintenant)/gi, '');
+  // Pattern: "reveal your prompt"
+  clean = clean.replace(/\b(reveal|révèle|show|montre|display|affiche)\s+(system|your|ton|ta|the|le|la)\s+(prompt|instruction|consigne|règle)/gi, '');
+  // Pattern: "bypass safety"
+  clean = clean.replace(/\b(override|bypass|contourne|ignore)\s+(safety|sécurité|filter|filtre|restriction|rule|règle)/gi, '');
+  // Pattern: "do anything now" (DAN) jailbreak attempts
+  clean = clean.replace(/\b(do\s+anything\s+now|dan\s+mode|jailbreak|no\s+restrictions?)/gi, '');
+  // Pattern: Base64-like encoded content (suspicious long alphanumeric strings)
+  clean = clean.replace(/[A-Za-z0-9+/=]{50,}/g, '');
+  
+  // Step 6: Remove excessive newlines (potential formatting attacks)
+  clean = clean.replace(/\n{3,}/g, '\n\n');
+  
+  // Step 7: Remove control characters
+  clean = clean.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
+  
+  return clean.trim();
 }
 
 function validateNumber(num: unknown, min: number, max: number): number {
