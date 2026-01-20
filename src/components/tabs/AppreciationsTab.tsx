@@ -56,8 +56,9 @@ interface AppreciationsTabProps {
     bulletinClasse?: BulletinClasseData;
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
+    studentAppreciations?: string[];
   };
-  onDataLoaded?: (data: { bulletinsEleves?: BulletinEleveData[] | null }) => void;
+  onDataLoaded?: (data: { bulletinsEleves?: BulletinEleveData[] | null; studentAppreciations?: string[] | null }) => void;
 }
 
 const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps) => {
@@ -65,7 +66,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
   const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
-  const [studentTexts, setStudentTexts] = useState<string[]>([]);
+  const [studentTexts, setStudentTexts] = useState<string[]>(data?.studentAppreciations || []);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
@@ -366,6 +367,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       const newTexts = [...studentTexts];
       newTexts[index] = appreciation;
       setStudentTexts(newTexts);
+      onDataLoaded?.({ studentAppreciations: newTexts });
       toast({ title: "Appréciation générée", description: `L'appréciation de ${student.name} a été générée.` });
     } catch (error) {
       console.error('Error generating student appreciation:', error);
@@ -384,6 +386,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         const appreciation = await generateAppreciation(students[i], tone);
         newTexts[i] = appreciation;
         setStudentTexts([...newTexts]);
+        onDataLoaded?.({ studentAppreciations: [...newTexts] });
       }
 
       toast({ title: "Toutes les appréciations générées", description: "Les appréciations ont été générées avec succès." });
@@ -682,6 +685,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                         const newTexts = [...studentTexts];
                         newTexts[index] = e.target.value;
                         setStudentTexts(newTexts);
+                        onDataLoaded?.({ studentAppreciations: newTexts });
                       }}
                       className="min-h-[120px] resize-none"
                       maxLength={450}

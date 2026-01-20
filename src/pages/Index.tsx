@@ -15,13 +15,17 @@ const tabs = [
   { value: "export", label: "Bilan" },
 ];
 
+export interface ClasseDataState {
+  bulletinClasse?: BulletinClasseData;
+  bulletinsEleves?: BulletinEleveData[];
+  classeCSV?: ClasseDataCSV;
+  generalAppreciation?: string;
+  studentAppreciations?: string[];
+}
+
 const Index = () => {
   const [activeTab, setActiveTab] = useState("analyse");
-  const [classeData, setClasseData] = useState<{
-    bulletinClasse?: BulletinClasseData;
-    bulletinsEleves?: BulletinEleveData[];
-    classeCSV?: ClasseDataCSV;
-  }>({});
+  const [classeData, setClasseData] = useState<ClasseDataState>({});
 
   const getStepNumber = () => {
     return tabs.findIndex((tab) => tab.value === activeTab) + 1;
@@ -31,6 +35,8 @@ const Index = () => {
     bulletinClasse?: BulletinClasseData | null;
     bulletinsEleves?: BulletinEleveData[] | null;
     classeCSV?: ClasseDataCSV | null;
+    generalAppreciation?: string | null;
+    studentAppreciations?: string[] | null;
   }>) => {
     setClasseData(prev => {
       const updated = { ...prev };
@@ -49,6 +55,16 @@ const Index = () => {
         delete updated.bulletinsEleves;
       } else if (newData.bulletinsEleves !== undefined) {
         updated.bulletinsEleves = newData.bulletinsEleves;
+      }
+      if (newData.generalAppreciation === null) {
+        delete updated.generalAppreciation;
+      } else if (newData.generalAppreciation !== undefined) {
+        updated.generalAppreciation = newData.generalAppreciation;
+      }
+      if (newData.studentAppreciations === null) {
+        delete updated.studentAppreciations;
+      } else if (newData.studentAppreciations !== undefined) {
+        updated.studentAppreciations = newData.studentAppreciations;
       }
       return updated;
     });

@@ -1,29 +1,93 @@
-import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image } from "lucide-react";
+import { useState } from "react";
+import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
+import { downloadPDF, ExportOptions, ExportData } from "@/utils/pdfGenerator";
+import { useToast } from "@/hooks/use-toast";
 
 interface ExportTabProps {
   data?: {
     bulletinClasse?: BulletinClasseData;
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
+    generalAppreciation?: string;
+    studentAppreciations?: string[];
   };
 }
 
 const ExportTab = ({ data }: ExportTabProps) => {
+  const { toast } = useToast();
+  const [showPreview, setShowPreview] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Export options
+  const [includeGraphs, setIncludeGraphs] = useState(true);
+  const [includeComments, setIncludeComments] = useState(true);
+  const [colorMode, setColorMode] = useState(true);
+  const [schoolLogo, setSchoolLogo] = useState(false);
+
   const hasClasseCSV = !!data?.classeCSV;
   const hasBulletinClasse = !!data?.bulletinClasse;
   const hasBulletinsEleves = data?.bulletinsEleves && data.bulletinsEleves.length > 0;
+  const hasGeneralAppreciation = !!data?.generalAppreciation;
+  const hasStudentAppreciations = data?.studentAppreciations && data.studentAppreciations.some(t => t && t.length > 0);
   
   const hasAnyData = hasClasseCSV || hasBulletinClasse || hasBulletinsEleves;
 
   const nbEleves = data?.classeCSV?.eleves.length || data?.bulletinsEleves?.length || 0;
   const nbMatieres = data?.classeCSV?.matieres.length || data?.bulletinClasse?.matieres.length || 0;
+  const nbAppreciationsGenerated = data?.studentAppreciations?.filter(t => t && t.length > 0).length || 0;
+
+  const getExportData = (): ExportData => ({
+    bulletinClasse: data?.bulletinClasse,
+    bulletinsEleves: data?.bulletinsEleves,
+    classeCSV: data?.classeCSV,
+    generalAppreciation: data?.generalAppreciation,
+    studentAppreciations: data?.studentAppreciations,
+  });
+
+  const getExportOptions = (): ExportOptions => ({
+    includeGraphs,
+    includeComments,
+    colorMode,
+    schoolLogo,
+  });
+
+  const handleGeneratePDF = async () => {
+    setIsGenerating(true);
+    try {
+      // Small delay to show loading state
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      downloadPDF(getExportData(), getExportOptions());
+      
+      toast({
+        title: "PDF généré avec succès",
+        description: "Le rapport a été téléchargé sur votre appareil.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le PDF. Veuillez réessayer.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const className = data?.bulletinClasse?.classe || '3ème';
+  const trimester = data?.bulletinClasse?.trimestre || '1er Trimestre';
+  const moyenneClasse = data?.classeCSV?.statistiques.moyenneClasse || 
+    (data?.bulletinClasse?.matieres.reduce((s, m) => s + m.moyenne, 0) || 0) / (data?.bulletinClasse?.matieres.length || 1);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -94,7 +158,12 @@ const ExportTab = ({ data }: ExportTabProps) => {
               <div className="flex justify-between">
                 <span>Appréciations:</span>
                 <span className="font-bold">
-                  {hasBulletinsEleves ? `${nbEleves + 1} (1 générale + ${nbEleves} individuelles)` : "Non générées"}
+                  {hasStudentAppreciations 
+                    ? `${hasGeneralAppreciation ? 1 : 0} générale + ${nbAppreciationsGenerated} individuelles`
+                    : hasGeneralAppreciation 
+                      ? "1 générale" 
+                      : "Non générées"
+                  }
                 </span>
               </div>
             </div>
@@ -113,26 +182,46 @@ const ExportTab = ({ data }: ExportTabProps) => {
               <Label htmlFor="include-graphs" className="text-sm">
                 Inclure les graphiques et statistiques
               </Label>
-              <Switch id="include-graphs" defaultChecked disabled={!hasAnyData} />
+              <Switch 
+                id="include-graphs" 
+                checked={includeGraphs}
+                onCheckedChange={setIncludeGraphs}
+                disabled={!hasAnyData} 
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="include-comments" className="text-sm">
                 Commentaires des professeurs
               </Label>
-              <Switch id="include-comments" defaultChecked disabled={!hasAnyData} />
+              <Switch 
+                id="include-comments" 
+                checked={includeComments}
+                onCheckedChange={setIncludeComments}
+                disabled={!hasAnyData} 
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="color-mode" className="text-sm">
                 Mode couleur (sinon noir & blanc)
               </Label>
-              <Switch id="color-mode" defaultChecked disabled={!hasAnyData} />
+              <Switch 
+                id="color-mode" 
+                checked={colorMode}
+                onCheckedChange={setColorMode}
+                disabled={!hasAnyData} 
+              />
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="school-logo" className="text-sm flex items-center gap-2">
                 <Image className="h-4 w-4" />
                 Logo de l'établissement (optionnel)
               </Label>
-              <Switch id="school-logo" disabled={!hasAnyData} />
+              <Switch 
+                id="school-logo" 
+                checked={schoolLogo}
+                onCheckedChange={setSchoolLogo}
+                disabled={!hasAnyData} 
+              />
             </div>
           </CardContent>
         </Card>
@@ -142,7 +231,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Sections incluses dans le rapport</CardTitle>
-          <CardDescription>Sélectionnez les sections à inclure dans votre PDF</CardDescription>
+          <CardDescription>Récapitulatif des données disponibles pour l'export</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
@@ -150,14 +239,16 @@ const ExportTab = ({ data }: ExportTabProps) => {
               <Badge variant="outline">Page 1</Badge>
               <span className="text-sm font-medium">Page de garde</span>
               <span className="ml-auto text-xs text-muted-foreground">
-                {hasAnyData ? "Classe & Trimestre" : "—"}
+                {hasAnyData ? `${className} • ${trimester}` : "—"}
               </span>
               {hasAnyData && <CheckCircle2 className="h-4 w-4 text-success" />}
             </div>
             <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
               <Badge variant="outline">Pages 2-3</Badge>
               <span className="text-sm font-medium">Analyse globale</span>
-              <span className="ml-auto text-xs text-muted-foreground">Tableaux & graphiques</span>
+              <span className="ml-auto text-xs text-muted-foreground">
+                {hasClasseCSV ? `Moyenne: ${moyenneClasse.toFixed(2)}` : "Tableaux & graphiques"}
+              </span>
               {hasClasseCSV ? (
                 <CheckCircle2 className="h-4 w-4 text-success" />
               ) : (
@@ -179,8 +270,10 @@ const ExportTab = ({ data }: ExportTabProps) => {
             <div className="flex items-center gap-3 rounded-lg border bg-card p-3">
               <Badge variant="outline">Page 6</Badge>
               <span className="text-sm font-medium">Appréciation générale</span>
-              <span className="ml-auto text-xs text-muted-foreground">Synthèse de classe</span>
-              {hasBulletinsEleves ? (
+              <span className="ml-auto text-xs text-muted-foreground">
+                {hasGeneralAppreciation ? `${data?.generalAppreciation?.length || 0} caractères` : "Synthèse de classe"}
+              </span>
+              {hasGeneralAppreciation ? (
                 <CheckCircle2 className="h-4 w-4 text-success" />
               ) : (
                 <span className="text-xs text-warning">Non générée</span>
@@ -190,9 +283,9 @@ const ExportTab = ({ data }: ExportTabProps) => {
               <Badge variant="outline">Pages 7+</Badge>
               <span className="text-sm font-medium">Appréciations individuelles</span>
               <span className="ml-auto text-xs text-muted-foreground">
-                {nbEleves > 0 ? `${nbEleves} élèves (1 page/élève)` : "—"}
+                {nbEleves > 0 ? `${nbAppreciationsGenerated}/${nbEleves} générées` : "—"}
               </span>
-              {hasBulletinsEleves ? (
+              {hasStudentAppreciations ? (
                 <CheckCircle2 className="h-4 w-4 text-success" />
               ) : (
                 <span className="text-xs text-warning">Non générées</span>
@@ -209,6 +302,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
           size="lg" 
           className="flex-1 gap-2"
           disabled={!hasAnyData}
+          onClick={() => setShowPreview(true)}
         >
           <Eye className="h-5 w-5" />
           Aperçu avant export
@@ -216,10 +310,15 @@ const ExportTab = ({ data }: ExportTabProps) => {
         <Button 
           size="lg" 
           className="flex-1 gap-2 bg-gradient-to-r from-primary to-primary-light shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200"
-          disabled={!hasAnyData}
+          disabled={!hasAnyData || isGenerating}
+          onClick={handleGeneratePDF}
         >
-          <Download className="h-5 w-5" />
-          Générer le PDF
+          {isGenerating ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Download className="h-5 w-5" />
+          )}
+          {isGenerating ? "Génération..." : "Générer le PDF"}
         </Button>
       </div>
 
@@ -236,6 +335,128 @@ const ExportTab = ({ data }: ExportTabProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-4xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>Aperçu du rapport</DialogTitle>
+            <DialogDescription>
+              Vérifiez le contenu avant de générer le PDF
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-6">
+              {/* Cover Preview */}
+              <div className="rounded-lg border p-6 bg-gradient-to-br from-navy to-navy-light text-white">
+                <h3 className="text-2xl font-bold text-center mb-2">ClassCouncil AI</h3>
+                <p className="text-center text-white/80 mb-4">Rapport du Conseil de Classe</p>
+                <div className="text-center">
+                  <p className="text-xl font-semibold">{className}</p>
+                  <p className="text-sm text-white/70">{trimester}</p>
+                </div>
+                <div className="flex justify-center gap-4 mt-4">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold">{nbEleves}</p>
+                    <p className="text-xs text-white/70">Élèves</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold">{nbMatieres}</p>
+                    <p className="text-xs text-white/70">Matières</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold">{moyenneClasse.toFixed(1)}</p>
+                    <p className="text-xs text-white/70">Moyenne</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* General Appreciation Preview */}
+              {hasGeneralAppreciation && (
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold mb-2 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Appréciation générale
+                  </h4>
+                  <p className="text-sm text-muted-foreground bg-muted/30 p-3 rounded">
+                    {data?.generalAppreciation}
+                  </p>
+                </div>
+              )}
+
+              {/* Student Appreciations Preview */}
+              {hasStudentAppreciations && (
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Appréciations individuelles ({nbAppreciationsGenerated}/{nbEleves})
+                  </h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {data?.studentAppreciations?.map((appreciation, index) => {
+                      const student = data?.bulletinsEleves?.[index] || data?.classeCSV?.eleves?.[index];
+                      const studentName = data?.bulletinsEleves?.[index] 
+                        ? `${data.bulletinsEleves[index].prenom} ${data.bulletinsEleves[index].nom}`
+                        : data?.classeCSV?.eleves?.[index]?.nom || `Élève ${index + 1}`;
+                      
+                      if (!appreciation) return null;
+                      
+                      return (
+                        <div key={index} className="bg-muted/30 p-3 rounded text-sm">
+                          <p className="font-medium text-xs text-muted-foreground mb-1">{studentName}</p>
+                          <p>{appreciation}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Data Summary */}
+              {hasClasseCSV && (
+                <div className="rounded-lg border p-4">
+                  <h4 className="font-semibold mb-2">Données de la classe</h4>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div className="bg-muted/30 p-3 rounded">
+                      <p className="text-lg font-bold text-primary">{data?.classeCSV?.statistiques.moyenneClasse.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">Moyenne classe</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded">
+                      <p className="text-lg font-bold text-success">{data?.classeCSV?.eleves.filter(e => e.moyenneGenerale >= 10).length}</p>
+                      <p className="text-xs text-muted-foreground">≥ 10/20</p>
+                    </div>
+                    <div className="bg-muted/30 p-3 rounded">
+                      <p className="text-lg font-bold text-destructive">{data?.classeCSV?.eleves.filter(e => e.moyenneGenerale < 10).length}</p>
+                      <p className="text-xs text-muted-foreground">&lt; 10/20</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreview(false)}>
+              Fermer
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowPreview(false);
+                handleGeneratePDF();
+              }}
+              disabled={isGenerating}
+              className="gap-2"
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Télécharger le PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
