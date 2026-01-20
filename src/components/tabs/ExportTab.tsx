@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image, Loader2 } from "lucide-react";
+import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image, Loader2, Award } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,7 @@ import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 import { downloadPDF, ExportOptions, ExportData } from "@/utils/pdfGenerator";
 import { useToast } from "@/hooks/use-toast";
+import { Attribution } from "@/types/attribution";
 
 interface ExportTabProps {
   data?: {
@@ -19,6 +20,8 @@ interface ExportTabProps {
     classeCSV?: ClasseDataCSV;
     generalAppreciation?: string;
     studentAppreciations?: string[];
+    studentAttributions?: (Attribution | null)[];
+    professeurPrincipal?: string;
   };
 }
 
@@ -32,18 +35,21 @@ const ExportTab = ({ data }: ExportTabProps) => {
   const [includeComments, setIncludeComments] = useState(true);
   const [colorMode, setColorMode] = useState(true);
   const [schoolLogo, setSchoolLogo] = useState(false);
+  const [includeAttributions, setIncludeAttributions] = useState(true);
 
   const hasClasseCSV = !!data?.classeCSV;
   const hasBulletinClasse = !!data?.bulletinClasse;
   const hasBulletinsEleves = data?.bulletinsEleves && data.bulletinsEleves.length > 0;
   const hasGeneralAppreciation = !!data?.generalAppreciation;
   const hasStudentAppreciations = data?.studentAppreciations && data.studentAppreciations.some(t => t && t.length > 0);
+  const hasAttributions = data?.studentAttributions && data.studentAttributions.some(a => a !== null);
   
   const hasAnyData = hasClasseCSV || hasBulletinClasse || hasBulletinsEleves;
 
   const nbEleves = data?.classeCSV?.eleves.length || data?.bulletinsEleves?.length || 0;
   const nbMatieres = data?.classeCSV?.matieres.length || data?.bulletinClasse?.matieres.length || 0;
   const nbAppreciationsGenerated = data?.studentAppreciations?.filter(t => t && t.length > 0).length || 0;
+  const nbAttributions = data?.studentAttributions?.filter(a => a !== null).length || 0;
 
   const getExportData = (): ExportData => ({
     bulletinClasse: data?.bulletinClasse,
@@ -51,6 +57,8 @@ const ExportTab = ({ data }: ExportTabProps) => {
     classeCSV: data?.classeCSV,
     generalAppreciation: data?.generalAppreciation,
     studentAppreciations: data?.studentAppreciations,
+    studentAttributions: data?.studentAttributions,
+    professeurPrincipal: data?.professeurPrincipal,
   });
 
   const getExportOptions = (): ExportOptions => ({
@@ -58,6 +66,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
     includeComments,
     colorMode,
     schoolLogo,
+    includeAttributions: includeAttributions && hasAttributions,
   });
 
   const handleGeneratePDF = async () => {
@@ -209,6 +218,18 @@ const ExportTab = ({ data }: ExportTabProps) => {
                 checked={colorMode}
                 onCheckedChange={setColorMode}
                 disabled={!hasAnyData} 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="include-attributions" className="text-sm flex items-center gap-2">
+                <Award className="h-4 w-4" />
+                Inclure les attributions (Félicitations, etc.)
+              </Label>
+              <Switch 
+                id="include-attributions" 
+                checked={includeAttributions}
+                onCheckedChange={setIncludeAttributions}
+                disabled={!hasAnyData || !hasAttributions} 
               />
             </div>
             <div className="flex items-center justify-between">
