@@ -4,3 +4,9 @@ project_id = "xynwjqxprigmhctzurks"
 
 [functions.generate-appreciation]
 verify_jwt = false
+
+[functions.generate-reportcard-appreciation]
+verify_jwt = false
+
+[functions.generate-reportcard-summary]
+verify_jwt = false
