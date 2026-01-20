@@ -19,7 +19,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle, AlertTriangle, BookOpen, Users, Calendar } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle, AlertTriangle, BookOpen, Users, Calendar, Bug } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePronoteGradePDF, parseStudentsFromManualInput } from "@/utils/reportcardPdfParser";
 
@@ -42,6 +47,9 @@ const Step1DataImport = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualInput, setManualInput] = useState("");
   const [activeTab, setActiveTab] = useState<string>("pdf");
+  const [rawPdfText, setRawPdfText] = useState<string>("");
+  const [showDebug, setShowDebug] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const handlePDFUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -57,13 +65,23 @@ const Step1DataImport = ({
     }
 
     setIsProcessing(true);
+    setParseError(null);
+    setRawPdfText("");
+    
     try {
       const result = await parsePronoteGradePDF(file);
+      
+      // Store raw text for debug
+      if (result.rawText) {
+        setRawPdfText(result.rawText);
+      }
 
       if (result.students.length === 0) {
+        setParseError("Aucun élève détecté dans le fichier. Le format du PDF n'a peut-être pas été reconnu.");
+        setShowDebug(true);
         toast({
           title: "Aucun élève détecté",
-          description: "Impossible d'extraire les données du PDF. Essayez la saisie manuelle.",
+          description: "Impossible d'extraire les données du PDF. Consultez le mode debug ou essayez la saisie manuelle.",
           variant: "destructive",
         });
       } else {
@@ -78,9 +96,10 @@ const Step1DataImport = ({
       }
     } catch (error) {
       console.error("PDF parsing error:", error);
+      setParseError(error instanceof Error ? error.message : "Erreur inconnue lors du parsing");
       toast({
         title: "Erreur de lecture",
-        description: "Impossible de lire le fichier PDF. Essayez la saisie manuelle.",
+        description: "Impossible de lire le fichier PDF. Vérifiez qu'il n'est pas protégé.",
         variant: "destructive",
       });
     } finally {
@@ -127,6 +146,8 @@ const Step1DataImport = ({
   const handleClearAll = () => {
     onStudentsChange([]);
     onClassMetadataChange(null);
+    setRawPdfText("");
+    setParseError(null);
   };
 
   const getAverageBadgeVariant = (average: number | null) => {
@@ -270,6 +291,60 @@ const Step1DataImport = ({
                   </Button>
                 </label>
               </div>
+              
+              {/* Parse error message */}
+              {parseError && students.length === 0 && (
+                <div className="mt-6 p-6 bg-warning/10 border border-warning/30 rounded-xl">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-1">
+                          Impossible de parser automatiquement ce fichier
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {parseError}
+                        </p>
+                      </div>
+                      <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                        <li>Vérifiez que le PDF a été exporté depuis PRONOTE <strong>sans protection</strong></li>
+                        <li>Assurez-vous d'avoir choisi "Le service sélectionné" dans les données à imprimer</li>
+                        <li>Réessayez avec un autre fichier ou utilisez la saisie manuelle</li>
+                      </ul>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setActiveTab("manual")}
+                      >
+                        <Edit3 className="w-4 h-4 mr-2" />
+                        Passer à la saisie manuelle
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Debug mode */}
+              {rawPdfText && (
+                <Collapsible open={showDebug} onOpenChange={setShowDebug} className="mt-4">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground">
+                      <Bug className="w-4 h-4 mr-2" />
+                      {showDebug ? "Masquer" : "Afficher"} le texte brut extrait (debug)
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-3 p-4 bg-muted rounded-lg">
+                      <p className="text-xs text-muted-foreground mb-2">
+                        Texte extrait du PDF ({rawPdfText.length} caractères) :
+                      </p>
+                      <pre className="text-xs font-mono whitespace-pre-wrap overflow-auto max-h-60 text-foreground/80">
+                        {rawPdfText}
+                      </pre>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </TabsContent>
 
             <TabsContent value="manual" className="mt-6 space-y-4">
