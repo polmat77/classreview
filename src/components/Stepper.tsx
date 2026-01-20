@@ -9,6 +9,7 @@ interface Step {
 interface StepperProps {
   currentStep: number;
   steps?: Step[];
+  onStepClick?: (stepId: number) => void;
 }
 
 const defaultSteps: Step[] = [
@@ -18,18 +19,26 @@ const defaultSteps: Step[] = [
   { id: 4, label: 'Bilan' },
 ];
 
-export function Stepper({ currentStep, steps = defaultSteps }: StepperProps) {
+export function Stepper({ currentStep, steps = defaultSteps, onStepClick }: StepperProps) {
   return (
     <div className="flex items-center justify-center gap-0 py-4 px-6 bg-card rounded-xl shadow-sm border">
       {steps.map((step, index) => (
         <div key={step.id} className="flex items-center">
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onStepClick?.(step.id)}
+            className={cn(
+              "flex items-center gap-2 group cursor-pointer transition-opacity hover:opacity-80",
+              !onStepClick && "cursor-default"
+            )}
+          >
             <div
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
                 currentStep > step.id && "bg-gold text-navy",
                 currentStep === step.id && "bg-card text-gold border-[3px] border-gold shadow-[0_0_0_4px_hsl(var(--gold)/0.2)]",
-                currentStep < step.id && "bg-muted text-muted-foreground"
+                currentStep < step.id && "bg-muted text-muted-foreground",
+                onStepClick && "group-hover:scale-105"
               )}
             >
               {currentStep > step.id ? (
@@ -41,12 +50,13 @@ export function Stepper({ currentStep, steps = defaultSteps }: StepperProps) {
             <span
               className={cn(
                 "text-sm font-medium mr-4 transition-colors",
-                currentStep >= step.id ? "text-foreground" : "text-muted-foreground"
+                currentStep >= step.id ? "text-foreground" : "text-muted-foreground",
+                onStepClick && "group-hover:text-gold"
               )}
             >
               {step.label}
             </span>
-          </div>
+          </button>
           {index < steps.length - 1 && (
             <div
               className={cn(

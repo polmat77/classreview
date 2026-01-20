@@ -103,6 +103,13 @@ const Index = () => {
     }
   };
 
+  const handleStepClick = (stepId: number) => {
+    const tabValue = tabs[stepId - 1]?.value;
+    if (tabValue) {
+      setActiveTab(tabValue);
+    }
+  };
+
   return (
     <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
       {/* Stepper */}
@@ -110,6 +117,7 @@ const Index = () => {
         <Stepper 
           currentStep={getStepNumber()} 
           steps={tabs.map((tab, index) => ({ id: index + 1, label: tab.label }))}
+          onStepClick={handleStepClick}
         />
       </div>
 
