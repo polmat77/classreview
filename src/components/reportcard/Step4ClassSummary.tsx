@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Student,
   ClassSummary,
@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface Step4ClassSummaryProps {
   students: Student[];
@@ -51,6 +52,45 @@ const Step4ClassSummary = ({
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Calculate grade distribution
+  const gradeDistribution = useMemo(() => {
+    const ranges = [
+      { label: "0-5", min: 0, max: 5, color: "hsl(var(--destructive))" },
+      { label: "5-8", min: 5, max: 8, color: "hsl(var(--destructive))" },
+      { label: "8-10", min: 8, max: 10, color: "hsl(var(--warning))" },
+      { label: "10-12", min: 10, max: 12, color: "hsl(var(--warning))" },
+      { label: "12-14", min: 12, max: 14, color: "hsl(var(--primary))" },
+      { label: "14-16", min: 14, max: 16, color: "hsl(var(--success))" },
+      { label: "16-18", min: 16, max: 18, color: "hsl(var(--success))" },
+      { label: "18-20", min: 18, max: 20, color: "hsl(var(--success))" },
+    ];
+
+    return ranges.map(range => ({
+      ...range,
+      count: students.filter(s => 
+        s.average !== null && s.average >= range.min && s.average < (range.max === 20 ? 21 : range.max)
+      ).length,
+    }));
+  }, [students]);
+
+  // Calculate class stats
+  const classStats = useMemo(() => {
+    const studentsWithGrades = students.filter(s => s.average !== null);
+    const averageGrade = studentsWithGrades.length > 0
+      ? studentsWithGrades.reduce((sum, s) => sum + (s.average || 0), 0) / studentsWithGrades.length
+      : 0;
+    
+    const aboveAverage = studentsWithGrades.filter(s => (s.average || 0) >= 10).length;
+    const belowAverage = studentsWithGrades.filter(s => (s.average || 0) < 10).length;
+    
+    return {
+      totalStudents: students.length,
+      averageGrade,
+      aboveAverage,
+      belowAverage,
+    };
+  }, [students]);
 
   const handleOptionChange = (
     category: "workLevel" | "behavior" | "participation" | "progression",
@@ -84,17 +124,13 @@ const Step4ClassSummary = ({
     setIsGenerating(true);
 
     try {
-      const classStats = {
-        totalStudents: students.length,
-        averageGrade:
-          students.filter((s) => s.average !== null).reduce((sum, s) => sum + (s.average || 0), 0) /
-            students.filter((s) => s.average !== null).length || 0,
-      };
-
       const { data, error } = await supabase.functions.invoke("generate-reportcard-summary", {
         body: {
           options: classSummary.options,
-          classStats,
+          classStats: {
+            totalStudents: classStats.totalStudents,
+            averageGrade: classStats.averageGrade,
+          },
           labels: {
             workLevel: workLevelLabels[classSummary.options.workLevel!],
             behavior: behaviorLabels[classSummary.options.behavior!],
@@ -191,6 +227,65 @@ const Step4ClassSummary = ({
           Sélectionnez les caractéristiques de la classe pour générer le bilan
         </p>
       </div>
+
+      {/* Class stats and distribution */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Statistiques de la classe</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Stats badges */}
+          <div className="flex flex-wrap gap-3">
+            <Badge variant="outline" className="text-sm px-3 py-1">
+              {classStats.totalStudents} élèves
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 py-1 bg-primary/10 text-primary border-primary/30">
+              Moyenne : {classStats.averageGrade.toFixed(2)}/20
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 py-1 bg-success/10 text-success border-success/30">
+              ≥ 10 : {classStats.aboveAverage} élèves
+            </Badge>
+            <Badge variant="outline" className="text-sm px-3 py-1 bg-destructive/10 text-destructive border-destructive/30">
+              &lt; 10 : {classStats.belowAverage} élèves
+            </Badge>
+          </div>
+
+          {/* Grade distribution chart */}
+          <div className="h-[150px] mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={gradeDistribution} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <XAxis 
+                  dataKey="label" 
+                  tick={{ fontSize: 11 }} 
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  tick={{ fontSize: 11 }} 
+                  tickLine={false}
+                  axisLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [`${value} élève${value > 1 ? "s" : ""}`, "Nombre"]}
+                  labelFormatter={(label) => `Moyenne ${label}`}
+                  contentStyle={{ 
+                    backgroundColor: "hsl(var(--card))", 
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                    fontSize: "12px"
+                  }}
+                />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {gradeDistribution.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Category selectors */}
       <div className="grid md:grid-cols-2 gap-4">

@@ -3,8 +3,6 @@ import { Student, StudentObservations, SpecificObservation } from "@/types/repor
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight, Plus, X, AlertTriangle, MessageCircle, Lightbulb, CheckCircle2 } from "lucide-react";
@@ -18,6 +16,17 @@ interface Step2ObservationsProps {
   onBack: () => void;
 }
 
+const QUICK_OBSERVATIONS = [
+  "fait des efforts",
+  "très passif",
+  "souvent en retard",
+  "excellente progression",
+  "manque de travail personnel",
+  "très investi à l'oral",
+  "distrait",
+  "travail irrégulier",
+];
+
 const Step2Observations = ({
   students,
   observations,
@@ -28,27 +37,32 @@ const Step2Observations = ({
   const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(1);
   
-  // Temporary states for each question
-  const [behaviorIds, setBehaviorIds] = useState(
-    observations.behavior?.studentIds.join(", ") || ""
+  // State for clickable chips
+  const [selectedBehaviorIds, setSelectedBehaviorIds] = useState<number[]>(
+    observations.behavior?.studentIds || []
   );
   const [behaviorDesc, setBehaviorDesc] = useState(
     observations.behavior?.description || ""
   );
-  const [talkativeIds, setTalkativeIds] = useState(
-    observations.talkative?.studentIds.join(", ") || ""
+  const [selectedTalkativeIds, setSelectedTalkativeIds] = useState<number[]>(
+    observations.talkative?.studentIds || []
   );
   const [specificList, setSpecificList] = useState<SpecificObservation[]>(
     observations.specific || []
   );
-  const [newSpecificId, setNewSpecificId] = useState("");
+  const [selectedSpecificId, setSelectedSpecificId] = useState<number | null>(null);
   const [newSpecificObs, setNewSpecificObs] = useState("");
 
-  const parseStudentIds = (input: string): number[] => {
-    return input
-      .split(/[,;]/)
-      .map((s) => parseInt(s.trim()))
-      .filter((n) => !isNaN(n) && n >= 1 && n <= students.length);
+  const toggleStudentSelection = (
+    studentId: number,
+    selectedIds: number[],
+    setSelectedIds: React.Dispatch<React.SetStateAction<number[]>>
+  ) => {
+    if (selectedIds.includes(studentId)) {
+      setSelectedIds(selectedIds.filter(id => id !== studentId));
+    } else {
+      setSelectedIds([...selectedIds, studentId]);
+    }
   };
 
   const getStudentName = (id: number): string => {
@@ -56,82 +70,84 @@ const Step2Observations = ({
     return student ? `${student.lastName} ${student.firstName}` : `Élève ${id}`;
   };
 
+  const getAverageBadgeClass = (average: number | null): string => {
+    if (average === null) return "bg-muted text-muted-foreground";
+    if (average < 10) return "bg-destructive/10 text-destructive border-destructive/30";
+    if (average < 14) return "bg-warning/10 text-warning border-warning/30";
+    return "bg-success/10 text-success border-success/30";
+  };
+
   const handleBehaviorSubmit = (hasIssues: boolean) => {
-    if (hasIssues) {
-      const ids = parseStudentIds(behaviorIds);
-      if (ids.length === 0) {
-        toast({
-          title: "Numéros invalides",
-          description: "Veuillez entrer des numéros d'élèves valides",
-          variant: "destructive",
-        });
-        return;
-      }
-      onObservationsChange({
-        ...observations,
-        behavior: { studentIds: ids, description: behaviorDesc },
+    if (hasIssues && selectedBehaviorIds.length === 0) {
+      toast({
+        title: "Aucun élève sélectionné",
+        description: "Cliquez sur les élèves concernés ou appuyez sur 'Aucun problème'",
+        variant: "destructive",
       });
-    } else {
-      onObservationsChange({
-        ...observations,
-        behavior: { studentIds: [], description: "" },
-      });
+      return;
     }
+    onObservationsChange({
+      ...observations,
+      behavior: hasIssues 
+        ? { studentIds: selectedBehaviorIds, description: behaviorDesc }
+        : { studentIds: [], description: "" },
+    });
     setCurrentQuestion(2);
   };
 
   const handleTalkativeSubmit = (hasTalkative: boolean) => {
-    if (hasTalkative) {
-      const ids = parseStudentIds(talkativeIds);
-      if (ids.length === 0) {
-        toast({
-          title: "Numéros invalides",
-          description: "Veuillez entrer des numéros d'élèves valides",
-          variant: "destructive",
-        });
-        return;
-      }
-      onObservationsChange({
-        ...observations,
-        talkative: { studentIds: ids },
+    if (hasTalkative && selectedTalkativeIds.length === 0) {
+      toast({
+        title: "Aucun élève sélectionné",
+        description: "Cliquez sur les élèves concernés ou appuyez sur 'Aucun bavard'",
+        variant: "destructive",
       });
-    } else {
-      onObservationsChange({
-        ...observations,
-        talkative: { studentIds: [] },
-      });
+      return;
     }
+    onObservationsChange({
+      ...observations,
+      talkative: hasTalkative 
+        ? { studentIds: selectedTalkativeIds }
+        : { studentIds: [] },
+    });
     setCurrentQuestion(3);
   };
 
-  const handleAddSpecific = () => {
-    const id = parseInt(newSpecificId);
-    if (isNaN(id) || id < 1 || id > students.length) {
+  const handleAddSpecific = (observation?: string) => {
+    if (selectedSpecificId === null) {
       toast({
-        title: "Numéro invalide",
-        description: "Veuillez entrer un numéro d'élève valide",
+        title: "Aucun élève sélectionné",
+        description: "Cliquez sur un élève dans la liste pour ajouter une observation",
         variant: "destructive",
       });
       return;
     }
-    if (!newSpecificObs.trim()) {
+    
+    const obsText = observation || newSpecificObs.trim();
+    if (!obsText) {
       toast({
         title: "Observation manquante",
-        description: "Veuillez entrer une observation",
+        description: "Entrez une observation ou cliquez sur une suggestion",
         variant: "destructive",
       });
       return;
     }
 
-    const updated = [...specificList, { studentId: id, observation: newSpecificObs.trim() }];
-    setSpecificList(updated);
-    setNewSpecificId("");
+    // Check if student already has this observation
+    const existingIndex = specificList.findIndex(
+      obs => obs.studentId === selectedSpecificId && obs.observation === obsText
+    );
+    
+    if (existingIndex === -1) {
+      setSpecificList([...specificList, { studentId: selectedSpecificId, observation: obsText }]);
+    }
+    
+    setSelectedSpecificId(null);
     setNewSpecificObs("");
   };
 
   const handleRemoveSpecific = (index: number) => {
-    const updated = specificList.filter((_, i) => i !== index);
-    setSpecificList(updated);
+    setSpecificList(specificList.filter((_, i) => i !== index));
   };
 
   const handleFinish = () => {
@@ -142,6 +158,9 @@ const Step2Observations = ({
     onNext();
   };
 
+  // Get students that already have specific observations
+  const studentsWithObservations = new Set(specificList.map(obs => obs.studentId));
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -150,7 +169,7 @@ const Step2Observations = ({
           Observations sur les élèves
         </h1>
         <p className="text-muted-foreground">
-          Question {currentQuestion} sur 3 • Ces informations personnaliseront les appréciations
+          Question {currentQuestion} sur 3 • Cliquez sur les élèves concernés
         </p>
       </div>
 
@@ -159,24 +178,42 @@ const Step2Observations = ({
         <Card className="md:col-span-1">
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Liste des élèves</CardTitle>
-            <CardDescription>Référence pour les numéros</CardDescription>
+            <CardDescription>
+              {currentQuestion === 3 
+                ? "Cliquez pour sélectionner" 
+                : "Référence"}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[400px]">
               <div className="px-4 pb-4 space-y-1">
-                {students.map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center gap-2 py-1.5 text-sm"
-                  >
-                    <Badge variant="outline" className="w-8 justify-center shrink-0">
-                      {student.id}
-                    </Badge>
-                    <span className="truncate">
-                      {student.lastName} {student.firstName}
-                    </span>
-                  </div>
-                ))}
+                {students.map((student) => {
+                  const hasObs = studentsWithObservations.has(student.id);
+                  const isSelected = selectedSpecificId === student.id;
+                  
+                  return (
+                    <div
+                      key={student.id}
+                      onClick={() => currentQuestion === 3 && setSelectedSpecificId(isSelected ? null : student.id)}
+                      className={`flex items-center gap-2 py-1.5 px-2 text-sm rounded-md transition-colors ${
+                        currentQuestion === 3 ? "cursor-pointer hover:bg-accent/50" : ""
+                      } ${isSelected ? "bg-primary/10 ring-1 ring-primary" : ""}`}
+                    >
+                      <Badge 
+                        variant="outline" 
+                        className={`w-8 justify-center shrink-0 ${getAverageBadgeClass(student.average)}`}
+                      >
+                        {student.id}
+                      </Badge>
+                      <span className="truncate flex-1">
+                        {student.lastName} {student.firstName}
+                      </span>
+                      {hasObs && (
+                        <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </ScrollArea>
           </CardContent>
@@ -202,28 +239,47 @@ const Step2Observations = ({
             {currentQuestion === 1 && (
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Numéros des élèves concernés</Label>
-                  <Input
-                    value={behaviorIds}
-                    onChange={(e) => setBehaviorIds(e.target.value)}
-                    placeholder="Ex: 3, 7, 12"
-                  />
+                  <p className="text-sm text-muted-foreground">Cliquez sur les élèves concernés :</p>
+                  <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-lg bg-muted/30">
+                    {students.map((student) => {
+                      const isSelected = selectedBehaviorIds.includes(student.id);
+                      return (
+                        <Badge
+                          key={student.id}
+                          variant={isSelected ? "destructive" : "outline"}
+                          className={`cursor-pointer transition-all hover:scale-105 ${
+                            isSelected ? "" : "hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+                          }`}
+                          onClick={() => toggleStudentSelection(student.id, selectedBehaviorIds, setSelectedBehaviorIds)}
+                        >
+                          {student.id}. {student.firstName}
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Description (facultatif)</Label>
-                  <Textarea
-                    value={behaviorDesc}
-                    onChange={(e) => setBehaviorDesc(e.target.value)}
-                    placeholder="Ex: bavardages incessants, insolence..."
-                    className="min-h-[80px]"
-                  />
-                </div>
+                
+                {selectedBehaviorIds.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Description (facultatif) :</p>
+                    <Input
+                      value={behaviorDesc}
+                      onChange={(e) => setBehaviorDesc(e.target.value)}
+                      placeholder="Ex: bavardages incessants, insolence..."
+                    />
+                  </div>
+                )}
+                
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => handleBehaviorSubmit(false)} className="flex-1">
                     Aucun problème
                   </Button>
-                  <Button onClick={() => handleBehaviorSubmit(true)} className="flex-1">
-                    Valider
+                  <Button 
+                    onClick={() => handleBehaviorSubmit(true)} 
+                    className="flex-1"
+                    disabled={selectedBehaviorIds.length === 0}
+                  >
+                    Valider ({selectedBehaviorIds.length})
                   </Button>
                 </div>
               </CardContent>
@@ -263,19 +319,38 @@ const Step2Observations = ({
             {currentQuestion === 2 && (
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Numéros des élèves concernés</Label>
-                  <Input
-                    value={talkativeIds}
-                    onChange={(e) => setTalkativeIds(e.target.value)}
-                    placeholder="Ex: 2, 5, 8, 15"
-                  />
+                  <p className="text-sm text-muted-foreground">Cliquez sur les élèves concernés :</p>
+                  <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto p-2 border rounded-lg bg-muted/30">
+                    {students.map((student) => {
+                      const isSelected = selectedTalkativeIds.includes(student.id);
+                      return (
+                        <Badge
+                          key={student.id}
+                          variant={isSelected ? "default" : "outline"}
+                          className={`cursor-pointer transition-all hover:scale-105 ${
+                            isSelected 
+                              ? "bg-warning text-warning-foreground hover:bg-warning/90" 
+                              : "hover:bg-warning/10 hover:text-warning hover:border-warning"
+                          }`}
+                          onClick={() => toggleStudentSelection(student.id, selectedTalkativeIds, setSelectedTalkativeIds)}
+                        >
+                          {student.id}. {student.firstName}
+                        </Badge>
+                      );
+                    })}
+                  </div>
                 </div>
+                
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => handleTalkativeSubmit(false)} className="flex-1">
                     Aucun bavard
                   </Button>
-                  <Button onClick={() => handleTalkativeSubmit(true)} className="flex-1">
-                    Valider
+                  <Button 
+                    onClick={() => handleTalkativeSubmit(true)} 
+                    className="flex-1"
+                    disabled={selectedTalkativeIds.length === 0}
+                  >
+                    Valider ({selectedTalkativeIds.length})
                   </Button>
                 </div>
               </CardContent>
@@ -307,16 +382,51 @@ const Step2Observations = ({
                 <div>
                   <CardTitle className="text-lg">Observations spécifiques</CardTitle>
                   <CardDescription>
-                    As-tu des observations spécifiques pour certains élèves ?
+                    Sélectionnez un élève dans la liste, puis ajoutez une observation
                   </CardDescription>
                 </div>
               </div>
             </CardHeader>
             {currentQuestion === 3 && (
               <CardContent className="space-y-4">
+                {/* Quick observation buttons */}
+                {selectedSpecificId !== null && (
+                  <div className="space-y-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="text-sm font-medium">
+                      Élève sélectionné : <span className="text-primary">{getStudentName(selectedSpecificId)}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">Cliquez sur une suggestion ou tapez une observation :</p>
+                    <div className="flex flex-wrap gap-2">
+                      {QUICK_OBSERVATIONS.map((obs) => (
+                        <Badge
+                          key={obs}
+                          variant="outline"
+                          className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                          onClick={() => handleAddSpecific(obs)}
+                        >
+                          {obs}
+                        </Badge>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <Input
+                        value={newSpecificObs}
+                        onChange={(e) => setNewSpecificObs(e.target.value)}
+                        placeholder="Ou entrez une observation personnalisée..."
+                        onKeyDown={(e) => e.key === "Enter" && handleAddSpecific()}
+                        className="flex-1"
+                      />
+                      <Button size="sm" onClick={() => handleAddSpecific()}>
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Added observations */}
                 {specificList.length > 0 && (
                   <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Observations ajoutées :</p>
                     {specificList.map((obs, index) => (
                       <div key={index} className="flex items-start gap-2 p-3 bg-muted/50 rounded-lg">
                         <Badge variant="outline" className="shrink-0 mt-0.5">
@@ -336,33 +446,15 @@ const Step2Observations = ({
                   </div>
                 )}
 
-                {/* Add new observation */}
-                <div className="space-y-3 p-4 border border-dashed rounded-lg">
-                  <div className="flex gap-3">
-                    <div className="w-20">
-                      <Input
-                        value={newSpecificId}
-                        onChange={(e) => setNewSpecificId(e.target.value)}
-                        placeholder="N°"
-                        className="text-center"
-                      />
-                    </div>
-                    <Input
-                      value={newSpecificObs}
-                      onChange={(e) => setNewSpecificObs(e.target.value)}
-                      placeholder="Ex: fait des efforts, très passif, excellente progression..."
-                      className="flex-1"
-                    />
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleAddSpecific} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Ajouter cette observation
-                  </Button>
-                </div>
+                {selectedSpecificId === null && specificList.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    👈 Cliquez sur un élève dans la liste pour ajouter une observation
+                  </p>
+                )}
 
                 <Button onClick={handleFinish} className="w-full">
                   <CheckCircle2 className="w-4 h-4 mr-2" />
-                  {specificList.length === 0 ? "Aucune observation supplémentaire" : "Valider les observations"}
+                  {specificList.length === 0 ? "Aucune observation supplémentaire" : `Valider (${specificList.length} observation${specificList.length > 1 ? "s" : ""})`}
                 </Button>
               </CardContent>
             )}
