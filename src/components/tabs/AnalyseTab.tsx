@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BarChart3, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,14 @@ import { useToast } from "@/hooks/use-toast";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
+
+// New components
+import KPICards from "@/components/analysis/KPICards";
+import TopStudents from "@/components/analysis/TopStudents";
+import StudentsMonitoring from "@/components/analysis/StudentsMonitoring";
+import SubjectAnalysis from "@/components/analysis/SubjectAnalysis";
+import AIRecommendations from "@/components/analysis/AIRecommendations";
+import { getSubjectAverages } from "@/utils/statisticsCalculations";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -118,77 +126,49 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   }
 
   // STATE B: File loaded - Show analysis dashboard
-  const eleves = data?.bulletinsEleves || [];
-  
-  const classAverage = eleves.length > 0
-    ? eleves.reduce((sum, eleve) => {
-        const moyEleve = eleve.matieres.reduce((s, m) => s + m.moyenneEleve, 0) / eleve.matieres.length;
-        return sum + moyEleve;
-      }, 0) / eleves.length
-    : classeCSV?.statistiques.moyenneClasse || 0;
-
-  const previousAverage = classeCSV?.statistiques.moyenneClasse || classAverage;
-  const trend = classAverage > previousAverage ? "up" : classAverage < previousAverage ? "down" : "stable";
-
-  const gradeDistribution = classeCSV ? [
+  const gradeDistribution = [
     { 
       name: "Excellent (≥16)", 
-      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 16).length,
+      value: classeCSV.eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale >= 16).length,
       color: "hsl(var(--success))" 
     },
     { 
       name: "Très bien (14-16)", 
-      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 14 && e.moyenneGenerale < 16).length,
-      color: "hsl(var(--success-light))" 
+      value: classeCSV.eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale >= 14 && e.moyenneGenerale < 16).length,
+      color: "hsl(142 71% 45%)" 
     },
     { 
       name: "Bien (12-14)", 
-      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 12 && e.moyenneGenerale < 14).length,
+      value: classeCSV.eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale >= 12 && e.moyenneGenerale < 14).length,
       color: "hsl(var(--accent))" 
     },
     { 
       name: "Moyen (10-12)", 
-      value: classeCSV.eleves.filter(e => e.moyenneGenerale >= 10 && e.moyenneGenerale < 12).length,
+      value: classeCSV.eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale >= 10 && e.moyenneGenerale < 12).length,
       color: "hsl(var(--warning))" 
     },
     { 
       name: "Insuffisant (<10)", 
-      value: classeCSV.eleves.filter(e => e.moyenneGenerale < 10).length,
+      value: classeCSV.eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale < 10).length,
       color: "hsl(var(--destructive))" 
     },
-  ] : [];
+  ].filter(d => d.value > 0);
 
-  const subjectAverages = classeCSV?.matieres.map(matiere => {
-    const notes = classeCSV.eleves
-      .map(e => e.moyennesParMatiere[matiere])
-      .filter(n => n !== undefined);
-    const avg = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
-    return {
-      subject: matiere.split(' ')[0],
-      average: avg,
-      previous: avg,
-    };
-  }).slice(0, 6) || [];
-
-  const top3Eleves = classeCSV?.eleves
-    .map(e => ({ nom: e.nom, moyenne: e.moyenneGenerale }))
-    .sort((a, b) => b.moyenne - a.moyenne)
-    .slice(0, 3) || [];
-
-  const elevesAuDessusDe10 = classeCSV?.eleves.filter(e => e.moyenneGenerale >= 10).length || 0;
-  const elevesEnDessousDe10 = classeCSV?.eleves.filter(e => e.moyenneGenerale < 10).length || 0;
-  const totalEleves = classeCSV?.eleves.length || 0;
+  const subjectAverages = getSubjectAverages(classeCSV).slice(0, 8).map(s => ({
+    subject: s.name.length > 12 ? s.name.substring(0, 12) + '…' : s.name,
+    average: s.currentAvg,
+  }));
 
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header with file action buttons */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <BarChart3 className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground">Analyse des résultats de la classe</h2>
+            <h2 className="text-2xl font-bold text-foreground">Analyse des résultats</h2>
             <p className="text-muted-foreground">
               {classeCSV.statistiques.totalEleves} élèves • {classeCSV.matieres.length} matières
             </p>
@@ -207,56 +187,10 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         </div>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="bg-gradient-primary text-primary-foreground">
-          <CardHeader>
-            <CardDescription className="text-primary-foreground/80">Moyenne générale</CardDescription>
-            <CardTitle className="text-4xl font-bold">{classAverage.toFixed(2)}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2 text-sm">
-              {trend === "up" && <TrendingUp className="h-4 w-4" />}
-              {trend === "down" && <TrendingDown className="h-4 w-4" />}
-              {trend === "stable" && <Minus className="h-4 w-4" />}
-              <span>
-                {trend === "up" && "+"}
-                {(classAverage - previousAverage).toFixed(2)} par rapport au T1
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+      {/* KPI Cards */}
+      <KPICards eleves={classeCSV.eleves} />
 
-        <Card>
-          <CardHeader>
-            <CardDescription>Élèves au-dessus de 10</CardDescription>
-            <CardTitle className="text-4xl font-bold text-success">
-              {elevesAuDessusDe10}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {totalEleves > 0 ? Math.round((elevesAuDessusDe10 / totalEleves) * 100) : 0}% de la classe
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardDescription>Élèves en dessous de 10</CardDescription>
-            <CardTitle className="text-4xl font-bold text-warning">
-              {elevesEnDessousDe10}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {totalEleves > 0 ? Math.round((elevesEnDessousDe10 / totalEleves) * 100) : 0}% de la classe
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts */}
+      {/* Charts Row */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -264,15 +198,15 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
             <CardDescription>Distribution des élèves par niveau</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <PieChart>
                 <Pie
                   data={gradeDistribution}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
+                  label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                  outerRadius={90}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -290,54 +224,45 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         <Card>
           <CardHeader>
             <CardTitle>Moyennes par matière</CardTitle>
-            <CardDescription>Comparaison avec le trimestre précédent</CardDescription>
+            <CardDescription>Résultats des principales matières</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={subjectAverages}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={subjectAverages} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="subject" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, 20]} />
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, 20]} />
+                <YAxis type="category" dataKey="subject" stroke="hsl(var(--muted-foreground))" fontSize={11} width={100} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "var(--radius)",
                   }}
+                  formatter={(value: number) => [value.toFixed(2), 'Moyenne']}
                 />
-                <Bar dataKey="average" fill="hsl(var(--primary))" name="Actuel" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="previous" fill="hsl(var(--muted))" name="Précédent" radius={[8, 8, 0, 0]} />
+                <Bar 
+                  dataKey="average" 
+                  fill="hsl(var(--primary))" 
+                  radius={[0, 4, 4, 0]}
+                  barSize={20}
+                />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Top 3 */}
-      <Card className="bg-muted/30">
-        <CardHeader>
-          <CardTitle className="text-base">Top 3 élèves</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            {top3Eleves.map((eleve, index) => (
-              <div key={index} className="flex items-center justify-between rounded-lg border bg-card p-3">
-                <span className="font-medium">
-                  {index === 0 ? '🏆' : index === 1 ? '🥈' : '🥉'} {eleve.nom}
-                </span>
-                <span className="text-lg font-bold text-success">
-                  {eleve.moyenne.toFixed(2)}
-                </span>
-              </div>
-            ))}
-            {top3Eleves.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                Aucune donnée disponible.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Subject Analysis */}
+      <SubjectAnalysis classeCSV={classeCSV} />
+
+      {/* Two columns: Top Students + Students Monitoring */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <TopStudents eleves={classeCSV.eleves} />
+        <StudentsMonitoring eleves={classeCSV.eleves} />
+      </div>
+
+      {/* AI Recommendations */}
+      <AIRecommendations classeCSV={classeCSV} />
 
       <div className="flex justify-end">
         <Button onClick={onNext} size="lg">
