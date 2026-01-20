@@ -10,7 +10,8 @@ import {
   Shield,
   HelpCircle,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Home
 } from 'lucide-react';
 import logo from "@/assets/logo.png";
 import { Button } from '@/components/ui/button';
@@ -100,19 +101,45 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
           isCollapsed ? "w-20" : "w-[280px]"
         )}
       >
-        {/* Logo Section - seamlessly blended into navy background */}
-        <div className={cn(
-          "flex-shrink-0 flex items-center justify-center py-5 animate-slide-in-left",
-          isCollapsed ? "px-2" : "px-4"
-        )}>
+        {/* Logo Section - clickable to go back to landing page */}
+        <Link 
+          to="/"
+          className={cn(
+            "flex-shrink-0 flex items-center justify-center py-5 animate-slide-in-left group",
+            isCollapsed ? "px-2" : "px-4"
+          )}
+        >
           <img 
             src={logo} 
             alt="ClassCouncil AI" 
             className={cn(
-              "object-contain transition-all duration-300 hover:scale-105",
+              "object-contain transition-all duration-300 group-hover:scale-105",
               isCollapsed ? "h-12 w-12" : "w-full max-w-[240px] h-auto"
             )}
           />
+        </Link>
+
+        {/* Back to AIProject4You link */}
+        <div className="px-3 mb-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link
+                to="/"
+                className={cn(
+                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
+                  "text-gold/80 hover:bg-gold/10 hover:text-gold border border-gold/30 hover:border-gold/50"
+                )}
+              >
+                <Home className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium">Retour à AIProject4You</span>}
+              </Link>
+            </TooltipTrigger>
+            {isCollapsed && (
+              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+                Retour à AIProject4You
+              </TooltipContent>
+            )}
+          </Tooltip>
         </div>
 
         {/* Separator */}
