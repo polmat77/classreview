@@ -69,17 +69,17 @@ All colors MUST be HSL.
     --gold-light: 45 85% 72%;
     --gold-foreground: 215 50% 20%;
 
-    /* Navy for sidebar - matches logo outer blue */
-    --navy: 212 38% 28%;
-    --navy-light: 212 35% 35%;
-    --navy-dark: 212 42% 22%;
+    /* Navy for sidebar - exact match with logo outer edge #192D43 */
+    --navy: 212 46% 18%;
+    --navy-light: 212 42% 25%;
+    --navy-dark: 212 50% 14%;
 
     /* Custom gradients */
     --gradient-primary: linear-gradient(135deg, hsl(215 85% 35%) 0%, hsl(215 85% 50%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(145 65% 42%) 0%, hsl(145 65% 55%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(215 85% 35%) 0%, hsl(205 90% 55%) 100%);
     --gradient-gold: linear-gradient(135deg, hsl(42 75% 55%) 0%, hsl(45 85% 72%) 100%);
-    --gradient-navy: linear-gradient(180deg, hsl(212 38% 28%) 0%, hsl(212 42% 22%) 100%);
+    --gradient-navy: linear-gradient(180deg, hsl(212 46% 18%) 0%, hsl(212 50% 14%) 100%);
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsl(215 25% 15% / 0.05);
@@ -95,13 +95,13 @@ All colors MUST be HSL.
     --sidebar-width: 280px;
     --sidebar-width-collapsed: 80px;
 
-    --sidebar-background: 212 38% 28%;
+    --sidebar-background: 212 46% 18%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 42 75% 55%;
     --sidebar-primary-foreground: 215 50% 20%;
-    --sidebar-accent: 212 35% 35%;
+    --sidebar-accent: 212 42% 25%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 212 38% 32%;
+    --sidebar-border: 212 46% 22%;
     --sidebar-ring: 42 75% 55%;
   }
 
@@ -148,28 +148,28 @@ All colors MUST be HSL.
     --gold-light: 45 85% 75%;
     --gold-foreground: 0 0% 100%;
 
-    --navy: 212 38% 22%;
-    --navy-light: 212 35% 28%;
-    --navy-dark: 212 42% 16%;
+    --navy: 212 46% 14%;
+    --navy-light: 212 42% 20%;
+    --navy-dark: 212 50% 10%;
 
     --gradient-primary: linear-gradient(135deg, hsl(215 85% 45%) 0%, hsl(215 85% 60%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(145 65% 50%) 0%, hsl(145 65% 65%) 100%);
     --gradient-hero: linear-gradient(135deg, hsl(215 85% 45%) 0%, hsl(205 90% 60%) 100%);
     --gradient-gold: linear-gradient(135deg, hsl(42 75% 60%) 0%, hsl(45 85% 75%) 100%);
-    --gradient-navy: linear-gradient(180deg, hsl(212 38% 22%) 0%, hsl(212 42% 16%) 100%);
+    --gradient-navy: linear-gradient(180deg, hsl(212 46% 14%) 0%, hsl(212 50% 10%) 100%);
 
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 10px 10px -5px hsl(0 0% 0% / 0.2);
 
-    --sidebar-background: 212 38% 22%;
+    --sidebar-background: 212 46% 14%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 42 75% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 212 35% 28%;
+    --sidebar-accent: 212 42% 20%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 212 38% 25%;
+    --sidebar-border: 212 46% 18%;
     --sidebar-ring: 42 75% 60%;
   }
 }
