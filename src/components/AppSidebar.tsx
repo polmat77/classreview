@@ -102,36 +102,24 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex flex-col items-center pt-6 pb-4 animate-slide-in-left",
-          isCollapsed ? "px-2" : "px-4"
+          "flex-shrink-0 flex items-center justify-center pt-6 pb-4 animate-slide-in-left",
+          isCollapsed ? "px-2" : "px-5"
         )}>
-          <div className="bg-white/10 rounded-2xl p-3 mb-3 hover:bg-white/15 hover:scale-105 transition-all duration-300">
-            <img 
-              src={logo} 
-              alt="ClassCouncil AI Logo" 
-              className={cn(
-                "object-contain drop-shadow-lg transition-all duration-300",
-                isCollapsed ? "h-10 w-10" : "h-20 w-20"
-              )}
-            />
-          </div>
-          {!isCollapsed && (
-            <div className="text-center">
-              <h1 className="text-xl font-bold text-white leading-tight">
-                ClassCouncil
-                <span className="ml-1.5 inline-block bg-gradient-to-r from-gold to-gold-light text-navy px-2 py-0.5 rounded text-sm font-bold">
-                  AI
-                </span>
-              </h1>
-            </div>
-          )}
+          <img 
+            src={logo} 
+            alt="ClassCouncil AI" 
+            className={cn(
+              "object-contain drop-shadow-lg transition-all duration-300 hover:scale-105",
+              isCollapsed ? "h-12 w-12" : "w-full max-w-[200px] h-auto"
+            )}
+          />
         </div>
 
         {/* Separator */}
         <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4" />
 
         {/* Main Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
           {!isCollapsed && (
             <p className="text-[11px] uppercase tracking-wider text-white/50 px-3 mb-2 font-medium">
               Navigation
