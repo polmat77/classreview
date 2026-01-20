@@ -297,29 +297,47 @@ const LandingPage = () => {
               </CardContent>
             </Card>
 
-            {/* Outil à venir */}
-            <Card className="bg-card border-border/50 relative overflow-hidden opacity-80">
+            {/* ReportCard AI - Disponible */}
+            <Card className="bg-card border-2 border-accent/20 relative overflow-hidden group hover:shadow-lg transition-all">
               <div className="absolute top-4 right-4">
-                <Badge variant="secondary" className="bg-warning/10 text-warning border-warning/20">
-                  🔜 Bientôt
+                <Badge className="bg-success text-success-foreground">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Disponible
                 </Badge>
               </div>
               <CardHeader>
-                <div className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mb-4">
-                  <FlaskConical className="w-7 h-7 text-muted-foreground" />
+                <div className="w-14 h-14 rounded-xl bg-accent/10 flex items-center justify-center mb-4">
+                  <FileText className="w-7 h-7 text-accent" />
                 </div>
-                <CardTitle className="text-xl text-muted-foreground">Prochain outil</CardTitle>
+                <CardTitle className="text-xl">ReportCard AI</CardTitle>
                 <CardDescription>
-                  En cours de développement
+                  Générez vos appréciations en quelques clics
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  De nouveaux outils sont en développement pour vous simplifier la vie. Restez informé des nouveautés.
+                  Importez vos données, répondez à 3 questions sur vos élèves, et laissez l'IA générer des appréciations personnalisées.
                 </p>
-                <Button variant="outline" className="w-full" disabled>
-                  Bientôt disponible
-                </Button>
+                <ul className="space-y-2 text-sm">
+                  {[
+                    "Import PDF PRONOTE ou saisie manuelle",
+                    "3 questions pour personnaliser",
+                    "Appréciations 300-400 caractères",
+                    "Bilan de classe automatique",
+                    "Export texte complet"
+                  ].map((feature, i) => (
+                    <li key={i} className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Link to="/reportcard-ai">
+                  <Button variant="outline" className="w-full mt-4 group-hover:bg-accent/10 group-hover:border-accent">
+                    Essayer ReportCard AI
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 
