@@ -20,15 +20,16 @@ interface MatieresTabProps {
     bulletinClasse?: BulletinClasseData;
     bulletinsEleves?: BulletinEleveData[];
     classeCSV?: ClasseDataCSV;
+    generalAppreciation?: string;
   };
-  onDataLoaded?: (data: { bulletinClasse?: BulletinClasseData | null }) => void;
+  onDataLoaded?: (data: { bulletinClasse?: BulletinClasseData | null; generalAppreciation?: string | null }) => void;
 }
 
 const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
-  const [generalText, setGeneralText] = useState("");
+  const [generalText, setGeneralText] = useState(data?.generalAppreciation || "");
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
   const [classTone, setClassTone] = useState<AppreciationTone>('standard');
   const [currentFileName, setCurrentFileName] = useState<string>("");
@@ -80,6 +81,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
             
             if (!error && result?.appreciation) {
               setGeneralText(result.appreciation);
+              onDataLoaded?.({ generalAppreciation: result.appreciation });
               toast({ title: "✓ Appréciation générée", description: "L'appréciation générale a été générée automatiquement." });
             }
           } catch (err) {
@@ -138,6 +140,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     try {
       const appreciation = await generateAppreciation();
       setGeneralText(appreciation);
+      onDataLoaded?.({ generalAppreciation: appreciation });
       toast({ title: "Appréciation générée", description: "L'appréciation générale a été générée avec succès." });
     } catch (error) {
       console.error('Error generating general appreciation:', error);
@@ -239,7 +242,10 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           <div className="space-y-3">
             <Textarea
               value={generalText}
-              onChange={(e) => setGeneralText(e.target.value)}
+              onChange={(e) => {
+                setGeneralText(e.target.value);
+                onDataLoaded?.({ generalAppreciation: e.target.value });
+              }}
               className="min-h-[120px] resize-none"
               maxLength={255}
               placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
