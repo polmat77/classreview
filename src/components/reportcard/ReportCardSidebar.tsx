@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
   Upload,
@@ -15,8 +15,8 @@ import {
   Sparkles,
   FileSpreadsheet,
 } from 'lucide-react';
-import logo from "@/assets/logo.png";
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
@@ -53,6 +53,32 @@ const workflowSteps = [
   { id: 4, label: 'Bilan de classe', icon: BarChart3, description: 'Synthèse' },
 ];
 
+// Composant séparé pour faciliter le remplacement du logo
+const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
+  // TODO: Remplacer par le vrai logo quand disponible
+  return (
+    <div className="flex items-center gap-3">
+      <div className="relative flex-shrink-0">
+        <div className={cn(
+          "flex items-center justify-center bg-gradient-to-br from-success to-primary rounded-xl shadow-lg",
+          isCollapsed ? "w-10 h-10" : "w-12 h-12"
+        )}>
+          <FileSpreadsheet className={cn("text-white", isCollapsed ? "w-5 h-5" : "w-6 h-6")} />
+        </div>
+        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-accent rounded-full flex items-center justify-center border-2 border-navy">
+          <Sparkles className="w-2 h-2 text-white" />
+        </div>
+      </div>
+      {!isCollapsed && (
+        <div className="flex flex-col">
+          <span className="text-white font-bold text-base leading-tight">ReportCard AI</span>
+          <span className="text-white/50 text-[10px]">Génération d'appréciations</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export function ReportCardSidebar({ 
   currentStep, 
   onStepClick, 
@@ -63,7 +89,6 @@ export function ReportCardSidebar({
   onCollapsedChange,
   onReset,
 }: ReportCardSidebarProps) {
-  const location = useLocation();
 
   const isStepAccessible = (stepId: number) => {
     switch (stepId) {
@@ -106,36 +131,27 @@ export function ReportCardSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-gradient-to-b from-navy to-navy-dark text-white transition-all duration-300 overflow-hidden",
-          isCollapsed ? "w-20" : "w-[280px]"
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-gradient-to-b from-navy to-navy-dark text-white transition-all duration-300",
+          "overflow-y-auto scrollbar-hide",
+          isCollapsed ? "w-20" : "w-[260px]"
         )}
       >
         {/* Logo Section */}
-        <Link 
-          to="/"
-          className={cn(
-            "flex-shrink-0 flex items-center justify-center py-5 animate-slide-in-left group",
-            isCollapsed ? "px-2" : "px-4"
-          )}
-        >
-          <img 
-            src={logo} 
-            alt="AIProject4You" 
-            className={cn(
-              "object-contain transition-all duration-300 group-hover:scale-105",
-              isCollapsed ? "h-12 w-12" : "w-full max-w-[240px] h-auto"
-            )}
-          />
-        </Link>
+        <div className={cn(
+          "flex-shrink-0 py-4",
+          isCollapsed ? "px-3" : "px-4"
+        )}>
+          <AppLogo isCollapsed={isCollapsed} />
+        </div>
 
-        {/* Back to AIProject4You link */}
-        <div className="px-3 mb-2">
+        {/* Back to AIProject4You */}
+        <div className="px-2 mb-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 to="/"
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
                   "text-gold/80 hover:bg-gold/10 hover:text-gold border border-gold/30 hover:border-gold/50"
                 )}
               >
@@ -152,20 +168,24 @@ export function ReportCardSidebar({
         </div>
 
         {/* App Switcher */}
-        <div className="px-3 mb-4">
+        <div className="px-2 mb-3">
           <div className={cn(
-            "rounded-lg bg-success/20 border border-success/30 p-3",
+            "rounded-lg bg-success/20 border border-success/30 p-2",
             isCollapsed && "p-2"
           )}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-success to-success-light flex items-center justify-center flex-shrink-0">
-                <FileSpreadsheet className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-success to-success-light flex items-center justify-center flex-shrink-0">
+                <FileSpreadsheet className="h-4 w-4 text-white" />
               </div>
               {!isCollapsed && (
-                <div>
-                  <p className="font-semibold text-white text-sm">ReportCard AI</p>
-                  <p className="text-xs text-white/60">Actuel</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white text-xs">ReportCard AI</p>
                 </div>
+              )}
+              {!isCollapsed && (
+                <Badge className="bg-success text-white text-[10px] px-1.5 py-0.5">
+                  Actuel
+                </Badge>
               )}
             </div>
           </div>
@@ -176,7 +196,7 @@ export function ReportCardSidebar({
               <Link
                 to="/classcouncil-ai"
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 mt-2 text-sm",
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 mt-1.5 text-xs",
                   "text-white/60 hover:bg-white/10 hover:text-white"
                 )}
               >
@@ -193,12 +213,12 @@ export function ReportCardSidebar({
         </div>
 
         {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4" />
+        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-3" />
 
         {/* Workflow Steps */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+        <nav className="flex-1 px-2 py-3 space-y-0.5">
           {!isCollapsed && (
-            <p className="text-[11px] uppercase tracking-wider text-white/50 px-3 mb-3 font-medium">
+            <p className="text-[10px] uppercase tracking-wider text-white/50 px-3 mb-2 font-medium">
               Progression
             </p>
           )}
@@ -206,7 +226,6 @@ export function ReportCardSidebar({
             const isActive = currentStep === step.id;
             const isCompleted = isStepCompleted(step.id);
             const isAccessible = isStepAccessible(step.id);
-            const Icon = step.icon;
             const status = getStepStatus(step.id);
 
             const content = (
@@ -214,7 +233,7 @@ export function ReportCardSidebar({
                 onClick={() => isAccessible && onStepClick(step.id)}
                 disabled={!isAccessible}
                 className={cn(
-                  "relative flex items-center gap-3 w-full rounded-lg transition-all duration-200 text-left px-3 py-3",
+                  "relative flex items-center gap-2 w-full rounded-lg transition-all duration-200 text-left px-2 py-2",
                   isActive && "bg-primary/20",
                   !isActive && isAccessible && "hover:bg-white/10",
                   !isAccessible && "opacity-40 cursor-not-allowed"
@@ -222,15 +241,15 @@ export function ReportCardSidebar({
               >
                 {/* Step indicator */}
                 <div className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all",
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-xs",
                   isActive && "bg-primary text-white relative",
                   isCompleted && !isActive && "bg-success text-white",
                   !isActive && !isCompleted && "bg-white/10 text-white/60"
                 )}>
                   {isCompleted && !isActive ? (
-                    <Check className="h-5 w-5" />
+                    <Check className="h-4 w-4" />
                   ) : (
-                    <span className="font-semibold text-sm">{step.id}</span>
+                    <span className="font-semibold">{step.id}</span>
                   )}
                   {isActive && (
                     <div className="absolute inset-0 rounded-full border-2 border-primary animate-pulse" />
@@ -240,13 +259,13 @@ export function ReportCardSidebar({
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "font-medium text-sm truncate",
+                      "font-medium text-xs truncate",
                       isActive ? "text-white" : "text-white/80"
                     )}>
                       {step.label}
                     </p>
                     <p className={cn(
-                      "text-xs truncate",
+                      "text-[10px] truncate",
                       isActive ? "text-primary-light" : "text-white/50"
                     )}>
                       {status}
@@ -266,14 +285,14 @@ export function ReportCardSidebar({
                   <TooltipTrigger asChild>
                     <div 
                       className="animate-slide-in-left"
-                      style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+                      style={{ animationDelay: `${0.05 + index * 0.03}s` }}
                     >
                       {content}
                     </div>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="bg-navy text-white border-navy-light">
-                    <p className="font-medium">{step.label}</p>
-                    <p className="text-xs text-white/60">{status}</p>
+                    <p className="font-medium text-xs">{step.label}</p>
+                    <p className="text-[10px] text-white/60">{status}</p>
                   </TooltipContent>
                 </Tooltip>
               );
@@ -283,7 +302,7 @@ export function ReportCardSidebar({
               <div 
                 key={step.id}
                 className="animate-slide-in-left"
-                style={{ animationDelay: `${0.1 + index * 0.05}s` }}
+                style={{ animationDelay: `${0.05 + index * 0.03}s` }}
               >
                 {content}
               </div>
@@ -292,10 +311,10 @@ export function ReportCardSidebar({
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4" />
+        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-3" />
 
         {/* Secondary Navigation */}
-        <nav className="px-3 py-3 space-y-1">
+        <nav className="px-2 py-2 space-y-0.5">
           {/* New Session */}
           <AlertDialog>
             <Tooltip>
@@ -303,11 +322,11 @@ export function ReportCardSidebar({
                 <AlertDialogTrigger asChild>
                   <button
                     className={cn(
-                      "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2.5 text-sm",
+                      "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
                       "text-white/70 hover:bg-white/10 hover:text-white"
                     )}
                   >
-                    <RotateCcw className="h-5 w-5 flex-shrink-0" />
+                    <RotateCcw className="h-4 w-4 flex-shrink-0" />
                     {!isCollapsed && <span className="font-medium">Nouvelle session</span>}
                   </button>
                 </AlertDialogTrigger>
@@ -340,11 +359,11 @@ export function ReportCardSidebar({
               <Link
                 to="/politique-confidentialite"
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2.5 text-sm",
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
                   "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <Shield className="h-5 w-5 flex-shrink-0" />
+                <Shield className="h-4 w-4 flex-shrink-0" />
                 {!isCollapsed && <span className="font-medium">Confidentialité</span>}
               </Link>
             </TooltipTrigger>
@@ -360,11 +379,11 @@ export function ReportCardSidebar({
             <TooltipTrigger asChild>
               <button
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2.5 text-sm",
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
                   "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <HelpCircle className="h-5 w-5 flex-shrink-0" />
+                <HelpCircle className="h-4 w-4 flex-shrink-0" />
                 {!isCollapsed && <span className="font-medium">Aide</span>}
               </button>
             </TooltipTrigger>
@@ -376,16 +395,13 @@ export function ReportCardSidebar({
           </Tooltip>
         </nav>
 
-        {/* Spacer */}
-        <div className="flex-grow min-h-4" />
-
         {/* Footer */}
         {!isCollapsed && (
-          <div className="px-4 py-4 text-center animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
-            <span className="inline-block bg-gradient-to-r from-success to-success-light text-white px-3 py-1.5 rounded-full text-xs font-semibold mb-1">
+          <div className="px-3 py-3 text-center animate-slide-in-left" style={{ animationDelay: '0.2s' }}>
+            <span className="inline-block bg-gradient-to-r from-success to-success-light text-white px-2 py-1 rounded-full text-[10px] font-semibold mb-0.5">
               👨‍🏫 Créé par un prof
             </span>
-            <p className="text-xs text-white/50">pour les profs</p>
+            <p className="text-[10px] text-white/50">pour les profs</p>
           </div>
         )}
 
