@@ -8,18 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -28,6 +16,7 @@ import {
 import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, Download, Settings2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import ReportCardToneSelector from "./ReportCardToneSelector";
 
 interface Step3AppreciationsProps {
   students: Student[];
@@ -318,7 +307,7 @@ const Step3Appreciations = ({
             {/* Default tone */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="defaultTone">Ton par défaut</Label>
+                <Label>Ton par défaut</Label>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -330,29 +319,14 @@ const Step3Appreciations = ({
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <Select
+              <ReportCardToneSelector
                 value={appreciationSettings.defaultTone}
-                onValueChange={(value: AppreciationTone) => onAppreciationSettingsChange({
+                onChange={(value) => onAppreciationSettingsChange({
                   ...appreciationSettings,
                   defaultTone: value,
                 })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {toneOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex flex-col items-start">
-                        <span>{option.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {toneOptions.find(t => t.value === appreciationSettings.defaultTone)?.description}
-              </p>
+                showDescription
+              />
             </div>
           </div>
         </CardContent>
@@ -431,38 +405,12 @@ const Step3Appreciations = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Tone selector per student */}
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 gap-1">
-                            <Settings2 className="w-3.5 h-3.5" />
-                            <span className="text-xs">{getToneLabel(studentTone)}</span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-64" align="end">
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium">Ton pour cet élève</p>
-                            <Select
-                              value={studentTone}
-                              onValueChange={(value: AppreciationTone) => setStudentTone(student.id, value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {toneOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <p className="text-xs text-muted-foreground">
-                              {toneOptions.find(t => t.value === studentTone)?.description}
-                            </p>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                      {/* Tone selector per student - compact version */}
+                      <ReportCardToneSelector
+                        value={studentTone}
+                        onChange={(value) => setStudentTone(student.id, value)}
+                        compact
+                      />
 
                       {/* Character count badge */}
                       <Badge 
