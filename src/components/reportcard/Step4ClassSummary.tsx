@@ -4,7 +4,6 @@ import {
   ClassSummary,
   GeneratedAppreciation,
   AppreciationTone,
-  toneOptions,
   workLevelLabels,
   behaviorLabels,
   participationLabels,
@@ -44,7 +43,10 @@ import {
   TrendingUp,
   Settings2,
   Info,
+  Scissors,
+  AlertTriangle,
 } from "lucide-react";
+import ReportCardToneSelector from "./ReportCardToneSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
@@ -69,8 +71,37 @@ const Step4ClassSummary = ({
   const [copied, setCopied] = useState(false);
 
   // Default values
-  const maxCharacters = classSummary.maxCharacters || 400;
+  const maxCharacters = classSummary.maxCharacters || 350;
   const tone = classSummary.tone || 'neutre';
+  
+  // Truncate function
+  const truncateIntelligently = (text: string, maxLength: number): string => {
+    if (text.length <= maxLength) return text;
+    
+    const truncated = text.substring(0, maxLength);
+    const lastPeriod = truncated.lastIndexOf('.');
+    const lastExclamation = truncated.lastIndexOf('!');
+    const bestCut = Math.max(lastPeriod, lastExclamation);
+    
+    if (bestCut > maxLength * 0.7) {
+      return truncated.substring(0, bestCut + 1);
+    }
+    
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxLength * 0.8) {
+      return truncated.substring(0, lastSpace) + '.';
+    }
+    
+    return truncated.substring(0, maxLength - 3) + '...';
+  };
+
+  const handleTruncate = () => {
+    const truncated = truncateIntelligently(classSummary.generatedText, maxCharacters);
+    onClassSummaryChange({ ...classSummary, generatedText: truncated });
+    toast({ title: "Bilan tronqué", description: `${truncated.length}/${maxCharacters} caractères` });
+  };
+
+  const isOverLimit = classSummary.generatedText.length > maxCharacters;
 
   // Calculate grade distribution
   const gradeDistribution = useMemo(() => {
@@ -322,77 +353,83 @@ const Step4ClassSummary = ({
             <CardTitle className="text-base">Paramètres du bilan</CardTitle>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Character limit */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="maxCharactersSummary">Longueur maximale</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[280px]">
-                      <p>Adaptez selon les paramètres de votre établissement (généralement entre 200 et 400 caractères)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="maxCharactersSummary"
-                  type="number"
-                  min={150}
-                  max={600}
-                  value={maxCharacters}
-                  onChange={(e) => onClassSummaryChange({
-                    ...classSummary,
-                    maxCharacters: Math.max(150, Math.min(600, parseInt(e.target.value) || 400)),
-                  })}
-                  className="w-24"
-                />
-                <span className="text-sm text-muted-foreground">caractères</span>
-              </div>
+        <CardContent className="space-y-6">
+          {/* Character limit with presets */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="maxCharactersSummary">Longueur maximale</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[280px]">
+                    <p>Adaptez selon les paramètres de votre établissement (généralement entre 200 et 400 caractères)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-
-            {/* Tone selector */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="toneSummary">Ton du bilan</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[280px]">
-                      <p>Le ton général à utiliser pour rédiger le bilan de la classe</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Select
-                value={tone}
-                onValueChange={(value: AppreciationTone) => onClassSummaryChange({
+            <div className="flex items-center gap-2">
+              <Input
+                id="maxCharactersSummary"
+                type="number"
+                min={100}
+                max={600}
+                step={50}
+                value={maxCharacters}
+                onChange={(e) => onClassSummaryChange({
                   ...classSummary,
-                  tone: value,
+                  maxCharacters: Math.max(100, Math.min(600, parseInt(e.target.value) || 350)),
                 })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {toneOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {toneOptions.find(t => t.value === tone)?.description}
-              </p>
+                className="w-24"
+              />
+              <span className="text-sm text-muted-foreground">caractères</span>
             </div>
+            {/* Presets */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 200, label: "Court (200)" },
+                { value: 350, label: "Moyen (350)" },
+                { value: 500, label: "Long (500)" },
+              ].map((preset) => (
+                <Button
+                  key={preset.value}
+                  variant={maxCharacters === preset.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onClassSummaryChange({
+                    ...classSummary,
+                    maxCharacters: preset.value,
+                  })}
+                  className="text-xs"
+                >
+                  {preset.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tone selector with icons */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Label>Ton du bilan</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[280px]">
+                    <p>Le ton général à utiliser pour rédiger le bilan de la classe</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <ReportCardToneSelector
+              value={tone}
+              onChange={(value) => onClassSummaryChange({
+                ...classSummary,
+                tone: value,
+              })}
+            />
           </div>
         </CardContent>
       </Card>
@@ -451,14 +488,14 @@ const Step4ClassSummary = ({
 
       {/* Generated summary */}
       {classSummary.generatedText && (
-        <Card>
+        <Card className={isOverLimit ? "border-destructive" : ""}>
           <CardHeader>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle>Bilan de la classe</CardTitle>
                 <CardDescription className={getCharacterBadgeColor(classSummary.generatedText.length, maxCharacters)}>
                   {classSummary.generatedText.length}/{maxCharacters} caractères
-                  {classSummary.generatedText.length > maxCharacters && " (dépassement)"}
+                  {isOverLimit && " (dépassement)"}
                 </CardDescription>
               </div>
               <div className="flex gap-2">
@@ -477,14 +514,48 @@ const Step4ClassSummary = ({
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Progress bar */}
+            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${
+                  isOverLimit
+                    ? 'bg-destructive'
+                    : classSummary.generatedText.length > maxCharacters * 0.9
+                      ? 'bg-warning'
+                      : 'bg-success'
+                }`}
+                style={{ width: `${Math.min((classSummary.generatedText.length / maxCharacters) * 100, 100)}%` }}
+              />
+            </div>
+
             <Textarea
               value={classSummary.generatedText}
               onChange={(e) =>
                 onClassSummaryChange({ ...classSummary, generatedText: e.target.value })
               }
-              className="min-h-[150px] resize-none"
+              className={`min-h-[150px] resize-none ${isOverLimit ? "border-destructive bg-destructive/5" : ""}`}
             />
+
+            {/* Truncation warning and button */}
+            {isOverLimit && (
+              <div className="flex items-center justify-between p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm font-medium">
+                    Dépasse de {classSummary.generatedText.length - maxCharacters} caractères
+                  </span>
+                </div>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleTruncate}
+                >
+                  <Scissors className="w-4 h-4 mr-2" />
+                  Tronquer
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

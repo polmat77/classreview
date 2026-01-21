@@ -15,6 +15,27 @@ const toneInstructions: Record<AppreciationTone, string> = {
   bienveillant: "Adopte un ton chaleureux et encourageant, mets en avant le potentiel du groupe.",
 };
 
+// Helper function to truncate intelligently
+function truncateIntelligently(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  
+  const truncated = text.substring(0, maxLength);
+  const lastPeriod = truncated.lastIndexOf('.');
+  const lastExclamation = truncated.lastIndexOf('!');
+  const bestCut = Math.max(lastPeriod, lastExclamation);
+  
+  if (bestCut > maxLength * 0.7) {
+    return truncated.substring(0, bestCut + 1);
+  }
+  
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.8) {
+    return truncated.substring(0, lastSpace) + '.';
+  }
+  
+  return truncated.substring(0, maxLength - 3) + '...';
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -27,6 +48,10 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
+
+    // Calculate target with safety margin
+    const targetChars = Math.floor(maxCharacters * 0.85);
+    const minChars = Math.floor(maxCharacters * 0.6);
 
     // Determine overall class tone
     const positiveIndicators = [
@@ -41,17 +66,30 @@ serve(async (req) => {
 
     const systemPrompt = `Tu es un assistant pour enseignants français. Génère un bilan de classe pour le bulletin du conseil de classe.
 
-CONTRAINTES STRICTES :
-- Entre ${Math.round(maxCharacters * 0.75)} et ${maxCharacters} caractères exactement
+CONTRAINTE DE LONGUEUR ABSOLUE ET NON NÉGOCIABLE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ MINIMUM : ${minChars} caractères
+⚠️ MAXIMUM : ${maxCharacters} caractères
+⚠️ CIBLE IDÉALE : ${targetChars} caractères
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Si ton texte dépasse ${maxCharacters} caractères, il sera REJETÉ. Compte soigneusement.
+
+RÈGLES STRICTES À RESPECTER IMPÉRATIVEMENT :
+- NE JAMAIS mentionner la moyenne de classe en chiffres (pas de "13.9/20", "moyenne de 14", "14/20", etc.)
+- NE JAMAIS mentionner le nombre exact d'élèves (pas de "les 23 élèves", "cette classe de 28 élèves")
+- NE JAMAIS écrire de notes numériques dans le bilan
+- Utiliser UNIQUEMENT des formulations qualitatives (excellents résultats, satisfaisants, insuffisants, etc.)
 - Ton professionnel adapté au contexte officiel
 - Synthétique et percutant
-- Une seule phrase ou deux phrases courtes maximum
+- Texte fluide en un seul paragraphe (pas de liste à puces)
+- Pas de formule de politesse finale
 
-STRUCTURE :
-- Décrire l'ambiance générale de travail
-- Mentionner le comportement collectif
-- Évoquer la participation
-- Conclure sur la progression ou les attentes
+STRUCTURE DU BILAN (à adapter selon les caractéristiques) :
+1. Phrase d'accroche sur l'ambiance générale de travail
+2. Mention du comportement collectif
+3. Évocation de la participation
+4. Conclusion sur la progression et les attentes pour la suite
 
 TON À ADOPTER : ${toneInstruction}
 
@@ -60,22 +98,30 @@ ${classProfile === "positif" ? "- Classe globalement positive : valoriser les ef
 ${classProfile === "nuance" ? "- Classe mitigée : équilibrer points positifs et axes d'amélioration" : ""}
 ${classProfile === "difficile" ? "- Classe en difficulté : être ferme sur les attentes tout en restant constructif" : ""}
 
-IMPORTANT :
-- Ne pas utiliser de formules génériques vides
-- Être concret et spécifique
-- Adapter le vocabulaire au niveau scolaire (collège)`;
+EXEMPLES DE FORMULATIONS CORRECTES :
+✅ "Cette classe montre un investissement satisfaisant..."
+✅ "Le groupe fait preuve d'un sérieux remarquable..."
+✅ "L'ambiance de travail reste perfectible..."
+✅ "Les résultats de cette classe sont encourageants..."
+
+FORMULATIONS INTERDITES :
+❌ "avec une moyenne de classe de 13.9/20"
+❌ "les 23 élèves de cette classe"
+❌ "la moyenne générale de 14/20"
+❌ "une moyenne honorable de 13.9"
+
+RAPPEL FINAL : Tu dois produire EXACTEMENT entre ${minChars} et ${maxCharacters} caractères. Pas plus.`;
 
     const userPrompt = `Génère un bilan de classe avec ces caractéristiques :
 - Niveau de travail : ${labels.workLevel}
 - Comportement : ${labels.behavior}
 - Participation : ${labels.participation}
 - Progression : ${labels.progression}
-- Nombre d'élèves : ${classStats.totalStudents}
-- Moyenne de classe : ${classStats.averageGrade.toFixed(1)}/20
 - Ton demandé : ${tone}
 - Longueur maximale : ${maxCharacters} caractères
 
-Le bilan doit refléter fidèlement ces caractéristiques et être utilisable directement dans un bulletin officiel.`;
+Le bilan doit refléter fidèlement ces caractéristiques et être utilisable directement dans un bulletin officiel.
+RAPPEL : Maximum ${maxCharacters} caractères. Sois concis et direct.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -113,7 +159,13 @@ Le bilan doit refléter fidèlement ces caractéristiques et être utilisable di
     }
 
     const data = await response.json();
-    const summary = data.choices?.[0]?.message?.content || "";
+    let summary = data.choices?.[0]?.message?.content || "";
+    
+    // Post-processing: truncate if still too long
+    if (summary.length > maxCharacters) {
+      console.log(`Summary too long: ${summary.length}/${maxCharacters}, truncating...`);
+      summary = truncateIntelligently(summary, maxCharacters);
+    }
 
     return new Response(JSON.stringify({ summary }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
