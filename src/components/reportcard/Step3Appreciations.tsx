@@ -120,6 +120,13 @@ const Step3Appreciations = ({
   };
 
   const handleGenerateAll = async () => {
+    // Log generation parameters for debugging
+    console.log("=== GÉNÉRATION GLOBALE ===");
+    console.log("Longueur max:", appreciationSettings.maxCharacters);
+    console.log("Ton par défaut:", appreciationSettings.defaultTone);
+    console.log("Tons individuels:", appreciationSettings.individualTones);
+    console.log("Nombre d'élèves:", students.length);
+
     setIsGeneratingAll(true);
     setGenerationProgress(0);
 
@@ -128,28 +135,37 @@ const Step3Appreciations = ({
 
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
-      const tone = getStudentTone(student.id);
+      const effectiveTone = getStudentTone(student.id);
+      
+      console.log(`Génération pour ${student.firstName}: ton=${effectiveTone}, max=${appreciationSettings.maxCharacters}`);
       
       setGenerationProgress(((i + 1) / total) * 100);
       
       try {
-        const text = await generateAppreciation(student, tone);
+        const text = await generateAppreciation(student, effectiveTone);
+        
+        // Post-generation validation
+        if (text.length > appreciationSettings.maxCharacters) {
+          console.warn(`⚠️ Appréciation trop longue pour ${student.firstName}: ${text.length}/${appreciationSettings.maxCharacters}`);
+        }
+        
         newAppreciations.push({
           studentId: student.id,
           text,
           characterCount: text.length,
           isEditing: false,
           isGenerating: false,
-          tone,
+          tone: effectiveTone,
         });
       } catch (error) {
+        console.error(`Erreur génération pour ${student.firstName}:`, error);
         newAppreciations.push({
           studentId: student.id,
           text: `Erreur lors de la génération pour ${student.firstName}. Cliquez sur "Régénérer".`,
           characterCount: 0,
           isEditing: false,
           isGenerating: false,
-          tone,
+          tone: effectiveTone,
         });
       }
 
@@ -161,9 +177,11 @@ const Step3Appreciations = ({
     }
 
     setIsGeneratingAll(false);
+    
+    const successCount = newAppreciations.filter(a => a.characterCount > 0).length;
     toast({
       title: "Génération terminée",
-      description: `${newAppreciations.length} appréciations générées`,
+      description: `${successCount}/${total} appréciations générées (max ${appreciationSettings.maxCharacters} car., ton: ${appreciationSettings.defaultTone})`,
     });
   };
 
@@ -367,10 +385,13 @@ const Step3Appreciations = ({
           </div>
 
           {isGeneratingAll && (
-            <div className="mt-4 space-y-2">
+            <div className="mt-4 space-y-3">
               <Progress value={generationProgress} />
               <p className="text-sm text-center text-muted-foreground">
                 {Math.round(generationProgress)}% • Ne fermez pas cette page
+              </p>
+              <p className="text-xs text-center text-muted-foreground/70">
+                Paramètres : {appreciationSettings.maxCharacters} caractères max, ton "{getToneLabel(appreciationSettings.defaultTone)}"
               </p>
             </div>
           )}
