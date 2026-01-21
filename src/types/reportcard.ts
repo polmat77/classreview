@@ -41,12 +41,35 @@ export interface StudentObservations {
   specific: SpecificObservation[];
 }
 
+export type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
+
+export interface ToneOption {
+  value: AppreciationTone;
+  label: string;
+  description: string;
+}
+
+export const toneOptions: ToneOption[] = [
+  { value: 'neutre', label: 'Neutre et factuel', description: 'Ton professionnel et objectif, basé sur les faits' },
+  { value: 'encourageant', label: 'Encourageant', description: 'Souligne les points positifs et motive l\'élève' },
+  { value: 'constructif', label: 'Constructif', description: 'Met l\'accent sur les axes d\'amélioration avec bienveillance' },
+  { value: 'ferme', label: 'Ferme mais juste', description: 'Ton plus direct pour les situations problématiques' },
+  { value: 'bienveillant', label: 'Bienveillant', description: 'Ton chaleureux et empathique, adapté aux élèves fragiles' },
+];
+
+export interface AppreciationSettings {
+  maxCharacters: number;
+  defaultTone: AppreciationTone;
+  individualTones: Record<number, AppreciationTone>;
+}
+
 export interface GeneratedAppreciation {
   studentId: number;
   text: string;
   characterCount: number;
   isEditing: boolean;
   isGenerating: boolean;
+  tone?: AppreciationTone;
 }
 
 export interface ClassSummaryOptions {
@@ -60,6 +83,8 @@ export interface ClassSummary {
   options: ClassSummaryOptions;
   generatedText: string;
   isEditing: boolean;
+  tone?: AppreciationTone;
+  maxCharacters?: number;
 }
 
 export interface ReportCardState {
@@ -68,6 +93,7 @@ export interface ReportCardState {
   observations: StudentObservations;
   appreciations: GeneratedAppreciation[];
   classSummary: ClassSummary;
+  appreciationSettings: AppreciationSettings;
   currentStep: number;
   subject?: string;
   teacherName?: string;

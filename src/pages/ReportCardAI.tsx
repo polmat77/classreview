@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata } from "@/types/reportcard";
+import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata, AppreciationSettings, AppreciationTone } from "@/types/reportcard";
 import ReportCardLayout from "@/components/reportcard/ReportCardLayout";
 import ReportCardStepper from "@/components/reportcard/ReportCardStepper";
 import Step1DataImport from "@/components/reportcard/Step1DataImport";
@@ -8,6 +8,22 @@ import Step3Appreciations from "@/components/reportcard/Step3Appreciations";
 import Step4ClassSummary from "@/components/reportcard/Step4ClassSummary";
 
 const STORAGE_KEY = "reportcard-ai-session";
+const PREFERENCES_KEY = "reportCardAI_preferences";
+
+interface SavedPreferences {
+  maxCharacters: number;
+  defaultTone: AppreciationTone;
+}
+
+const getDefaultPreferences = (): SavedPreferences => {
+  try {
+    const saved = localStorage.getItem(PREFERENCES_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch {}
+  return { maxCharacters: 400, defaultTone: 'neutre' };
+};
 
 const initialState: ReportCardState = {
   students: [],
@@ -27,6 +43,13 @@ const initialState: ReportCardState = {
     },
     generatedText: "",
     isEditing: false,
+    tone: 'neutre',
+    maxCharacters: 400,
+  },
+  appreciationSettings: {
+    maxCharacters: 400,
+    defaultTone: 'neutre',
+    individualTones: {},
   },
   currentStep: 1,
 };
@@ -74,8 +97,31 @@ const ReportCardAI = () => {
     setState((prev) => ({ ...prev, classSummary }));
   };
 
+  const setAppreciationSettings = (appreciationSettings: AppreciationSettings) => {
+    setState((prev) => ({ ...prev, appreciationSettings }));
+    // Save preferences to localStorage
+    localStorage.setItem(PREFERENCES_KEY, JSON.stringify({
+      maxCharacters: appreciationSettings.maxCharacters,
+      defaultTone: appreciationSettings.defaultTone,
+    }));
+  };
+
   const resetSession = () => {
-    setState(initialState);
+    // Keep preferences but reset session
+    const prefs = getDefaultPreferences();
+    setState({
+      ...initialState,
+      appreciationSettings: {
+        maxCharacters: prefs.maxCharacters,
+        defaultTone: prefs.defaultTone,
+        individualTones: {},
+      },
+      classSummary: {
+        ...initialState.classSummary,
+        tone: prefs.defaultTone,
+        maxCharacters: prefs.maxCharacters,
+      },
+    });
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -107,7 +153,9 @@ const ReportCardAI = () => {
             students={state.students}
             observations={state.observations}
             appreciations={state.appreciations}
+            appreciationSettings={state.appreciationSettings}
             onAppreciationsChange={setAppreciations}
+            onAppreciationSettingsChange={setAppreciationSettings}
             onNext={() => setCurrentStep(4)}
             onBack={() => setCurrentStep(2)}
           />
