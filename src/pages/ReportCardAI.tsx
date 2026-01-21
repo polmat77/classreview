@@ -59,7 +59,24 @@ const ReportCardAI = () => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        const prefs = getDefaultPreferences();
+        // Ensure appreciationSettings exists (for sessions saved before this feature)
+        return {
+          ...initialState,
+          ...parsed,
+          appreciationSettings: parsed.appreciationSettings || {
+            maxCharacters: prefs.maxCharacters,
+            defaultTone: prefs.defaultTone,
+            individualTones: {},
+          },
+          classSummary: {
+            ...initialState.classSummary,
+            ...parsed.classSummary,
+            tone: parsed.classSummary?.tone || prefs.defaultTone,
+            maxCharacters: parsed.classSummary?.maxCharacters || prefs.maxCharacters,
+          },
+        };
       } catch {
         return initialState;
       }
