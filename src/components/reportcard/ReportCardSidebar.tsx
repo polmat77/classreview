@@ -12,9 +12,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
-  Sparkles,
   FileSpreadsheet,
 } from 'lucide-react';
+import reportCardLogo from '@/assets/Logo_ReportCardAI.png';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -53,26 +53,22 @@ const workflowSteps = [
   { id: 4, label: 'Bilan de classe', icon: BarChart3, description: 'Synthèse' },
 ];
 
-// Composant séparé pour faciliter le remplacement du logo
+// Composant Logo avec image
 const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
-  // TODO: Remplacer par le vrai logo quand disponible
   return (
-    <div className="flex items-center gap-3">
-      <div className="relative flex-shrink-0">
-        <div className={cn(
-          "flex items-center justify-center bg-gradient-to-br from-success to-primary rounded-xl shadow-lg",
-          isCollapsed ? "w-10 h-10" : "w-12 h-12"
-        )}>
-          <FileSpreadsheet className={cn("text-white", isCollapsed ? "w-5 h-5" : "w-6 h-6")} />
-        </div>
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-accent rounded-full flex items-center justify-center border-2 border-navy">
-          <Sparkles className="w-2 h-2 text-white" />
-        </div>
-      </div>
+    <div className="flex items-center gap-4">
+      <img 
+        src={reportCardLogo} 
+        alt="ReportCard AI Logo" 
+        className={cn(
+          "flex-shrink-0 rounded-lg",
+          isCollapsed ? "w-10 h-10" : "w-14 h-14"
+        )}
+      />
       {!isCollapsed && (
         <div className="flex flex-col">
-          <span className="text-white font-bold text-base leading-tight">ReportCard AI</span>
-          <span className="text-white/50 text-[10px]">Génération d'appréciations</span>
+          <span className="text-white font-bold text-lg leading-tight">ReportCard AI</span>
+          <span className="text-white/50 text-xs">Génération d'appréciations</span>
         </div>
       )}
     </div>
