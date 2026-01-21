@@ -38,7 +38,6 @@ import {
   Check,
   Loader2,
   Download,
-  RotateCcw,
   Briefcase,
   Users,
   Hand,
@@ -56,7 +55,6 @@ interface Step4ClassSummaryProps {
   onClassSummaryChange: (classSummary: ClassSummary) => void;
   appreciations: GeneratedAppreciation[];
   onBack: () => void;
-  onReset: () => void;
 }
 
 const Step4ClassSummary = ({
@@ -65,7 +63,6 @@ const Step4ClassSummary = ({
   onClassSummaryChange,
   appreciations,
   onBack,
-  onReset,
 }: Step4ClassSummaryProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -513,14 +510,10 @@ const Step4ClassSummary = ({
       )}
 
       {/* Navigation */}
-      <div className="flex justify-between">
+      <div className="flex justify-start">
         <Button variant="outline" onClick={onBack}>
           <ChevronLeft className="w-4 h-4 mr-2" />
           Retour
-        </Button>
-        <Button variant="outline" onClick={onReset}>
-          <RotateCcw className="w-4 h-4 mr-2" />
-          Nouvelle session
         </Button>
       </div>
     </div>

@@ -1,94 +1,96 @@
-import { ReactNode } from "react";
-import { Link } from "react-router-dom";
-import { Home, FileText, RotateCcw, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useState, useEffect, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import ReportCardSidebar from "./ReportCardSidebar";
+import ReportCardMobileHeader from "./ReportCardMobileHeader";
+import AppFooter from "@/components/AppFooter";
 
 interface ReportCardLayoutProps {
   children: ReactNode;
+  currentStep: number;
+  onStepClick: (step: number) => void;
+  hasStudents: boolean;
+  hasObservations: boolean;
+  hasAppreciations: boolean;
   onReset: () => void;
 }
 
-const ReportCardLayout = ({ children, onReset }: ReportCardLayoutProps) => {
+const ReportCardLayout = ({ 
+  children, 
+  currentStep,
+  onStepClick,
+  hasStudents,
+  hasObservations,
+  hasAppreciations,
+  onReset,
+}: ReportCardLayoutProps) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // Close mobile sidebar on step change
+  useEffect(() => {
+    setIsMobileSidebarOpen(false);
+  }, [currentStep]);
+
+  // Close mobile sidebar on resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setIsMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-navy text-white border-b border-navy-light">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-gold" />
-              </div>
-              <span className="font-bold text-lg hidden sm:inline">AIProject4You</span>
-            </Link>
-            <span className="text-white/40">|</span>
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-gold" />
-              <span className="font-semibold">ReportCard AI</span>
-            </div>
-          </div>
+      {/* Mobile Header */}
+      <ReportCardMobileHeader 
+        isSidebarOpen={isMobileSidebarOpen} 
+        onToggleSidebar={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)} 
+      />
 
-          <div className="flex items-center gap-2">
-            <Link to="/">
-              <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                <Home className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Accueil</span>
-              </Button>
-            </Link>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-white/70 hover:text-white hover:bg-white/10">
-                  <RotateCcw className="w-4 h-4 mr-2" />
-                  <span className="hidden sm:inline">Nouvelle session</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Réinitialiser la session ?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Cette action supprimera toutes les données actuelles (élèves, observations, appréciations). Cette action est irréversible.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction onClick={onReset} className="bg-destructive hover:bg-destructive/90">
-                    Réinitialiser
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+      {/* Mobile Overlay */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Desktop always visible, Mobile as drawer */}
+      <div className={cn(
+        "lg:block",
+        isMobileSidebarOpen ? "block" : "hidden"
+      )}>
+        <ReportCardSidebar 
+          currentStep={currentStep}
+          onStepClick={onStepClick}
+          hasStudents={hasStudents}
+          hasObservations={hasObservations}
+          hasAppreciations={hasAppreciations}
+          isCollapsed={isCollapsed}
+          onCollapsedChange={setIsCollapsed}
+          onReset={onReset}
+        />
+      </div>
+
+      {/* Main Content */}
+      <main
+        className={cn(
+          "min-h-screen transition-all duration-300 flex flex-col",
+          "lg:ml-[280px]",
+          isCollapsed && "lg:ml-20",
+          "pt-16 lg:pt-0"
+        )}
+      >
+        <div className="flex-1 p-4 lg:p-8">
+          <div className="max-w-5xl mx-auto">
+            {children}
           </div>
         </div>
-      </header>
-
-      {/* Main content */}
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        {children}
+        <AppFooter />
       </main>
-
-      {/* Footer */}
-      <footer className="py-6 px-4 border-t border-border bg-muted/30">
-        <div className="container mx-auto max-w-5xl text-center text-sm text-muted-foreground">
-          <p>
-            ReportCard AI fait partie de{" "}
-            <Link to="/" className="text-primary hover:underline">
-              AIProject4You
-            </Link>
-            {" "}- Créé par un enseignant, pour les enseignants
-          </p>
-        </div>
-      </footer>
     </div>
   );
 };

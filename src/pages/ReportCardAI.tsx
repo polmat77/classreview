@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata, AppreciationSettings, AppreciationTone } from "@/types/reportcard";
 import ReportCardLayout from "@/components/reportcard/ReportCardLayout";
-import ReportCardStepper from "@/components/reportcard/ReportCardStepper";
 import Step1DataImport from "@/components/reportcard/Step1DataImport";
 import Step2Observations from "@/components/reportcard/Step2Observations";
 import Step3Appreciations from "@/components/reportcard/Step3Appreciations";
@@ -168,7 +167,6 @@ const ReportCardAI = () => {
             onClassSummaryChange={setClassSummary}
             appreciations={state.appreciations}
             onBack={() => setCurrentStep(3)}
-            onReset={resetSession}
           />
         );
       default:
@@ -176,17 +174,17 @@ const ReportCardAI = () => {
     }
   };
 
+  const hasObservations = state.observations.behavior !== null || state.observations.talkative !== null || state.observations.specific.length > 0;
+
   return (
-    <ReportCardLayout onReset={resetSession}>
-      <div className="mb-8">
-        <ReportCardStepper
-          currentStep={state.currentStep}
-          onStepClick={setCurrentStep}
-          hasStudents={state.students.length > 0}
-          hasObservations={state.observations.behavior !== null || state.observations.talkative !== null || state.observations.specific.length > 0}
-          hasAppreciations={state.appreciations.length > 0}
-        />
-      </div>
+    <ReportCardLayout 
+      currentStep={state.currentStep}
+      onStepClick={setCurrentStep}
+      hasStudents={state.students.length > 0}
+      hasObservations={hasObservations}
+      hasAppreciations={state.appreciations.length > 0}
+      onReset={resetSession}
+    >
       {renderStep()}
     </ReportCardLayout>
   );
