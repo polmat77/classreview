@@ -5,13 +5,23 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
+
+const toneInstructions: Record<AppreciationTone, string> = {
+  neutre: "Reste factuel et objectif, sans jugement personnel excessif. Base-toi sur les données concrètes.",
+  encourageant: "Valorise les efforts et les réussites, même modestes. Termine sur une note positive et motivante.",
+  constructif: "Identifie les difficultés avec bienveillance et propose des pistes d'amélioration concrètes. Reste encourageant tout en étant honnête.",
+  ferme: "Sois direct sur les problèmes identifiés tout en restant professionnel. Les attentes doivent être claires et les manquements explicités.",
+  bienveillant: "Adopte un ton chaleureux et encourageant, particulièrement adapté aux élèves en difficulté ou manquant de confiance. Mets en avant le potentiel.",
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { student, classAverage, subject, trimester } = await req.json();
+    const { student, classAverage, subject, trimester, maxCharacters = 400, tone = 'neutre' } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -40,11 +50,13 @@ serve(async (req) => {
       else studentProfile = "grande_difficulte";
     }
 
+    const toneInstruction = toneInstructions[tone as AppreciationTone] || toneInstructions.neutre;
+
     const systemPrompt = `Tu es un assistant pour enseignants français. Génère une appréciation de bulletin scolaire.
 
 CONTRAINTES STRICTES :
-- Entre 300 et 400 caractères exactement
-- Ton professionnel et constructif
+- Entre ${Math.round(maxCharacters * 0.75)} et ${maxCharacters} caractères exactement
+- Ton professionnel et ${tone}
 - En français correct
 - Pas de formule de politesse finale
 - Utiliser le prénom "${firstName}" au début de la première phrase
@@ -57,12 +69,14 @@ STRUCTURE OBLIGATOIRE :
 4. Si absences (${absences || 0}) ou non-rendus (${nonRendus || 0}) significatifs : le mentionner
 5. Encouragement ou avertissement selon le profil
 
-TON À ADAPTER selon le profil "${studentProfile}" :
+TON À ADOPTER : ${toneInstruction}
+
+ADAPTATION SELON LE PROFIL "${studentProfile}" :
 - Excellent (>16) : valorisant, encourager à maintenir l'excellence
 - Correct (12-16) : positif avec axes d'amélioration identifiés
 - Difficulté (8-12) : constructif, identifier les efforts ou les manques
-- Grande difficulté (<8) : ferme, urgence de se ressaisir
-${behaviorIssue ? "- Problème de comportement signalé : ton direct et ferme" : ""}
+- Grande difficulté (<8) : ${tone === 'bienveillant' ? 'encourageant malgré les difficultés, mettre en avant le potentiel' : 'ferme, urgence de se ressaisir'}
+${behaviorIssue ? "- Problème de comportement signalé : ton direct et ferme sur ce point" : ""}
 ${isTalkative ? "- Élève bavard : mentionner que le bavardage nuit au travail" : ""}
 
 IMPORTANT : 
@@ -78,13 +92,15 @@ IMPORTANT :
     if (participation !== null && participation !== undefined) context += `- Note de participation : ${participation}/20\n`;
     if (absences && absences > 0) context += `- Absences aux évaluations : ${absences}\n`;
     if (nonRendus && nonRendus > 0) context += `- Devoirs non rendus : ${nonRendus}\n`;
-    if (behaviorIssue) context += `- Problème de comportement : ${behaviorIssue}\n`;
+    if (behaviorIssue) context += `- Problème de comportement : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'signalé'}\n`;
     if (isTalkative) context += `- Signalé comme bavard\n`;
     if (specificObservations && specificObservations.length > 0) {
       context += `- Observations spécifiques : ${specificObservations.join(", ")}\n`;
     }
     if (subject) context += `- Matière : ${subject}\n`;
     if (trimester) context += `- Période : ${trimester}\n`;
+    context += `\nTon demandé : ${tone}\n`;
+    context += `Longueur maximale : ${maxCharacters} caractères\n`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

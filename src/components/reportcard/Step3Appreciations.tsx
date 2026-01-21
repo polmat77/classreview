@@ -1,11 +1,31 @@
 import { useState } from "react";
-import { Student, StudentObservations, GeneratedAppreciation } from "@/types/reportcard";
+import { Student, StudentObservations, GeneratedAppreciation, AppreciationSettings, AppreciationTone, toneOptions } from "@/types/reportcard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, Download } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, Download, Settings2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -13,7 +33,9 @@ interface Step3AppreciationsProps {
   students: Student[];
   observations: StudentObservations;
   appreciations: GeneratedAppreciation[];
+  appreciationSettings: AppreciationSettings;
   onAppreciationsChange: (appreciations: GeneratedAppreciation[]) => void;
+  onAppreciationSettingsChange: (settings: AppreciationSettings) => void;
   onNext: () => void;
   onBack: () => void;
 }
@@ -22,7 +44,9 @@ const Step3Appreciations = ({
   students,
   observations,
   appreciations,
+  appreciationSettings,
   onAppreciationsChange,
+  onAppreciationSettingsChange,
   onNext,
   onBack,
 }: Step3AppreciationsProps) => {
@@ -35,7 +59,6 @@ const Step3Appreciations = ({
     const obs: string[] = [];
     
     if (observations.behavior?.studentIds.includes(studentId)) {
-      // Check for individual note first
       const individualNote = observations.behavior.individualNotes?.[studentId];
       if (individualNote) {
         obs.push(`Problèmes de comportement: ${individualNote}`);
@@ -56,19 +79,47 @@ const Step3Appreciations = ({
     return obs;
   };
 
-  const generateAppreciation = async (student: Student): Promise<string> => {
+  const getStudentTone = (studentId: number): AppreciationTone => {
+    return appreciationSettings.individualTones[studentId] || appreciationSettings.defaultTone;
+  };
+
+  const setStudentTone = (studentId: number, tone: AppreciationTone) => {
+    onAppreciationSettingsChange({
+      ...appreciationSettings,
+      individualTones: {
+        ...appreciationSettings.individualTones,
+        [studentId]: tone,
+      },
+    });
+  };
+
+  const generateAppreciation = async (student: Student, tone: AppreciationTone): Promise<string> => {
     const studentObs = getStudentObservations(student.id);
     
     const studentData = {
       firstName: student.firstName,
+      lastName: student.lastName,
       average: student.average,
-      observations: studentObs,
+      seriousness: student.seriousness,
+      participation: student.participation,
       absences: student.absences,
+      nonRendus: student.nonRendus,
+      behaviorIssue: observations.behavior?.studentIds.includes(student.id) 
+        ? observations.behavior.individualNotes?.[student.id] || observations.behavior.description || true 
+        : null,
+      isTalkative: observations.talkative?.studentIds.includes(student.id),
+      specificObservations: observations.specific
+        .filter(o => o.studentId === student.id)
+        .map(o => o.observation),
     };
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-reportcard-appreciation", {
-        body: { student: studentData },
+        body: { 
+          student: studentData,
+          maxCharacters: appreciationSettings.maxCharacters,
+          tone,
+        },
       });
 
       if (error) throw error;
@@ -88,34 +139,33 @@ const Step3Appreciations = ({
 
     for (let i = 0; i < students.length; i++) {
       const student = students[i];
+      const tone = getStudentTone(student.id);
       
-      // Update progress
       setGenerationProgress(((i + 1) / total) * 100);
       
       try {
-        const text = await generateAppreciation(student);
+        const text = await generateAppreciation(student, tone);
         newAppreciations.push({
           studentId: student.id,
           text,
           characterCount: text.length,
           isEditing: false,
           isGenerating: false,
+          tone,
         });
       } catch (error) {
-        // Add error placeholder
         newAppreciations.push({
           studentId: student.id,
           text: `Erreur lors de la génération pour ${student.firstName}. Cliquez sur "Régénérer".`,
           characterCount: 0,
           isEditing: false,
           isGenerating: false,
+          tone,
         });
       }
 
-      // Update state progressively
       onAppreciationsChange([...newAppreciations]);
       
-      // Small delay between requests
       if (i < students.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));
       }
@@ -132,17 +182,18 @@ const Step3Appreciations = ({
     const student = students.find((s) => s.id === studentId);
     if (!student) return;
 
-    // Mark as generating
+    const tone = getStudentTone(studentId);
+
     const updated = appreciations.map((a) =>
       a.studentId === studentId ? { ...a, isGenerating: true } : a
     );
     onAppreciationsChange(updated);
 
     try {
-      const text = await generateAppreciation(student);
+      const text = await generateAppreciation(student, tone);
       const finalUpdated = appreciations.map((a) =>
         a.studentId === studentId
-          ? { ...a, text, characterCount: text.length, isGenerating: false }
+          ? { ...a, text, characterCount: text.length, isGenerating: false, tone }
           : a
       );
       onAppreciationsChange(finalUpdated);
@@ -193,10 +244,21 @@ const Step3Appreciations = ({
     toast({ title: "Export réussi", description: "Fichier téléchargé" });
   };
 
-  const getCharacterBadgeVariant = (count: number) => {
-    if (count >= 300 && count <= 400) return "default";
-    if (count > 400) return "destructive";
-    return "secondary";
+  const getCharacterBadgeVariant = (count: number, max: number) => {
+    if (count <= max && count >= max * 0.75) return "default";
+    if (count > max) return "destructive";
+    if (count < max * 0.5) return "secondary";
+    return "outline";
+  };
+
+  const getCharacterBadgeColor = (count: number, max: number) => {
+    if (count > max) return "text-destructive";
+    if (count >= max * 0.9) return "text-warning";
+    return "";
+  };
+
+  const getToneLabel = (tone: AppreciationTone) => {
+    return toneOptions.find(t => t.value === tone)?.label || tone;
   };
 
   return (
@@ -210,6 +272,91 @@ const Step3Appreciations = ({
           Générez, modifiez et copiez les appréciations pour chaque élève
         </p>
       </div>
+
+      {/* Settings card */}
+      <Card className="bg-muted/30">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Settings2 className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base">Paramètres de génération</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* Character limit */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="maxCharacters">Longueur maximale</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[280px]">
+                      <p>Adaptez selon les paramètres de votre établissement (généralement entre 300 et 600 caractères pour PRONOTE)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="maxCharacters"
+                  type="number"
+                  min={200}
+                  max={800}
+                  value={appreciationSettings.maxCharacters}
+                  onChange={(e) => onAppreciationSettingsChange({
+                    ...appreciationSettings,
+                    maxCharacters: Math.max(200, Math.min(800, parseInt(e.target.value) || 400)),
+                  })}
+                  className="w-24"
+                />
+                <span className="text-sm text-muted-foreground">caractères</span>
+              </div>
+            </div>
+
+            {/* Default tone */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="defaultTone">Ton par défaut</Label>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-[280px]">
+                      <p>Le ton utilisé pour toutes les appréciations, sauf si un ton spécifique est défini pour un élève</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Select
+                value={appreciationSettings.defaultTone}
+                onValueChange={(value: AppreciationTone) => onAppreciationSettingsChange({
+                  ...appreciationSettings,
+                  defaultTone: value,
+                })}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {toneOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex flex-col items-start">
+                        <span>{option.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {toneOptions.find(t => t.value === appreciationSettings.defaultTone)?.description}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Generation controls */}
       <Card>
@@ -263,10 +410,13 @@ const Step3Appreciations = ({
             const appreciation = appreciations.find((a) => a.studentId === student.id);
             if (!appreciation) return null;
 
+            const studentTone = getStudentTone(student.id);
+            const isOverLimit = appreciation.characterCount > appreciationSettings.maxCharacters;
+
             return (
-              <Card key={student.id}>
+              <Card key={student.id} className={isOverLimit ? "border-destructive/50" : ""}>
                 <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-3">
                       <Badge variant="outline">{student.id}</Badge>
                       <div>
@@ -280,9 +430,46 @@ const Step3Appreciations = ({
                         </CardDescription>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getCharacterBadgeVariant(appreciation.characterCount)}>
-                        {appreciation.characterCount} car.
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Tone selector per student */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 gap-1">
+                            <Settings2 className="w-3.5 h-3.5" />
+                            <span className="text-xs">{getToneLabel(studentTone)}</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64" align="end">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium">Ton pour cet élève</p>
+                            <Select
+                              value={studentTone}
+                              onValueChange={(value: AppreciationTone) => setStudentTone(student.id, value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {toneOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                              {toneOptions.find(t => t.value === studentTone)?.description}
+                            </p>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+
+                      {/* Character count badge */}
+                      <Badge 
+                        variant={getCharacterBadgeVariant(appreciation.characterCount, appreciationSettings.maxCharacters)}
+                        className={getCharacterBadgeColor(appreciation.characterCount, appreciationSettings.maxCharacters)}
+                      >
+                        {appreciation.characterCount}/{appreciationSettings.maxCharacters}
                       </Badge>
                     </div>
                   </div>
@@ -294,6 +481,12 @@ const Step3Appreciations = ({
                     className="min-h-[100px] resize-none"
                     disabled={appreciation.isGenerating}
                   />
+                  {isOverLimit && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      L'appréciation dépasse la limite de {appreciationSettings.maxCharacters} caractères
+                    </p>
+                  )}
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"
