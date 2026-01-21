@@ -8,12 +8,44 @@ const corsHeaders = {
 type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
 
 const toneInstructions: Record<AppreciationTone, string> = {
-  neutre: "Reste factuel et objectif, sans jugement personnel excessif. Base-toi sur les données concrètes.",
-  encourageant: "Valorise les efforts et les réussites, même modestes. Termine sur une note positive et motivante.",
-  constructif: "Identifie les difficultés avec bienveillance et propose des pistes d'amélioration concrètes. Reste encourageant tout en étant honnête.",
-  ferme: "Sois direct sur les problèmes identifiés tout en restant professionnel. Les attentes doivent être claires et les manquements explicités.",
-  bienveillant: "Adopte un ton chaleureux et encourageant, particulièrement adapté aux élèves en difficulté ou manquant de confiance. Mets en avant le potentiel.",
+  neutre: "Reste factuel et objectif, sans jugement personnel. Base-toi uniquement sur les observations concrètes.",
+  encourageant: "Valorise les efforts et les réussites, même modestes. Souligne les progrès et le potentiel. Termine sur une note positive.",
+  constructif: "Identifie les difficultés avec bienveillance et propose des pistes d'amélioration concrètes. Équilibre points positifs et axes de travail.",
+  ferme: "Sois direct sur les problèmes identifiés tout en restant professionnel. Les attentes doivent être claires et les axes d'amélioration explicites.",
+  bienveillant: "Adopte un ton chaleureux et empathique. Mets en valeur les efforts même modestes. Particulièrement adapté aux élèves fragiles.",
 };
+
+// Helper to determine work level description from average
+function getWorkLevel(average: number | null): string {
+  if (average === null) return "non évaluable";
+  if (average >= 16) return "excellent";
+  if (average >= 14) return "très bon";
+  if (average >= 12) return "bon";
+  if (average >= 10) return "correct";
+  if (average >= 8) return "insuffisant";
+  return "très insuffisant";
+}
+
+// Intelligent truncation to respect character limit
+function truncateIntelligently(text: string, maxChars: number): string {
+  if (text.length <= maxChars) return text;
+  
+  const truncated = text.substring(0, maxChars);
+  const lastPeriod = truncated.lastIndexOf('.');
+  const lastExclamation = truncated.lastIndexOf('!');
+  const lastCut = Math.max(lastPeriod, lastExclamation);
+  
+  if (lastCut > maxChars * 0.7) {
+    return truncated.substring(0, lastCut + 1);
+  }
+  
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxChars * 0.8) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+  
+  return truncated.substring(0, maxChars - 3) + '...';
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -41,55 +73,71 @@ serve(async (req) => {
       specificObservations 
     } = student;
 
-    // Determine student profile for tone adaptation
-    let studentProfile = "moyen";
-    if (average !== null) {
-      if (average >= 16) studentProfile = "excellent";
-      else if (average >= 12) studentProfile = "correct";
-      else if (average >= 8) studentProfile = "difficulte";
-      else studentProfile = "grande_difficulte";
-    }
+    // Calculate target with safety margin
+    const targetChars = Math.floor(maxCharacters * 0.85);
+    const minChars = Math.floor(maxCharacters * 0.6);
+    
+    // Get work level description instead of numerical average
+    const workLevel = getWorkLevel(average);
 
     const toneInstruction = toneInstructions[tone as AppreciationTone] || toneInstructions.neutre;
 
-    const systemPrompt = `Tu es un assistant pour enseignants français. Génère une appréciation de bulletin scolaire.
+    const systemPrompt = `Tu es un professeur expérimenté rédigeant une appréciation pour un bulletin scolaire de collège/lycée.
 
-CONTRAINTES STRICTES :
-- Entre ${Math.round(maxCharacters * 0.75)} et ${maxCharacters} caractères exactement
-- Ton professionnel et ${tone}
-- En français correct
+CONTRAINTE DE LONGUEUR ABSOLUE ET NON NÉGOCIABLE :
+- MINIMUM : ${minChars} caractères
+- MAXIMUM : ${maxCharacters} caractères  
+- CIBLE IDÉALE : ${targetChars} caractères
+⚠️ Si ton texte dépasse ${maxCharacters} caractères, il sera REJETÉ. Compte tes caractères.
+
+RÈGLES STRICTES À RESPECTER IMPÉRATIVEMENT :
+- NE JAMAIS mentionner la moyenne chiffrée de l'élève (pas de "12/20", "moyenne de 15", "17.9/20", etc.)
+- NE JAMAIS comparer avec la moyenne de classe en chiffres
+- NE JAMAIS écrire de notes numériques dans l'appréciation
+- Utiliser UNIQUEMENT des formulations qualitatives (excellent, satisfaisant, insuffisant, etc.)
+- Commencer directement par le prénom "${firstName}"
+- Ne pas commencer par "L'élève" ou "${firstName} est un/une élève"
 - Pas de formule de politesse finale
-- Utiliser le prénom "${firstName}" au début de la première phrase
-- Ne JAMAIS commencer par "L'élève" ou "${firstName} est un/une élève"
+- En français correct et professionnel
 
-STRUCTURE OBLIGATOIRE :
-1. Phrase sur le bilan du trimestre (liée à la moyenne)
+TON À ADOPTER : ${tone}
+${toneInstruction}
+
+FORMULATIONS QUALITATIVES À UTILISER selon le niveau "${workLevel}" :
+- Excellent (≥16) : "trimestre remarquable", "excellents résultats", "travail exemplaire", "très bonne maîtrise"
+- Très bon (14-16) : "trimestre très satisfaisant", "très bons résultats", "investissement sérieux"
+- Bon (12-14) : "trimestre satisfaisant", "bons résultats", "travail sérieux"
+- Correct (10-12) : "résultats corrects", "peut mieux faire", "des efforts à poursuivre"
+- Insuffisant (8-10) : "résultats insuffisants", "manque de travail", "doit fournir plus d'efforts"
+- Très insuffisant (<8) : "situation préoccupante", "résultats alarmants", "ressaisissement impératif"
+
+STRUCTURE (adapter selon le profil) :
+1. Phrase d'accroche qualitative sur le bilan du trimestre (SANS chiffres)
 2. Mention de la participation orale si pertinent
 3. Commentaire sur l'attitude/sérieux
-4. Si absences (${absences || 0}) ou non-rendus (${nonRendus || 0}) significatifs : le mentionner
-5. Encouragement ou avertissement selon le profil
+4. Si absences ou non-rendus : le mentionner
+5. Encouragement ou avertissement adapté au profil
 
-TON À ADOPTER : ${toneInstruction}
+EXEMPLES CORRECTS :
+✅ "Lilou réalise un excellent trimestre. Sa participation orale est remarquable et son travail très rigoureux."
+✅ "Les résultats de Flavio sont satisfaisants ce trimestre. Il participe avec pertinence mais gagnerait à approfondir son travail personnel."
+✅ "Kyle présente des résultats insuffisants qui traduisent un manque d'investissement. Un ressaisissement s'impose."
 
-ADAPTATION SELON LE PROFIL "${studentProfile}" :
-- Excellent (>16) : valorisant, encourager à maintenir l'excellence
-- Correct (12-16) : positif avec axes d'amélioration identifiés
-- Difficulté (8-12) : constructif, identifier les efforts ou les manques
-- Grande difficulté (<8) : ${tone === 'bienveillant' ? 'encourageant malgré les difficultés, mettre en avant le potentiel' : 'ferme, urgence de se ressaisir'}
-${behaviorIssue ? "- Problème de comportement signalé : ton direct et ferme sur ce point" : ""}
-${isTalkative ? "- Élève bavard : mentionner que le bavardage nuit au travail" : ""}
+FORMULATIONS INTERDITES :
+❌ "avec une moyenne de 17.9/20"
+❌ "obtient 13/20"
+❌ "nettement au-dessus de la moyenne de classe (12.5)"
+❌ "sa moyenne de 9.16"
+❌ Toute mention chiffrée de notes ou moyennes
 
-IMPORTANT : 
-- La moyenne de l'élève est ${average !== null ? average.toFixed(1) : "non disponible"}/20
-- La moyenne de classe est ${classAverage ? classAverage.toFixed(1) : "environ 12"}/20
-- Comparer subtilement la performance de l'élève à la classe si pertinent`;
+RAPPEL FINAL : Maximum ${maxCharacters} caractères. Sois concis et percutant.`;
 
     let context = `Génère une appréciation pour cet élève :\n`;
     context += `- Prénom : ${firstName}\n`;
     context += `- Nom : ${lastName}\n`;
-    if (average !== null) context += `- Moyenne : ${average.toFixed(1)}/20\n`;
-    if (seriousness !== null && seriousness !== undefined) context += `- Note de sérieux : ${seriousness}/20\n`;
-    if (participation !== null && participation !== undefined) context += `- Note de participation : ${participation}/20\n`;
+    context += `- Niveau de travail : ${workLevel}\n`;
+    if (seriousness !== null && seriousness !== undefined) context += `- Sérieux en classe : ${seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique"}\n`;
+    if (participation !== null && participation !== undefined) context += `- Participation orale : ${participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante"}\n`;
     if (absences && absences > 0) context += `- Absences aux évaluations : ${absences}\n`;
     if (nonRendus && nonRendus > 0) context += `- Devoirs non rendus : ${nonRendus}\n`;
     if (behaviorIssue) context += `- Problème de comportement : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'signalé'}\n`;
@@ -100,7 +148,7 @@ IMPORTANT :
     if (subject) context += `- Matière : ${subject}\n`;
     if (trimester) context += `- Période : ${trimester}\n`;
     context += `\nTon demandé : ${tone}\n`;
-    context += `Longueur maximale : ${maxCharacters} caractères\n`;
+    context += `\n⚠️ RAPPEL CRITIQUE : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -138,7 +186,13 @@ IMPORTANT :
     }
 
     const data = await response.json();
-    const appreciation = data.choices?.[0]?.message?.content || "";
+    let appreciation = data.choices?.[0]?.message?.content || "";
+    
+    // Post-process: truncate if still too long
+    if (appreciation.length > maxCharacters) {
+      console.log(`Truncating appreciation from ${appreciation.length} to ${maxCharacters} chars`);
+      appreciation = truncateIntelligently(appreciation, maxCharacters);
+    }
 
     return new Response(JSON.stringify({ appreciation }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

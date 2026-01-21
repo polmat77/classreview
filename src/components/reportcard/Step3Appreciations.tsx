@@ -13,7 +13,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, Download, Settings2, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, Download, Settings2, Info, Scissors, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ReportCardToneSelector from "./ReportCardToneSelector";
@@ -43,6 +43,61 @@ const Step3Appreciations = ({
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  // Intelligent truncation helper
+  const truncateIntelligently = (text: string, maxChars: number): string => {
+    if (text.length <= maxChars) return text;
+    
+    const truncated = text.substring(0, maxChars);
+    const lastPeriod = truncated.lastIndexOf('.');
+    const lastExclamation = truncated.lastIndexOf('!');
+    const lastCut = Math.max(lastPeriod, lastExclamation);
+    
+    if (lastCut > maxChars * 0.7) {
+      return truncated.substring(0, lastCut + 1);
+    }
+    
+    const lastSpace = truncated.lastIndexOf(' ');
+    if (lastSpace > maxChars * 0.8) {
+      return truncated.substring(0, lastSpace) + '...';
+    }
+    
+    return truncated.substring(0, maxChars - 3) + '...';
+  };
+
+  // Get appreciations that exceed the limit
+  const appreciationsOverLimit = appreciations.filter(
+    a => a.characterCount > appreciationSettings.maxCharacters
+  );
+
+  // Truncate a single appreciation
+  const handleTruncate = (studentId: number) => {
+    const updated = appreciations.map((a) => {
+      if (a.studentId === studentId && a.characterCount > appreciationSettings.maxCharacters) {
+        const truncatedText = truncateIntelligently(a.text, appreciationSettings.maxCharacters);
+        return { ...a, text: truncatedText, characterCount: truncatedText.length };
+      }
+      return a;
+    });
+    onAppreciationsChange(updated);
+    toast({ title: "Appréciation tronquée" });
+  };
+
+  // Truncate all appreciations over limit
+  const handleTruncateAll = () => {
+    const updated = appreciations.map((a) => {
+      if (a.characterCount > appreciationSettings.maxCharacters) {
+        const truncatedText = truncateIntelligently(a.text, appreciationSettings.maxCharacters);
+        return { ...a, text: truncatedText, characterCount: truncatedText.length };
+      }
+      return a;
+    });
+    onAppreciationsChange(updated);
+    toast({ 
+      title: "Troncature terminée", 
+      description: `${appreciationsOverLimit.length} appréciation(s) ajustée(s)` 
+    });
+  };
 
   const getStudentObservations = (studentId: number): string[] => {
     const obs: string[] = [];
@@ -142,11 +197,12 @@ const Step3Appreciations = ({
       setGenerationProgress(((i + 1) / total) * 100);
       
       try {
-        const text = await generateAppreciation(student, effectiveTone);
+        let text = await generateAppreciation(student, effectiveTone);
         
-        // Post-generation validation
+        // Post-generation validation and auto-truncation
         if (text.length > appreciationSettings.maxCharacters) {
-          console.warn(`⚠️ Appréciation trop longue pour ${student.firstName}: ${text.length}/${appreciationSettings.maxCharacters}`);
+          console.warn(`⚠️ Appréciation trop longue pour ${student.firstName}: ${text.length}/${appreciationSettings.maxCharacters} - troncature automatique`);
+          text = truncateIntelligently(text, appreciationSettings.maxCharacters);
         }
         
         newAppreciations.push({
@@ -398,6 +454,31 @@ const Step3Appreciations = ({
         </CardContent>
       </Card>
 
+      {/* Warning banner for over-limit appreciations */}
+      {appreciationsOverLimit.length > 0 && !isGeneratingAll && (
+        <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+          <CardContent className="py-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="text-sm font-medium">
+                  {appreciationsOverLimit.length} appréciation(s) dépasse(nt) la limite de {appreciationSettings.maxCharacters} caractères
+                </span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-200 dark:hover:bg-amber-900"
+                onClick={handleTruncateAll}
+              >
+                <Scissors className="w-4 h-4 mr-2" />
+                Tronquer toutes
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Appreciations list */}
       {appreciations.length > 0 && (
         <div className="space-y-4">
@@ -451,10 +532,21 @@ const Step3Appreciations = ({
                     disabled={appreciation.isGenerating}
                   />
                   {isOverLimit && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <Info className="w-3 h-3" />
-                      L'appréciation dépasse la limite de {appreciationSettings.maxCharacters} caractères
-                    </p>
+                    <div className="flex items-center justify-between text-xs text-destructive bg-destructive/10 p-2 rounded">
+                      <span className="flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        Dépasse de {appreciation.characterCount - appreciationSettings.maxCharacters} caractères
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 text-xs text-destructive hover:text-destructive"
+                        onClick={() => handleTruncate(student.id)}
+                      >
+                        <Scissors className="w-3 h-3 mr-1" />
+                        Tronquer
+                      </Button>
+                    </div>
                   )}
                   <div className="flex justify-end gap-2">
                     <Button
