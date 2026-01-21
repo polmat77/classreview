@@ -23,6 +23,7 @@ export interface ClassMetadata {
 export interface BehaviorObservation {
   studentIds: number[];
   description: string;
+  individualNotes?: Record<number, string>; // Notes individuelles par élève
 }
 
 export interface TalkativeObservation {
