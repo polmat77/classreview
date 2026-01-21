@@ -35,7 +35,15 @@ const Step3Appreciations = ({
     const obs: string[] = [];
     
     if (observations.behavior?.studentIds.includes(studentId)) {
-      obs.push(`Problèmes de comportement${observations.behavior.description ? `: ${observations.behavior.description}` : ""}`);
+      // Check for individual note first
+      const individualNote = observations.behavior.individualNotes?.[studentId];
+      if (individualNote) {
+        obs.push(`Problèmes de comportement: ${individualNote}`);
+      } else if (observations.behavior.description) {
+        obs.push(`Problèmes de comportement: ${observations.behavior.description}`);
+      } else {
+        obs.push("Problèmes de comportement");
+      }
     }
     
     if (observations.talkative?.studentIds.includes(studentId)) {

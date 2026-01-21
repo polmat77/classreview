@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ChevronLeft, ChevronRight, Plus, X, AlertTriangle, MessageCircle, Lightbulb, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, X, AlertTriangle, MessageCircle, Lightbulb, CheckCircle2, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Step2ObservationsProps {
@@ -27,6 +27,17 @@ const QUICK_OBSERVATIONS = [
   "travail irrégulier",
 ];
 
+const BEHAVIOR_SUGGESTIONS = [
+  "bavardages récurrents",
+  "insolence envers les adultes",
+  "utilisation du téléphone",
+  "perturbateur",
+  "manque de respect",
+  "agitation permanente",
+  "refuse de travailler",
+  "attitude passive-agressive",
+];
+
 const Step2Observations = ({
   students,
   observations,
@@ -44,6 +55,9 @@ const Step2Observations = ({
   const [behaviorDesc, setBehaviorDesc] = useState(
     observations.behavior?.description || ""
   );
+  const [behaviorIndividualNotes, setBehaviorIndividualNotes] = useState<Record<number, string>>(
+    observations.behavior?.individualNotes || {}
+  );
   const [selectedTalkativeIds, setSelectedTalkativeIds] = useState<number[]>(
     observations.talkative?.studentIds || []
   );
@@ -60,9 +74,32 @@ const Step2Observations = ({
   ) => {
     if (selectedIds.includes(studentId)) {
       setSelectedIds(selectedIds.filter(id => id !== studentId));
+      // Also remove individual note if deselecting from behavior
+      if (setSelectedIds === setSelectedBehaviorIds) {
+        setBehaviorIndividualNotes((prev) => {
+          const updated = { ...prev };
+          delete updated[studentId];
+          return updated;
+        });
+      }
     } else {
       setSelectedIds([...selectedIds, studentId]);
     }
+  };
+
+  const handleIndividualNoteChange = (studentId: number, note: string) => {
+    setBehaviorIndividualNotes((prev) => ({
+      ...prev,
+      [studentId]: note,
+    }));
+  };
+
+  const addBehaviorSuggestion = (studentId: number, suggestion: string) => {
+    setBehaviorIndividualNotes((prev) => {
+      const current = prev[studentId] || "";
+      const newNote = current ? `${current}, ${suggestion}` : suggestion;
+      return { ...prev, [studentId]: newNote };
+    });
   };
 
   const getStudentName = (id: number): string => {
@@ -89,8 +126,12 @@ const Step2Observations = ({
     onObservationsChange({
       ...observations,
       behavior: hasIssues 
-        ? { studentIds: selectedBehaviorIds, description: behaviorDesc }
-        : { studentIds: [], description: "" },
+        ? { 
+            studentIds: selectedBehaviorIds, 
+            description: behaviorDesc,
+            individualNotes: behaviorIndividualNotes 
+          }
+        : { studentIds: [], description: "", individualNotes: {} },
     });
     setCurrentQuestion(2);
   };
@@ -260,13 +301,65 @@ const Step2Observations = ({
                 </div>
                 
                 {selectedBehaviorIds.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Description (facultatif) :</p>
+                  <div className="space-y-3">
+                    <p className="text-sm text-muted-foreground">Description générale (facultatif) :</p>
                     <Input
                       value={behaviorDesc}
                       onChange={(e) => setBehaviorDesc(e.target.value)}
                       placeholder="Ex: bavardages incessants, insolence..."
                     />
+                    
+                    {/* Individual notes section */}
+                    <div className="space-y-3 pt-3 border-t">
+                      <div className="flex items-center gap-2">
+                        <Pencil className="w-4 h-4 text-muted-foreground" />
+                        <p className="text-sm font-medium">Notes individuelles (facultatif) :</p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Précisez le problème spécifique pour chaque élève. Ces notes remplaceront la description générale lors de la génération.
+                      </p>
+                      
+                      <div className="space-y-3">
+                        {selectedBehaviorIds.map((studentId) => {
+                          const student = students.find(s => s.id === studentId);
+                          if (!student) return null;
+                          
+                          return (
+                            <div key={studentId} className="p-3 bg-destructive/5 border border-destructive/20 rounded-lg space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="destructive" className="shrink-0">
+                                  {student.id}
+                                </Badge>
+                                <span className="font-medium text-sm">
+                                  {student.lastName} {student.firstName}
+                                </span>
+                              </div>
+                              
+                              {/* Quick suggestions */}
+                              <div className="flex flex-wrap gap-1">
+                                {BEHAVIOR_SUGGESTIONS.map((suggestion) => (
+                                  <Badge
+                                    key={suggestion}
+                                    variant="outline"
+                                    className="text-xs cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                    onClick={() => addBehaviorSuggestion(studentId, suggestion)}
+                                  >
+                                    + {suggestion}
+                                  </Badge>
+                                ))}
+                              </div>
+                              
+                              <Input
+                                value={behaviorIndividualNotes[studentId] || ""}
+                                onChange={(e) => handleIndividualNoteChange(studentId, e.target.value)}
+                                placeholder="Précision pour cet élève..."
+                                className="text-sm"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
                 
