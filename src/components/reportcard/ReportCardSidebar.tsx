@@ -190,26 +190,6 @@ export function ReportCardSidebar({
             </div>
           </div>
 
-          {/* Link to ClassCouncil AI */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link
-                to="/classcouncil-ai"
-                className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 mt-1.5 text-xs",
-                  "text-white/60 hover:bg-white/10 hover:text-white"
-                )}
-              >
-                <Sparkles className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && <span className="font-medium">ClassCouncil AI</span>}
-              </Link>
-            </TooltipTrigger>
-            {isCollapsed && (
-              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
-                ClassCouncil AI
-              </TooltipContent>
-            )}
-          </Tooltip>
         </div>
 
         {/* Separator */}
