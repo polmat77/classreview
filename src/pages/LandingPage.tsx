@@ -26,6 +26,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import classCouncilLogo from "@/assets/logo.png";
 import reportCardLogo from "@/assets/Logo_ReportCardAI.png";
+import aiProject4YouLogo from "@/assets/Logo_AIProject4you.png";
 
 // Floating particle component
 const FloatingParticle = ({ delay, duration, size, color, left, top }: {
@@ -150,13 +151,10 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img 
-              src={classCouncilLogo} 
+              src={aiProject4YouLogo} 
               alt="AIProject4You" 
-              className="w-10 h-10 rounded-lg"
+              className="h-12 w-auto"
             />
-            <span className="font-bold text-xl text-white">
-              AIProject4<span className="text-gold">You</span>
-            </span>
           </div>
           <div className="hidden md:flex items-center gap-6">
             <button 
