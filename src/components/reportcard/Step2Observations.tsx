@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight, Plus, X, AlertTriangle, MessageCircle, Lightbulb, CheckCircle2, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import StepResetButton from "./StepResetButton";
 
 interface Step2ObservationsProps {
   students: Student[];
@@ -14,6 +15,7 @@ interface Step2ObservationsProps {
   onObservationsChange: (observations: StudentObservations) => void;
   onNext: () => void;
   onBack: () => void;
+  onReset: () => void;
 }
 
 const QUICK_OBSERVATIONS = [
@@ -44,6 +46,7 @@ const Step2Observations = ({
   onObservationsChange,
   onNext,
   onBack,
+  onReset,
 }: Step2ObservationsProps) => {
   const { toast } = useToast();
   const [currentQuestion, setCurrentQuestion] = useState(1);
@@ -205,13 +208,22 @@ const Step2Observations = ({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Observations sur les élèves
-        </h1>
-        <p className="text-muted-foreground">
-          Question {currentQuestion} sur 3 • Cliquez sur les élèves concernés
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Observations sur les élèves
+          </h1>
+          <p className="text-muted-foreground">
+            Question {currentQuestion} sur 3 • Cliquez sur les élèves concernés
+          </p>
+        </div>
+        {(selectedBehaviorIds.length > 0 || selectedTalkativeIds.length > 0 || specificList.length > 0) && (
+          <StepResetButton 
+            onReset={onReset}
+            stepName="Observations"
+            description="Cette action effacera toutes les observations saisies (comportement, bavardages et remarques spécifiques)."
+          />
+        )}
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata, AppreciationSettings, AppreciationTone } from "@/types/reportcard";
 import ReportCardLayout from "@/components/reportcard/ReportCardLayout";
 import Step1DataImport from "@/components/reportcard/Step1DataImport";
 import Step2Observations from "@/components/reportcard/Step2Observations";
 import Step3Appreciations from "@/components/reportcard/Step3Appreciations";
 import Step4ClassSummary from "@/components/reportcard/Step4ClassSummary";
+import { useToast } from "@/hooks/use-toast";
 
 const STORAGE_KEY = "reportcard-ai-session";
 const PREFERENCES_KEY = "reportCardAI_preferences";
@@ -24,36 +25,45 @@ const getDefaultPreferences = (): SavedPreferences => {
   return { maxCharacters: 400, defaultTone: 'neutre' };
 };
 
-const initialState: ReportCardState = {
-  students: [],
-  classMetadata: null,
-  observations: {
+const initialObservations: StudentObservations = {
+  behavior: null,
+  talkative: null,
+  specific: [],
+};
+
+const initialClassSummary: ClassSummary = {
+  options: {
+    workLevel: null,
     behavior: null,
-    talkative: null,
-    specific: [],
+    participation: null,
+    progression: null,
   },
-  appreciations: [],
-  classSummary: {
-    options: {
-      workLevel: null,
-      behavior: null,
-      participation: null,
-      progression: null,
+  generatedText: "",
+  isEditing: false,
+  tone: 'neutre',
+  maxCharacters: 350,
+};
+
+const getInitialState = (): ReportCardState => {
+  const prefs = getDefaultPreferences();
+  return {
+    students: [],
+    classMetadata: null,
+    observations: { ...initialObservations },
+    appreciations: [],
+    classSummary: { ...initialClassSummary, tone: prefs.defaultTone, maxCharacters: prefs.maxCharacters },
+    appreciationSettings: {
+      maxCharacters: prefs.maxCharacters,
+      defaultTone: prefs.defaultTone,
+      individualTones: {},
     },
-    generatedText: "",
-    isEditing: false,
-    tone: 'neutre',
-    maxCharacters: 400,
-  },
-  appreciationSettings: {
-    maxCharacters: 400,
-    defaultTone: 'neutre',
-    individualTones: {},
-  },
-  currentStep: 1,
+    currentStep: 1,
+  };
 };
 
 const ReportCardAI = () => {
+  const { toast } = useToast();
+  
   const [state, setState] = useState<ReportCardState>(() => {
     // Load from localStorage on init
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -61,9 +71,10 @@ const ReportCardAI = () => {
       try {
         const parsed = JSON.parse(saved);
         const prefs = getDefaultPreferences();
+        const initial = getInitialState();
         // Ensure appreciationSettings exists (for sessions saved before this feature)
         return {
-          ...initialState,
+          ...initial,
           ...parsed,
           appreciationSettings: parsed.appreciationSettings || {
             maxCharacters: prefs.maxCharacters,
@@ -71,17 +82,17 @@ const ReportCardAI = () => {
             individualTones: {},
           },
           classSummary: {
-            ...initialState.classSummary,
+            ...initial.classSummary,
             ...parsed.classSummary,
             tone: parsed.classSummary?.tone || prefs.defaultTone,
             maxCharacters: parsed.classSummary?.maxCharacters || prefs.maxCharacters,
           },
         };
       } catch {
-        return initialState;
+        return getInitialState();
       }
     }
-    return initialState;
+    return getInitialState();
   });
 
   // Save to localStorage on state change
@@ -122,24 +133,74 @@ const ReportCardAI = () => {
     }));
   };
 
-  const resetSession = () => {
-    // Keep preferences but reset session
+  // Reset full session
+  const resetSession = useCallback(() => {
     const prefs = getDefaultPreferences();
+    const initial = getInitialState();
     setState({
-      ...initialState,
+      ...initial,
       appreciationSettings: {
         maxCharacters: prefs.maxCharacters,
         defaultTone: prefs.defaultTone,
         individualTones: {},
       },
       classSummary: {
-        ...initialState.classSummary,
+        ...initial.classSummary,
         tone: prefs.defaultTone,
         maxCharacters: prefs.maxCharacters,
       },
     });
     localStorage.removeItem(STORAGE_KEY);
-  };
+    toast({ title: "Session réinitialisée", description: "Toutes les données ont été effacées" });
+  }, [toast]);
+
+  // Reset Step 1: Data Import
+  const resetStep1 = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      students: [],
+      classMetadata: null,
+    }));
+    toast({ title: "Étape 1 réinitialisée", description: "Données des élèves effacées" });
+  }, [toast]);
+
+  // Reset Step 2: Observations
+  const resetStep2 = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      observations: { ...initialObservations },
+    }));
+    toast({ title: "Étape 2 réinitialisée", description: "Observations effacées" });
+  }, [toast]);
+
+  // Reset Step 3: Appreciations
+  const resetStep3 = useCallback(() => {
+    const prefs = getDefaultPreferences();
+    setState((prev) => ({
+      ...prev,
+      appreciations: [],
+      appreciationSettings: {
+        maxCharacters: prefs.maxCharacters,
+        defaultTone: prefs.defaultTone,
+        individualTones: {},
+      },
+    }));
+    toast({ title: "Étape 3 réinitialisée", description: "Appréciations effacées" });
+  }, [toast]);
+
+  // Reset Step 4: Class Summary
+  const resetStep4 = useCallback(() => {
+    const prefs = getDefaultPreferences();
+    setState((prev) => ({
+      ...prev,
+      classSummary: {
+        ...initialClassSummary,
+        tone: prefs.defaultTone,
+        maxCharacters: prefs.maxCharacters,
+      },
+    }));
+    toast({ title: "Étape 4 réinitialisée", description: "Bilan de classe effacé" });
+  }, [toast]);
 
   const renderStep = () => {
     switch (state.currentStep) {
@@ -151,6 +212,7 @@ const ReportCardAI = () => {
             onStudentsChange={setStudents}
             onClassMetadataChange={setClassMetadata}
             onNext={() => setCurrentStep(2)}
+            onReset={resetStep1}
           />
         );
       case 2:
@@ -161,6 +223,7 @@ const ReportCardAI = () => {
             onObservationsChange={setObservations}
             onNext={() => setCurrentStep(3)}
             onBack={() => setCurrentStep(1)}
+            onReset={resetStep2}
           />
         );
       case 3:
@@ -174,6 +237,7 @@ const ReportCardAI = () => {
             onAppreciationSettingsChange={setAppreciationSettings}
             onNext={() => setCurrentStep(4)}
             onBack={() => setCurrentStep(2)}
+            onReset={resetStep3}
           />
         );
       case 4:
@@ -184,6 +248,7 @@ const ReportCardAI = () => {
             onClassSummaryChange={setClassSummary}
             appreciations={state.appreciations}
             onBack={() => setCurrentStep(3)}
+            onReset={resetStep4}
           />
         );
       default:
