@@ -17,25 +17,37 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Core palette - Professional education theme */
-    --background: 210 20% 98%;
-    --foreground: 215 25% 15%;
+    /* AIProject4You Color Palette */
+    /* Dark blue primary: #1a2332 */
+    --background: 0 0% 100%;
+    --foreground: 218 33% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 218 33% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 218 33% 15%;
 
-    /* Primary - Professional Blue */
-    --primary: 215 85% 35%;
+    /* Primary - Dark Navy Blue #1a2332 */
+    --primary: 218 33% 15%;
     --primary-foreground: 0 0% 100%;
-    --primary-light: 215 85% 45%;
-    --primary-dark: 215 85% 25%;
+    --primary-light: 212 30% 25%;
+    --primary-dark: 218 40% 10%;
 
-    /* Secondary - Muted slate */
-    --secondary: 215 15% 92%;
-    --secondary-foreground: 215 25% 25%;
+    /* Secondary - Slate Blue #2c3e50, #4a5f7f */
+    --secondary: 210 25% 24%;
+    --secondary-foreground: 0 0% 100%;
+    --secondary-light: 213 26% 40%;
+
+    /* Cyan vibrant - #7dd3e8, #06b6d4 */
+    --cyan: 187 70% 70%;
+    --cyan-vibrant: 187 93% 43%;
+    --cyan-foreground: 218 33% 15%;
+
+    /* Gold premium - #f0a830, #f5c563 */
+    --gold: 38 87% 57%;
+    --gold-light: 42 88% 67%;
+    --gold-foreground: 218 33% 15%;
 
     /* Success - Growth green */
     --success: 145 65% 42%;
@@ -48,44 +60,46 @@ All colors MUST be HSL.
     --warning-light: 35 90% 65%;
 
     /* Muted - Neutral tones */
-    --muted: 215 15% 92%;
-    --muted-foreground: 215 15% 45%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 218 15% 45%;
 
-    /* Accent - Interactive blue */
-    --accent: 205 90% 55%;
+    /* Accent - Interactive cyan */
+    --accent: 187 93% 43%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 88%;
-    --input: 215 20% 88%;
-    --ring: 215 85% 35%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 187 93% 43%;
 
     --radius: 0.625rem;
 
-    /* Gold accent for branding */
-    --gold: 42 75% 55%;
-    --gold-light: 45 85% 72%;
-    --gold-foreground: 215 50% 20%;
-
     /* Navy for sidebar - exact match with logo outer edge #192D43 */
-    --navy: 212 46% 18%;
-    --navy-light: 212 42% 25%;
-    --navy-dark: 212 50% 14%;
+    --navy: 218 33% 15%;
+    --navy-light: 212 30% 25%;
+    --navy-dark: 218 40% 10%;
+
+    /* Slate variations */
+    --slate: 210 25% 24%;
+    --slate-light: 213 26% 40%;
 
     /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(215 85% 35%) 0%, hsl(215 85% 50%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(218 33% 15%) 0%, hsl(210 25% 24%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(218 33% 15%) 0%, hsl(210 25% 24%) 100%);
+    --gradient-cyan: linear-gradient(135deg, hsl(187 93% 43%) 0%, hsl(187 70% 70%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 87% 57%) 0%, hsl(42 88% 67%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(145 65% 42%) 0%, hsl(145 65% 55%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(215 85% 35%) 0%, hsl(205 90% 55%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(42 75% 55%) 0%, hsl(45 85% 72%) 100%);
-    --gradient-navy: linear-gradient(180deg, hsl(212 46% 18%) 0%, hsl(212 50% 14%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(187 93% 43%) 0%, hsl(213 26% 40%) 100%);
+    --gradient-navy: linear-gradient(180deg, hsl(218 33% 15%) 0%, hsl(218 40% 10%) 100%);
     
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(215 25% 15% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(215 25% 15% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(215 25% 15% / 0.1);
-    --shadow-elevated: 0 20px 25px -5px hsl(215 25% 15% / 0.1), 0 10px 10px -5px hsl(215 25% 15% / 0.04);
+    --shadow-sm: 0 1px 2px 0 hsl(218 33% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(218 33% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(218 33% 15% / 0.1);
+    --shadow-elevated: 0 20px 25px -5px hsl(218 33% 15% / 0.1), 0 10px 10px -5px hsl(218 33% 15% / 0.04);
+    --shadow-glow-cyan: 0 0 20px hsl(187 93% 43% / 0.3);
 
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -106,22 +120,31 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 210 20% 98%;
+    --background: 218 33% 8%;
+    --foreground: 0 0% 98%;
 
-    --card: 215 30% 10%;
-    --card-foreground: 210 20% 98%;
+    --card: 218 33% 12%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 215 30% 10%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 218 33% 12%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 215 85% 55%;
-    --primary-foreground: 0 0% 100%;
-    --primary-light: 215 85% 65%;
-    --primary-dark: 215 85% 45%;
+    --primary: 187 93% 50%;
+    --primary-foreground: 218 33% 10%;
+    --primary-light: 187 93% 60%;
+    --primary-dark: 187 93% 40%;
 
-    --secondary: 215 20% 18%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 213 26% 30%;
+    --secondary-foreground: 0 0% 98%;
+    --secondary-light: 213 26% 45%;
+
+    --cyan: 187 70% 65%;
+    --cyan-vibrant: 187 93% 50%;
+    --cyan-foreground: 218 33% 10%;
+
+    --gold: 38 87% 60%;
+    --gold-light: 42 88% 70%;
+    --gold-foreground: 218 33% 10%;
 
     --success: 145 65% 50%;
     --success-foreground: 0 0% 100%;
@@ -131,37 +154,39 @@ All colors MUST be HSL.
     --warning-foreground: 0 0% 100%;
     --warning-light: 35 90% 70%;
 
-    --muted: 215 20% 18%;
-    --muted-foreground: 215 15% 65%;
+    --muted: 218 20% 18%;
+    --muted-foreground: 218 15% 65%;
 
-    --accent: 205 90% 60%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 187 93% 50%;
+    --accent-foreground: 218 33% 10%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 20%;
-    --input: 215 20% 20%;
-    --ring: 215 85% 55%;
+    --border: 218 20% 20%;
+    --input: 218 20% 20%;
+    --ring: 187 93% 50%;
 
-    --gold: 42 75% 60%;
-    --gold-light: 45 85% 75%;
-    --gold-foreground: 0 0% 100%;
+    --navy: 218 33% 12%;
+    --navy-light: 212 30% 20%;
+    --navy-dark: 218 40% 8%;
 
-    --navy: 212 46% 14%;
-    --navy-light: 212 42% 20%;
-    --navy-dark: 212 50% 10%;
+    --slate: 210 25% 20%;
+    --slate-light: 213 26% 35%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(215 85% 45%) 0%, hsl(215 85% 60%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(218 33% 12%) 0%, hsl(210 25% 20%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(218 33% 12%) 0%, hsl(210 25% 20%) 100%);
+    --gradient-cyan: linear-gradient(135deg, hsl(187 93% 50%) 0%, hsl(187 70% 65%) 100%);
+    --gradient-gold: linear-gradient(135deg, hsl(38 87% 60%) 0%, hsl(42 88% 70%) 100%);
     --gradient-success: linear-gradient(135deg, hsl(145 65% 50%) 0%, hsl(145 65% 65%) 100%);
-    --gradient-hero: linear-gradient(135deg, hsl(215 85% 45%) 0%, hsl(205 90% 60%) 100%);
-    --gradient-gold: linear-gradient(135deg, hsl(42 75% 60%) 0%, hsl(45 85% 75%) 100%);
-    --gradient-navy: linear-gradient(180deg, hsl(212 46% 14%) 0%, hsl(212 50% 10%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(187 93% 50%) 0%, hsl(213 26% 35%) 100%);
+    --gradient-navy: linear-gradient(180deg, hsl(218 33% 12%) 0%, hsl(218 40% 8%) 100%);
 
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.2);
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.3);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.3);
     --shadow-elevated: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 10px 10px -5px hsl(0 0% 0% / 0.2);
+    --shadow-glow-cyan: 0 0 20px hsl(187 93% 50% / 0.4);
 
     --sidebar-background: 212 46% 14%;
     --sidebar-foreground: 0 0% 98%;
