@@ -27,6 +27,7 @@ import {
 import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle, AlertTriangle, BookOpen, Users, Calendar, Bug } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePronoteGradePDF, parseStudentsFromManualInput } from "@/utils/reportcardPdfParser";
+import StepResetButton from "./StepResetButton";
 
 interface Step1DataImportProps {
   students: Student[];
@@ -34,6 +35,7 @@ interface Step1DataImportProps {
   onStudentsChange: (students: Student[]) => void;
   onClassMetadataChange: (metadata: ClassMetadata | null) => void;
   onNext: () => void;
+  onReset: () => void;
 }
 
 const Step1DataImport = ({ 
@@ -41,7 +43,8 @@ const Step1DataImport = ({
   classMetadata, 
   onStudentsChange, 
   onClassMetadataChange, 
-  onNext 
+  onNext,
+  onReset,
 }: Step1DataImportProps) => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -167,13 +170,22 @@ const Step1DataImport = ({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Import des données élèves
-        </h1>
-        <p className="text-muted-foreground">
-          Importez vos données depuis PRONOTE ou saisissez-les manuellement
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Import des données élèves
+          </h1>
+          <p className="text-muted-foreground">
+            Importez vos données depuis PRONOTE ou saisissez-les manuellement
+          </p>
+        </div>
+        {students.length > 0 && (
+          <StepResetButton 
+            onReset={onReset}
+            stepName="Import des données"
+            description="Cette action supprimera tous les élèves importés et les métadonnées de la classe."
+          />
+        )}
       </div>
 
       {/* Help accordion */}

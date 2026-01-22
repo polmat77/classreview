@@ -17,6 +17,7 @@ import { ChevronLeft, ChevronRight, Sparkles, RefreshCw, Copy, Check, Loader2, D
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ReportCardToneSelector from "./ReportCardToneSelector";
+import StepResetButton from "./StepResetButton";
 
 interface Step3AppreciationsProps {
   students: Student[];
@@ -27,6 +28,7 @@ interface Step3AppreciationsProps {
   onAppreciationSettingsChange: (settings: AppreciationSettings) => void;
   onNext: () => void;
   onBack: () => void;
+  onReset: () => void;
 }
 
 const Step3Appreciations = ({
@@ -38,6 +40,7 @@ const Step3Appreciations = ({
   onAppreciationSettingsChange,
   onNext,
   onBack,
+  onReset,
 }: Step3AppreciationsProps) => {
   const { toast } = useToast();
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
@@ -327,13 +330,22 @@ const Step3Appreciations = ({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          Appréciations individuelles
-        </h1>
-        <p className="text-muted-foreground">
-          Générez, modifiez et copiez les appréciations pour chaque élève
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
+            Appréciations individuelles
+          </h1>
+          <p className="text-muted-foreground">
+            Générez, modifiez et copiez les appréciations pour chaque élève
+          </p>
+        </div>
+        {appreciations.length > 0 && (
+          <StepResetButton 
+            onReset={onReset}
+            stepName="Appréciations"
+            description="Cette action supprimera toutes les appréciations générées et réinitialisera les paramètres de génération."
+          />
+        )}
       </div>
 
       {/* Settings card */}

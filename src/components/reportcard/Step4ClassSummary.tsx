@@ -50,6 +50,7 @@ import ReportCardToneSelector from "./ReportCardToneSelector";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
+import StepResetButton from "./StepResetButton";
 
 interface Step4ClassSummaryProps {
   students: Student[];
@@ -57,6 +58,7 @@ interface Step4ClassSummaryProps {
   onClassSummaryChange: (classSummary: ClassSummary) => void;
   appreciations: GeneratedAppreciation[];
   onBack: () => void;
+  onReset: () => void;
 }
 
 const Step4ClassSummary = ({
@@ -65,6 +67,7 @@ const Step4ClassSummary = ({
   onClassSummaryChange,
   appreciations,
   onBack,
+  onReset,
 }: Step4ClassSummaryProps) => {
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
@@ -279,11 +282,20 @@ const Step4ClassSummary = ({
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Bilan général de la classe</h1>
-        <p className="text-muted-foreground">
-          Sélectionnez les caractéristiques de la classe pour générer le bilan
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 text-center">
+          <h1 className="text-3xl font-bold text-foreground mb-2">Bilan général de la classe</h1>
+          <p className="text-muted-foreground">
+            Sélectionnez les caractéristiques de la classe pour générer le bilan
+          </p>
+        </div>
+        {classSummary.generatedText && (
+          <StepResetButton 
+            onReset={onReset}
+            stepName="Bilan de classe"
+            description="Cette action effacera le bilan généré et les options sélectionnées."
+          />
+        )}
       </div>
 
       {/* Class stats and distribution */}
