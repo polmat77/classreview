@@ -20,7 +20,8 @@ import {
   suggestAttribution, 
   analyzeConductFromComments, 
   suggestToneFromAttribution,
-  generateAttributionSummary 
+  generateAttributionSummary,
+  truncateIntelligently
 } from "@/utils/attributionAnalysis";
 import AttributionSelector from "@/components/AttributionSelector";
 import ConductIssuesIndicator from "@/components/ConductIssuesIndicator";
@@ -29,6 +30,13 @@ import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelec
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
 import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
@@ -74,6 +82,12 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   // Anonymization level
   const [anonymizationLevel, setAnonymizationLevel] = useAnonymizationLevel();
   
+  // Character limit for individual appreciations
+  const [individualCharLimit, setIndividualCharLimit] = useState<number>(() => {
+    const saved = localStorage.getItem('classcouncil_individual_char_limit');
+    return saved ? parseInt(saved, 10) : 400;
+  });
+  
   // Attribution state
   const [attributionsEnabled, setAttributionsEnabled] = useState<boolean>(() => {
     const saved = localStorage.getItem('attributionsEnabled');
@@ -82,6 +96,14 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [studentAttributions, setStudentAttributions] = useState<Record<number, StudentAttribution>>({});
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
+  
+  // Manual attribution removal tracking
+  const [manuallyRemovedAttributions, setManuallyRemovedAttributions] = useState<Set<number>>(new Set());
+
+  // Save character limit preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('classcouncil_individual_char_limit', individualCharLimit.toString());
+  }, [individualCharLimit]);
 
   // Save attribution preference to localStorage
   useEffect(() => {
@@ -133,6 +155,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         setStudentTones({});
         setStudentTexts([]);
         setStudentAttributions({});
+        setManuallyRemovedAttributions(new Set());
       } else {
         throw new Error("Aucun bulletin élève trouvé dans le PDF");
       }
@@ -155,6 +178,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setStudentTones({});
     setStudentTexts([]);
     setStudentAttributions({});
+    setManuallyRemovedAttributions(new Set());
     onDataLoaded?.({ bulletinsEleves: null });
   };
 
@@ -231,6 +255,17 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       const newAttributions: Record<number, StudentAttribution> = {};
       
       students.forEach((student, index) => {
+        // Skip if manually removed
+        if (manuallyRemovedAttributions.has(index)) {
+          newAttributions[index] = {
+            attribution: null,
+            suggestedAttribution: null,
+            isManuallySet: true,
+            conductAnalysis: { hasConductIssues: false, detectedKeywords: [], relevantExcerpts: [] },
+          };
+          return;
+        }
+        
         const subjects = student.subjects || [];
         const conductAnalysis = analyzeConductFromComments(subjects);
         const suggested = suggestAttribution(student.average, subjects);
@@ -265,6 +300,17 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   };
 
   const handleAttributionChange = (index: number, attribution: Attribution | null) => {
+    // Track if user explicitly removes attribution
+    if (attribution === null) {
+      setManuallyRemovedAttributions(prev => new Set(prev).add(index));
+    } else {
+      setManuallyRemovedAttributions(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(index);
+        return newSet;
+      });
+    }
+    
     setStudentAttributions(prev => ({
       ...prev,
       [index]: {
@@ -285,6 +331,17 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     const newAttributions: Record<number, StudentAttribution> = {};
     
     students.forEach((student, index) => {
+      // Respect manually removed attributions
+      if (manuallyRemovedAttributions.has(index)) {
+        newAttributions[index] = {
+          attribution: null,
+          suggestedAttribution: null,
+          isManuallySet: true,
+          conductAnalysis: { hasConductIssues: false, detectedKeywords: [], relevantExcerpts: [] },
+        };
+        return;
+      }
+      
       const subjects = student.subjects || [];
       const conductAnalysis = analyzeConductFromComments(subjects);
       const suggested = suggestAttribution(student.average, subjects);
@@ -343,7 +400,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     } : undefined;
 
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'individual', tone, classData, student },
+      body: { type: 'individual', tone, classData, student, charLimit: individualCharLimit },
     });
 
     if (error) throw error;
@@ -353,6 +410,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     // If standard mode, automatically reinject the first name
     if (anonymizationLevel === 'standard') {
       appreciation = reinjectFirstName(appreciation, student.firstName);
+    }
+    
+    // Truncate if still over limit
+    if (appreciation.length > individualCharLimit) {
+      appreciation = truncateIntelligently(appreciation, individualCharLimit);
     }
     
     return appreciation;
@@ -402,6 +464,14 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const getSummary = () => {
     const attrs = Object.values(studentAttributions).map(a => a.attribution);
     return generateAttributionSummary(attrs);
+  };
+
+  // Character count color helper
+  const getCharCountColor = (current: number, limit: number) => {
+    const percentage = (current / limit) * 100;
+    if (percentage < 80) return 'text-green-600';
+    if (percentage <= 100) return 'text-amber-600';
+    return 'text-red-600';
   };
 
   // STATE A: No individual bulletins loaded - Show upload placeholder
@@ -485,15 +555,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                   Les attributions sont des mentions décernées par le conseil de classe pour valoriser ou alerter les élèves :
                 </p>
                 <div className="text-sm space-y-1.5">
-                  <p>⚠️ <strong>Avert. Travail</strong> : travail insuffisant, notes basses</p>
-                  <p>⚠️ <strong>Avert. Conduite</strong> : problèmes de comportement</p>
+                  <p>⚠️ <strong>Avert. Travail</strong> : 3+ mentions négatives sur le travail</p>
+                  <p>⚠️ <strong>Avert. Conduite</strong> : comportement grave ou 2+ incidents modérés</p>
                   <p>⚠️ <strong>Avert. Travail & Conduite</strong> : cumul des deux</p>
-                  <p>👍 <strong>Encouragements</strong> : efforts remarqués malgré résultats moyens</p>
-                  <p>⭐ <strong>Tableau d'honneur</strong> : bons résultats et bonne attitude</p>
-                  <p>🏆 <strong>Félicitations</strong> : excellence dans le travail et le comportement</p>
+                  <p>👍 <strong>Encouragements</strong> : 2+ mentions de progrès ou efforts</p>
+                  <p>⭐ <strong>Tableau d'honneur</strong> : bons résultats (14+) et bonne attitude</p>
+                  <p>🏆 <strong>Félicitations</strong> : mentions d'excellence</p>
                 </div>
                 <p className="text-xs text-muted-foreground pt-2 border-t">
-                  En activant cette option, ClassCouncil AI suggérera automatiquement une attribution pour chaque élève en fonction de sa moyenne et des appréciations des professeurs.
+                  ClassCouncil AI suggère automatiquement une attribution basée sur l'analyse des appréciations des professeurs.
                 </p>
               </div>
             </PopoverContent>
@@ -526,6 +596,26 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Character limit selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">Limite :</span>
+            <Select
+              value={individualCharLimit.toString()}
+              onValueChange={(v) => setIndividualCharLimit(parseInt(v, 10))}
+            >
+              <SelectTrigger className="h-8 w-[100px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="300">300 car.</SelectItem>
+                <SelectItem value="350">350 car.</SelectItem>
+                <SelectItem value="400">400 car.</SelectItem>
+                <SelectItem value="450">450 car.</SelectItem>
+                <SelectItem value="500">500 car.</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
           <TooltipProvider delayDuration={200}>
             <AnonymizationQuickSelector
               value={anonymizationLevel}
@@ -557,6 +647,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             detectedKeywords: [],
             relevantExcerpts: [],
           };
+          const currentText = studentTexts[index] || "";
+          const charCount = currentText.length;
+          const isOverLimit = charCount > individualCharLimit;
           
           return (
             <Card key={index} className="hover:shadow-md transition-all duration-200">
@@ -688,12 +781,16 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                         onDataLoaded?.({ studentAppreciations: newTexts });
                       }}
                       className="min-h-[120px] resize-none"
-                      maxLength={450}
                       placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
                     />
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        {(studentTexts[index] || "").length}/450 caractères
+                      <span className={`text-sm font-medium ${getCharCountColor(charCount, individualCharLimit)}`}>
+                        {charCount}/{individualCharLimit} caractères
+                        {isOverLimit && (
+                          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">
+                            {charCount - individualCharLimit} en trop
+                          </span>
+                        )}
                       </span>
                       <div className="flex gap-2">
                         <Button
@@ -718,13 +815,28 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     onCopy={() => setCopiedIndex(index)}
                   />
                 ) : (
-                  <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
-                    {studentTexts[index] || (
-                      <span className="text-muted-foreground italic">
-                        Aucune appréciation générée. Cliquez sur ✨ pour générer.
-                      </span>
+                  <div className="space-y-2">
+                    <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
+                      {studentTexts[index] || (
+                        <span className="text-muted-foreground italic">
+                          Aucune appréciation générée. Cliquez sur ✨ pour générer.
+                        </span>
+                      )}
+                    </p>
+                    {/* Character counter when not editing */}
+                    {currentText && (
+                      <div className="flex items-center justify-end">
+                        <span className={`text-xs font-medium ${getCharCountColor(charCount, individualCharLimit)}`}>
+                          {charCount}/{individualCharLimit}
+                          {isOverLimit && (
+                            <span className="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">
+                              -{charCount - individualCharLimit}
+                            </span>
+                          )}
+                        </span>
+                      </div>
                     )}
-                  </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

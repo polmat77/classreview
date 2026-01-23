@@ -125,10 +125,15 @@ function validateRequest(body: unknown): ValidatedRequest | null {
   // Validate tone (optional, defaults to standard)
   const tone: AppreciationTone = isValidTone(rawBody.tone) ? rawBody.tone : 'standard';
   
-  // Validate charLimit (optional, defaults to 255, range 200-400)
+  // Validate charLimit (optional, defaults based on type)
+  // For general: 200-400, default 255
+  // For individual: 300-500, default 400
+  const defaultLimit = rawBody.type === 'individual' ? 400 : 255;
+  const minLimit = rawBody.type === 'individual' ? 300 : 200;
+  const maxLimit = rawBody.type === 'individual' ? 500 : 400;
   const charLimit = typeof rawBody.charLimit === 'number' 
-    ? Math.max(200, Math.min(400, rawBody.charLimit)) 
-    : 255;
+    ? Math.max(minLimit, Math.min(maxLimit, rawBody.charLimit)) 
+    : defaultLimit;
   
   const result: ValidatedRequest = {
     type: rawBody.type,
@@ -294,12 +299,26 @@ ${toneInstruction}`;
 - Ambiance générale : ${ambiance}`;
 
     } else {
+      // Calculate individual length guidance
+      const getIndividualLengthGuidance = (limit: number): string => {
+        if (limit <= 300) return "CONCIS : 2-3 phrases, aller à l'essentiel.";
+        if (limit <= 350) return "STANDARD : 3 phrases, équilibre synthèse et détail.";
+        if (limit <= 400) return "DÉTAILLÉ : 3-4 phrases, développe les points clés.";
+        if (limit <= 450) return "DÉVELOPPÉ : 4 phrases, analyse plus complète.";
+        return "COMPLET : 4-5 phrases maximum, analyse détaillée.";
+      };
+
       // ANONYMIZATION: Always use {prénom} placeholder in the prompt
       // The frontend will handle reinserting the real first name based on anonymization level
       systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation du conseil de classe pour un bulletin scolaire français.
 
+CONTRAINTE ABSOLUE DE LONGUEUR :
+- L'appréciation DOIT contenir MAXIMUM ${charLimit} caractères (espaces et ponctuation inclus)
+- Compte précisément chaque caractère
+- Ne dépasse JAMAIS cette limite, même de 1 caractère
+- ${getIndividualLengthGuidance(charLimit)}
+
 RÈGLES STRICTES :
-- Entre 250 et 450 caractères (obligatoire)
 - Commencer OBLIGATOIREMENT par {prénom} (ce placeholder sera remplacé ensuite)
 - Utilise {prénom} chaque fois que tu dois mentionner le prénom de l'élève
 - Rédaction à la troisième personne (ne jamais s'adresser directement à l'élève avec "tu" ou "vous")
