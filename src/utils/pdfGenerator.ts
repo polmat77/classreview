@@ -8,9 +8,9 @@ import {
   calculateMedian, 
   calculateStdDev, 
   calculateSuccessRate,
-  getEvaluatedStudentsCount,
-  getTopStudents,
+  getGradeDistribution,
   getStrugglingStudents,
+  getTopStudents,
   getWeakSubjects,
   getSubjectAverages,
   getStrongSubjects,
@@ -18,15 +18,45 @@ import {
   getPositivePoints,
   getWarningPoints,
   getSuggestedActions,
-  SubjectStats
 } from '@/utils/statisticsCalculations';
 
-// Extend jsPDF type for autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: { finalY: number };
-  }
+// Color palette
+const COLORS = {
+  primary: [30, 58, 138] as [number, number, number], // Navy blue
+  secondary: [6, 182, 212] as [number, number, number], // Cyan
+  text: [31, 41, 55] as [number, number, number],
+  muted: [107, 114, 128] as [number, number, number],
+  background: [249, 250, 251] as [number, number, number],
+  success: [22, 163, 74] as [number, number, number],
+  warning: [234, 88, 12] as [number, number, number],
+  danger: [220, 38, 38] as [number, number, number],
+  excellent: [220, 252, 231] as [number, number, number],
+  tresBien: [219, 234, 254] as [number, number, number],
+  bien: [254, 249, 195] as [number, number, number],
+  moyen: [254, 243, 199] as [number, number, number],
+  insuffisant: [254, 215, 170] as [number, number, number],
+  inquietant: [254, 226, 226] as [number, number, number],
+};
+
+const COLORS_BW = {
+  primary: [50, 50, 50] as [number, number, number],
+  secondary: [80, 80, 80] as [number, number, number],
+  text: [0, 0, 0] as [number, number, number],
+  muted: [100, 100, 100] as [number, number, number],
+  background: [245, 245, 245] as [number, number, number],
+  success: [60, 60, 60] as [number, number, number],
+  warning: [80, 80, 80] as [number, number, number],
+  danger: [40, 40, 40] as [number, number, number],
+  excellent: [230, 230, 230] as [number, number, number],
+  tresBien: [235, 235, 235] as [number, number, number],
+  bien: [240, 240, 240] as [number, number, number],
+  moyen: [240, 240, 240] as [number, number, number],
+  insuffisant: [235, 235, 235] as [number, number, number],
+  inquietant: [225, 225, 225] as [number, number, number],
+};
+
+function getColors(colorMode: boolean) {
+  return colorMode ? COLORS : COLORS_BW;
 }
 
 export interface ExportOptions {
@@ -35,11 +65,6 @@ export interface ExportOptions {
   colorMode: boolean;
   schoolLogo: boolean;
   includeAttributions?: boolean;
-}
-
-export interface StudentAppreciationData {
-  appreciation: string;
-  attribution?: Attribution | null;
 }
 
 export interface ExportData {
@@ -52,96 +77,59 @@ export interface ExportData {
   professeurPrincipal?: string;
 }
 
-const COLORS = {
-  primary: [25, 45, 67] as [number, number, number],
-  primaryLight: [44, 62, 80] as [number, number, number],
-  accent: [245, 158, 11] as [number, number, number],
-  success: [34, 197, 94] as [number, number, number],
-  warning: [234, 179, 8] as [number, number, number],
-  danger: [239, 68, 68] as [number, number, number],
-  text: [30, 30, 30] as [number, number, number],
-  muted: [107, 114, 128] as [number, number, number],
-  background: [248, 250, 252] as [number, number, number],
-  excellent: [220, 252, 231] as [number, number, number],
-  tresBien: [219, 234, 254] as [number, number, number],
-  bien: [224, 231, 255] as [number, number, number],
-  moyen: [254, 243, 199] as [number, number, number],
-  insuffisant: [254, 215, 170] as [number, number, number],
-  inquietant: [254, 226, 226] as [number, number, number],
-};
-
-const COLORS_BW = {
-  primary: [0, 0, 0] as [number, number, number],
-  primaryLight: [60, 60, 60] as [number, number, number],
-  accent: [80, 80, 80] as [number, number, number],
-  success: [40, 40, 40] as [number, number, number],
-  warning: [100, 100, 100] as [number, number, number],
-  danger: [0, 0, 0] as [number, number, number],
-  text: [0, 0, 0] as [number, number, number],
-  muted: [80, 80, 80] as [number, number, number],
-  background: [255, 255, 255] as [number, number, number],
-  excellent: [240, 240, 240] as [number, number, number],
-  tresBien: [235, 235, 235] as [number, number, number],
-  bien: [230, 230, 230] as [number, number, number],
-  moyen: [225, 225, 225] as [number, number, number],
-  insuffisant: [220, 220, 220] as [number, number, number],
-  inquietant: [215, 215, 215] as [number, number, number],
-};
-
-function getColors(colorMode: boolean) {
-  return colorMode ? COLORS : COLORS_BW;
+function getEvaluatedStudentsCount(eleves: EleveData[]): number {
+  return eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale > 0).length;
 }
 
-// Grade distribution calculation
-interface GradeRange {
-  label: string;
-  emoji: string;
-  min: number;
-  max: number;
-  colorKey: keyof typeof COLORS;
-}
-
-const gradeRanges: GradeRange[] = [
-  { label: 'Excellent', emoji: '🏆', min: 16, max: 20, colorKey: 'excellent' },
-  { label: 'Très bien', emoji: '✨', min: 14, max: 16, colorKey: 'tresBien' },
-  { label: 'Bien', emoji: '👍', min: 12, max: 14, colorKey: 'bien' },
-  { label: 'Moyen', emoji: '📊', min: 10, max: 12, colorKey: 'moyen' },
-  { label: 'Insuffisant', emoji: '⚠️', min: 8, max: 10, colorKey: 'insuffisant' },
-  { label: 'Inquiétant', emoji: '🚨', min: 0, max: 8, colorKey: 'inquietant' },
-];
-
-function getGradeDistribution(eleves: EleveData[]) {
-  const validStudents = eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale > 0);
+// PDF Icons as text (jsPDF doesn't support emojis natively)
+// Using simple ASCII/Unicode symbols that render correctly
+const PDF_ICONS = {
+  // Stats icons
+  average: '[Moy]',
+  median: '[Med]',
+  stdDev: '[ET]',
+  success: '[OK]',
+  students: '[Elv]',
+  subjects: '[Mat]',
   
-  return gradeRanges.map(range => {
-    const count = validStudents.filter(e => {
-      if (range.min === 16) return e.moyenneGenerale >= range.min;
-      if (range.min === 0) return e.moyenneGenerale < range.max;
-      return e.moyenneGenerale >= range.min && e.moyenneGenerale < range.max;
-    }).length;
-    
-    const percentage = validStudents.length > 0 ? Math.round((count / validStudents.length) * 100) : 0;
-    
-    return { ...range, count, percentage };
-  });
-}
+  // Grade level icons
+  excellent: '***',
+  tresBien: '**+',
+  bien: '**',
+  moyen: '*',
+  insuffisant: '-',
+  inquietant: '--',
+  
+  // Section icons
+  pointsForts: '[+]',
+  aRenforcer: '[-]',
+  top: '[#]',
+  surveiller: '[!]',
+  recommandations: '[i]',
+  valoriser: '[+]',
+  attention: '[!]',
+  actions: '[>]',
+  
+  // Medals
+  medal1: '[1er]',
+  medal2: '[2e]',
+  medal3: '[3e]',
+};
 
 function addPageHeader(doc: jsPDF, title: string, colors: typeof COLORS, pageNum: number, totalPages: number) {
   const pageWidth = doc.internal.pageSize.getWidth();
   
   doc.setFillColor(...colors.primary);
-  doc.rect(0, 0, pageWidth, 15, 'F');
+  doc.rect(0, 0, pageWidth, 18, 'F');
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text(title, 14, 10);
+  doc.text(title, 14, 12);
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Page ${pageNum}/${totalPages}`, pageWidth - 14, 10, { align: 'right' });
-  
-  doc.setTextColor(...colors.text);
+  doc.text(`Page ${pageNum}/${totalPages}`, pageWidth - 14, 12, { align: 'right' });
 }
 
 function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
@@ -208,8 +196,8 @@ function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
   
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text('Élèves', 52.5, statsY + 40, { align: 'center' });
-  doc.text('Matières', 105, statsY + 40, { align: 'center' });
+  doc.text('Eleves', 52.5, statsY + 40, { align: 'center' });
+  doc.text('Matieres', 105, statsY + 40, { align: 'center' });
   doc.text('Moyenne', 157.5, statsY + 40, { align: 'center' });
   
   // Professeur principal section
@@ -235,12 +223,13 @@ function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
   // Footer
   doc.setTextColor(...colors.muted);
   doc.setFontSize(9);
-  doc.text(`Généré le ${new Date().toLocaleDateString('fr-FR')} par ClassCouncil AI`, pageWidth / 2, pageHeight - 20, { align: 'center' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Genere le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
 }
 
 function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
   doc.addPage();
-  addPageHeader(doc, 'Analyse des résultats', colors, pageNum, totalPages);
+  addPageHeader(doc, 'Analyse des resultats', colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 25;
@@ -248,7 +237,7 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   if (!data.classeCSV) {
     doc.setTextColor(...colors.muted);
     doc.setFontSize(12);
-    doc.text('Données d\'analyse non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
+    doc.text('Donnees d\'analyse non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
     return;
   }
   
@@ -273,12 +262,12 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   const nbMatieres = data.classeCSV.matieres.length;
   
   const kpis = [
-    { label: 'Moyenne générale', value: isNaN(moyenne) ? '-' : moyenne.toFixed(2), icon: '📊' },
-    { label: 'Médiane', value: isNaN(mediane) ? '-' : mediane.toFixed(2), icon: '👥' },
-    { label: 'Écart-type', value: isNaN(ecartType) ? '-' : ecartType.toFixed(2), icon: '📈' },
-    { label: 'Taux de réussite', value: isNaN(tauxReussite) ? '-' : `${tauxReussite}%`, icon: '✅' },
-    { label: 'Élèves évalués', value: String(nbEvalues), icon: '🎓' },
-    { label: 'Matières', value: String(nbMatieres), icon: '📚' },
+    { label: 'Moyenne generale', value: isNaN(moyenne) ? '-' : moyenne.toFixed(2), icon: PDF_ICONS.average },
+    { label: 'Mediane', value: isNaN(mediane) ? '-' : mediane.toFixed(2), icon: PDF_ICONS.median },
+    { label: 'Ecart-type', value: isNaN(ecartType) ? '-' : ecartType.toFixed(2), icon: PDF_ICONS.stdDev },
+    { label: 'Taux de reussite', value: isNaN(tauxReussite) ? '-' : `${tauxReussite}%`, icon: PDF_ICONS.success },
+    { label: 'Eleves evalues', value: String(nbEvalues), icon: PDF_ICONS.students },
+    { label: 'Matieres', value: String(nbMatieres), icon: PDF_ICONS.subjects },
   ];
   
   for (let i = 0; i < kpis.length; i++) {
@@ -307,21 +296,24 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   doc.setTextColor(...colors.text);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Répartition par tranche de moyenne', 14, yPos);
+  doc.text('Repartition par tranche de moyenne', 14, yPos);
   yPos += 8;
   
   const distribution = getGradeDistribution(eleves);
   
-  const tableData = distribution.map(d => [
-    `${d.emoji} ${d.label}`,
-    d.min === 16 ? '≥ 16' : d.min === 0 ? '< 8' : `${d.min} - ${d.max}`,
+  // Use text labels instead of emojis
+  const gradeLabels = ['Excellent', 'Tres bien', 'Bien', 'Moyen', 'Insuffisant', 'Inquietant'];
+  
+  const tableData = distribution.map((d, i) => [
+    gradeLabels[i] || d.label,
+    d.min === 16 ? '>= 16' : d.min === 0 ? '< 8' : `${d.min} - ${d.max}`,
     String(d.count),
     `${d.percentage}%`
   ]);
   
   autoTable(doc, {
     startY: yPos,
-    head: [['Tranche', 'Fourchette', 'Nombre d\'élèves', 'Pourcentage']],
+    head: [['Tranche', 'Fourchette', 'Nb eleves', '%']],
     body: tableData,
     theme: 'striped',
     headStyles: {
@@ -372,17 +364,17 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   doc.setTextColor(22, 163, 74);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('📈 Points forts (moyenne ≥ 14)', 18, yPos + 10);
+  doc.text('[+] Points forts (moyenne >= 14)', 18, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   
   if (strongSubjects.length === 0) {
-    doc.text('Aucune matière ≥ 14', 18, yPos + 22);
+    doc.text('Aucune matiere >= 14', 18, yPos + 22);
   } else {
     strongSubjects.slice(0, 4).forEach((s, i) => {
-      doc.text(`• ${s.name}: ${s.currentAvg.toFixed(2)}`, 18, yPos + 22 + i * 8);
+      doc.text(`- ${s.name}: ${s.currentAvg.toFixed(2)}`, 18, yPos + 22 + i * 8);
     });
   }
   
@@ -393,17 +385,17 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   doc.setTextColor(234, 88, 12);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('📉 À renforcer (moyenne < 12)', 18 + colWidth + 7, yPos + 10);
+  doc.text('[-] A renforcer (moyenne < 12)', 18 + colWidth + 7, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   
   if (weakSubjects.length === 0) {
-    doc.text('Aucune matière < 12', 18 + colWidth + 7, yPos + 22);
+    doc.text('Aucune matiere < 12', 18 + colWidth + 7, yPos + 22);
   } else {
     weakSubjects.slice(0, 4).forEach((s, i) => {
-      doc.text(`• ${s.name}: ${s.currentAvg.toFixed(2)}`, 18 + colWidth + 7, yPos + 22 + i * 8);
+      doc.text(`- ${s.name}: ${s.currentAvg.toFixed(2)}`, 18 + colWidth + 7, yPos + 22 + i * 8);
     });
   }
   
@@ -413,11 +405,11 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   doc.setTextColor(...colors.text);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('🏆 Top 3 élèves', 14, yPos);
+  doc.text('[#] Top 3 eleves', 14, yPos);
   yPos += 8;
   
   const top3 = getTopStudents(eleves, 3);
-  const medals = ['🥇', '🥈', '🥉'];
+  const medals = [PDF_ICONS.medal1, PDF_ICONS.medal2, PDF_ICONS.medal3];
   const medalColors: [number, number, number][] = [
     [254, 243, 199], // Gold
     [243, 244, 246], // Silver
@@ -431,8 +423,10 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
     doc.setFillColor(...medalColors[i]);
     doc.roundedRect(x, yPos, podiumWidth, 30, 3, 3, 'F');
     
-    doc.setFontSize(16);
-    doc.text(medals[i], x + podiumWidth / 2, yPos + 12, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.text(medals[i], x + podiumWidth / 2, yPos + 10, { align: 'center' });
     
     doc.setTextColor(...colors.text);
     doc.setFontSize(8);
@@ -448,7 +442,7 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
 
 function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
   doc.addPage();
-  addPageHeader(doc, 'Suivi des élèves', colors, pageNum, totalPages);
+  addPageHeader(doc, 'Suivi des eleves', colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 25;
@@ -456,7 +450,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   if (!data.classeCSV) {
     doc.setTextColor(...colors.muted);
     doc.setFontSize(12);
-    doc.text('Données de suivi non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
+    doc.text('Donnees de suivi non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
     return;
   }
   
@@ -466,7 +460,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   doc.setTextColor(...colors.text);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('👁️ Élèves à surveiller (moyenne < 10)', 14, yPos);
+  doc.text('[!] Eleves a surveiller (moyenne < 10)', 14, yPos);
   yPos += 8;
   
   const struggling = getStrugglingStudents(eleves).slice(0, 8);
@@ -480,7 +474,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Élève', 'Moyenne', 'Matières en difficulté']],
+      head: [['Eleve', 'Moyenne', 'Matieres en difficulte']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -509,7 +503,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
     doc.setTextColor(...colors.muted);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'italic');
-    doc.text('Aucun élève avec une moyenne < 10', 14, yPos + 5);
+    doc.text('Aucun eleve avec une moyenne < 10', 14, yPos + 5);
     yPos += 20;
   }
   
@@ -517,7 +511,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   doc.setTextColor(...colors.text);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('💡 Recommandations pour le conseil de classe', 14, yPos);
+  doc.text('[i] Recommandations pour le conseil de classe', 14, yPos);
   yPos += 8;
   
   const subjectStats = getSubjectAverages(data.classeCSV);
@@ -546,7 +540,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   doc.setTextColor(22, 163, 74);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('✅ Points à valoriser', xPos, yPos + 10);
+  doc.text('[+] Points a valoriser', xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
@@ -561,7 +555,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   doc.setTextColor(234, 88, 12);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('⚠️ Points d\'attention', xPos, yPos + 10);
+  doc.text('[!] Points d\'attention', xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
@@ -576,20 +570,20 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   doc.setTextColor(37, 99, 235);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('🎯 Actions suggérées', xPos, yPos + 10);
+  doc.text('[>] Actions suggerees', xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
   suggestedActions.slice(0, 3).forEach((action, i) => {
-    const lines = doc.splitTextToSize(`→ ${action}`, colW - 5);
+    const lines = doc.splitTextToSize(`> ${action}`, colW - 5);
     doc.text(lines.slice(0, 2), xPos, yPos + 18 + i * 12);
   });
 }
 
 function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOptions, colors: typeof COLORS, pageNum: number, totalPages: number) {
   doc.addPage();
-  addPageHeader(doc, 'Classement des élèves', colors, pageNum, totalPages);
+  addPageHeader(doc, 'Classement des eleves', colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 25;
@@ -613,7 +607,7 @@ function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpti
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Rang', 'Élève', 'Moyenne', 'Absences', 'Retards']],
+      head: [['Rang', 'Eleve', 'Moyenne', 'Abs.', 'Ret.']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -643,14 +637,14 @@ function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpti
 
 function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOptions, colors: typeof COLORS, pageNum: number, totalPages: number) {
   doc.addPage();
-  addPageHeader(doc, 'Analyse par matière', colors, pageNum, totalPages);
+  addPageHeader(doc, 'Analyse par matiere', colors, pageNum, totalPages);
   
   let yPos = 25;
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Résultats par discipline', 14, yPos);
+  doc.text('Resultats par discipline', 14, yPos);
   yPos += 10;
   
   const matieres = data.bulletinClasse?.matieres || [];
@@ -664,7 +658,7 @@ function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpt
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Matière', 'Moyenne', 'Appréciation']],
+      head: [['Matiere', 'Moy.', 'Appreciation']],
       body: tableData,
       theme: 'striped',
       headStyles: {
@@ -698,7 +692,7 @@ function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpt
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Matière', 'Moyenne classe', 'Observations']],
+      head: [['Matiere', 'Moy. classe', 'Observations']],
       body: matieresList,
       theme: 'striped',
       headStyles: {
@@ -721,7 +715,7 @@ function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpt
 
 function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
   doc.addPage();
-  addPageHeader(doc, 'Appréciation générale', colors, pageNum, totalPages);
+  addPageHeader(doc, 'Appreciation generale', colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 30;
@@ -729,7 +723,7 @@ function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof
   doc.setTextColor(...colors.text);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Appréciation du conseil de classe', 14, yPos);
+  doc.text('Appreciation du conseil de classe', 14, yPos);
   yPos += 15;
   
   if (data.generalAppreciation) {
@@ -750,7 +744,7 @@ function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof
     doc.setTextColor(...colors.muted);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'italic');
-    doc.text('Aucune appréciation générale n\'a été générée.', 14, yPos);
+    doc.text('Aucune appreciation generale n\'a ete generee.', 14, yPos);
   }
 }
 
@@ -787,7 +781,7 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
   const footerMargin = 20;
   
   doc.addPage();
-  addPageHeader(doc, 'Appréciations individuelles', colors, currentPage, totalPages);
+  addPageHeader(doc, 'Appreciations individuelles', colors, currentPage, totalPages);
   
   let yPos = headerHeight;
   
@@ -795,7 +789,7 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
   doc.setTextColor(...colors.text);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${studentList.length} élèves évalués`, 14, yPos + 5);
+  doc.text(`${studentList.length} eleves evalues`, 14, yPos + 5);
   yPos += 15;
   
   for (let i = 0; i < studentList.length; i++) {
@@ -814,7 +808,7 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
     if (yPos + cardHeight > pageHeight - footerMargin) {
       doc.addPage();
       currentPage++;
-      addPageHeader(doc, 'Appréciations individuelles', colors, currentPage, totalPages);
+      addPageHeader(doc, 'Appreciations individuelles', colors, currentPage, totalPages);
       yPos = headerHeight;
     }
     
@@ -857,7 +851,7 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
     } else {
       doc.setTextColor(...colors.muted);
       doc.setFont('helvetica', 'italic');
-      doc.text('Appréciation non générée', 18, yPos + 20);
+      doc.text('Appreciation non generee', 18, yPos + 20);
     }
     
     // Attribution badge if enabled
