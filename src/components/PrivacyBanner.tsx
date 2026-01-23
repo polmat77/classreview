@@ -1,28 +1,24 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Shield, X } from "lucide-react";
 
-export function PrivacyBanner() {
-  const [showBanner, setShowBanner] = useState(false);
+const APP_DISPLAY_NAMES: Record<string, string> = {
+  classcouncil: "ClassCouncil AI",
+  reportcard: "ReportCard AI",
+  quizmaster: "QuizMaster AI",
+};
 
-  useEffect(() => {
-    const accepted = localStorage.getItem("privacyAccepted");
-    if (!accepted) {
-      // Small delay to avoid flash on page load
-      const timer = setTimeout(() => setShowBanner(true), 500);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+interface PrivacyBannerProps {
+  isOpen: boolean;
+  onAccept: () => void;
+  appName: string;
+}
 
-  const handleAccept = () => {
-    localStorage.setItem("privacyAccepted", "true");
-    localStorage.setItem("privacyAcceptedDate", new Date().toISOString());
-    setShowBanner(false);
-  };
+export function PrivacyBanner({ isOpen, onAccept, appName }: PrivacyBannerProps) {
+  const displayName = APP_DISPLAY_NAMES[appName] || appName;
 
-  if (!showBanner) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-300">
@@ -47,7 +43,7 @@ export function PrivacyBanner() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0 -mt-1 -mr-2"
-                  onClick={handleAccept}
+                  onClick={onAccept}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -55,7 +51,7 @@ export function PrivacyBanner() {
 
               <div className="space-y-3 text-sm text-muted-foreground">
                 <p>
-                  ClassCouncil AI traite vos fichiers{" "}
+                  <strong className="text-foreground">{displayName}</strong> traite vos fichiers{" "}
                   <strong className="text-foreground">localement dans votre navigateur</strong>.
                   Aucune donnée d'élève n'est stockée sur nos serveurs.
                 </p>
@@ -77,7 +73,7 @@ export function PrivacyBanner() {
                     📄 En savoir plus
                   </Link>
                 </Button>
-                <Button onClick={handleAccept} className="sm:flex-1">
+                <Button onClick={onAccept} className="sm:flex-1">
                   ✓ J'ai compris
                 </Button>
               </div>

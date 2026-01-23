@@ -8,7 +8,6 @@ import Index from "./pages/Index";
 import ReportCardAI from "./pages/ReportCardAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
-import { PrivacyBanner } from "./components/PrivacyBanner";
 
 const queryClient = new QueryClient();
 
@@ -18,7 +17,6 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <PrivacyBanner />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/classcouncil-ai" element={<Index />} />
