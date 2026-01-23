@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Sparkles, Loader2, AlertTriangle, Scissors } from "lucide-react";
+import { BookOpen, Sparkles, Loader2, AlertTriangle, Scissors, Copy, Check } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -84,6 +84,27 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     return saved ? parseInt(saved, 10) : 255;
   });
   const [wasTruncated, setWasTruncated] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopyAppreciation = async () => {
+    if (!generalText.trim()) return;
+    
+    try {
+      await navigator.clipboard.writeText(generalText);
+      setIsCopied(true);
+      toast({
+        title: "✓ Appréciation copiée",
+        description: "L'appréciation a été copiée dans le presse-papiers",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de copier le texte",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Persist char limit preference
   useEffect(() => {
@@ -335,6 +356,26 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
                   Tronquer
                 </Button>
               )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={handleCopyAppreciation}
+                disabled={!generalText.trim()}
+                title="Copier l'appréciation"
+              >
+                {isCopied ? (
+                  <>
+                    <Check className="h-4 w-4 text-green-600" />
+                    <span className="text-green-600">Copié ✓</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Copier
+                  </>
+                )}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
