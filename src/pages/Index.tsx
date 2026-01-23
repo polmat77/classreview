@@ -7,6 +7,8 @@ import AppreciationsTab from "@/components/tabs/AppreciationsTab";
 import ExportTab from "@/components/tabs/ExportTab";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
+import { useRGPDModal } from "@/hooks/useRGPDModal";
+import { PrivacyBanner } from "@/components/PrivacyBanner";
 
 const tabs = [
   { value: "analyse", label: "Résultats" },
@@ -26,6 +28,7 @@ export interface ClasseDataState {
 const Index = () => {
   const [activeTab, setActiveTab] = useState("analyse");
   const [classeData, setClasseData] = useState<ClasseDataState>({});
+  const { showModal, acceptRGPD } = useRGPDModal('classcouncil');
 
   const getStepNumber = () => {
     return tabs.findIndex((tab) => tab.value === activeTab) + 1;
@@ -111,21 +114,28 @@ const Index = () => {
   };
 
   return (
-    <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {/* Stepper */}
-      <div className="mb-6">
-        <Stepper 
-          currentStep={getStepNumber()} 
-          steps={tabs.map((tab, index) => ({ id: index + 1, label: tab.label }))}
-          onStepClick={handleStepClick}
-        />
-      </div>
+    <>
+      <PrivacyBanner 
+        isOpen={showModal} 
+        onAccept={acceptRGPD} 
+        appName="classcouncil" 
+      />
+      <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>
+        {/* Stepper */}
+        <div className="mb-6">
+          <Stepper 
+            currentStep={getStepNumber()} 
+            steps={tabs.map((tab, index) => ({ id: index + 1, label: tab.label }))}
+            onStepClick={handleStepClick}
+          />
+        </div>
 
-      {/* Content */}
-      <div className="bg-card rounded-2xl shadow-sm border p-6">
-        {renderTabContent()}
-      </div>
-    </MainLayout>
+        {/* Content */}
+        <div className="bg-card rounded-2xl shadow-sm border p-6">
+          {renderTabContent()}
+        </div>
+      </MainLayout>
+    </>
   );
 };
 
