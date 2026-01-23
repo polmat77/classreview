@@ -88,6 +88,7 @@ interface ClassDataInput {
   trimester?: string;
   averageClass?: number;
   subjects?: SubjectInput[];
+  charLimit?: number;
 }
 
 interface StudentInput {
@@ -99,6 +100,7 @@ interface StudentInput {
 interface ValidatedRequest {
   type: 'general' | 'individual';
   tone: AppreciationTone;
+  charLimit: number;
   classData?: {
     className: string;
     trimester: string;
@@ -123,9 +125,15 @@ function validateRequest(body: unknown): ValidatedRequest | null {
   // Validate tone (optional, defaults to standard)
   const tone: AppreciationTone = isValidTone(rawBody.tone) ? rawBody.tone : 'standard';
   
+  // Validate charLimit (optional, defaults to 255, range 200-400)
+  const charLimit = typeof rawBody.charLimit === 'number' 
+    ? Math.max(200, Math.min(400, rawBody.charLimit)) 
+    : 255;
+  
   const result: ValidatedRequest = {
     type: rawBody.type,
     tone,
+    charLimit,
   };
   
   // Validate classData if provided
@@ -240,17 +248,31 @@ serve(async (req) => {
       );
     }
 
-    const { type, tone, classData, student } = validatedRequest;
+    const { type, tone, charLimit, classData, student } = validatedRequest;
     const toneInstruction = toneInstructions[tone];
 
     let systemPrompt: string;
     let userPrompt: string;
 
+    // Calculate style guidance based on char limit
+    const getLengthGuidance = (limit: number): string => {
+      if (limit <= 200) return "ULTRA-CONCIS : 1-2 phrases maximum, style télégraphique, aller à l'essentiel.";
+      if (limit <= 255) return "CONCIS : 2-3 phrases maximum, style direct et factuel.";
+      if (limit <= 300) return "STANDARD : 3 phrases, équilibre entre synthèse et détail.";
+      if (limit <= 350) return "DÉTAILLÉ : 3-4 phrases, développe les points clés.";
+      return "DÉVELOPPÉ : 4 phrases maximum, analyse complète mais structurée.";
+    };
+
     if (type === 'general') {
       systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation générale du conseil de classe pour un bulletin scolaire français.
 
+CONTRAINTE ABSOLUE DE LONGUEUR :
+- L'appréciation DOIT contenir MAXIMUM ${charLimit} caractères (espaces et ponctuation inclus)
+- Compte précisément chaque caractère
+- Ne dépasse JAMAIS cette limite, même de 1 caractère
+- ${getLengthGuidance(charLimit)}
+
 RÈGLES STRICTES :
-- Entre 200 et 255 caractères (strict)
 - Rédaction impersonnelle à la troisième personne (parler de "la classe", "le groupe")
 - Ton professionnel
 - Synthétiser la dynamique générale, l'ambiance de travail et les axes de progression

@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { BookOpen, Sparkles, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, Sparkles, Loader2, AlertTriangle, Scissors } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BulletinClasseData, BulletinEleveData, extractTextFromPDF, parseBulletinClasse } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +14,51 @@ import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
+
+const CHAR_LIMIT_OPTIONS = [
+  { value: 200, label: "200 caractères", description: "très court" },
+  { value: 225, label: "225 caractères", description: "court" },
+  { value: 255, label: "255 caractères", description: "standard PRONOTE" },
+  { value: 300, label: "300 caractères", description: "détaillé" },
+  { value: 350, label: "350 caractères", description: "très détaillé" },
+  { value: 400, label: "400 caractères", description: "maximum" },
+];
+
+const truncateIntelligently = (text: string, limit: number): string => {
+  if (text.length <= limit) return text;
+  
+  const truncated = text.substring(0, limit);
+  const lastPeriod = truncated.lastIndexOf('.');
+  const lastExclamation = truncated.lastIndexOf('!');
+  const lastQuestion = truncated.lastIndexOf('?');
+  
+  const lastPunctuation = Math.max(lastPeriod, lastExclamation, lastQuestion);
+  
+  if (lastPunctuation > limit * 0.7) {
+    return truncated.substring(0, lastPunctuation + 1);
+  }
+  
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > limit * 0.8) {
+    return truncated.substring(0, lastSpace) + '...';
+  }
+  
+  return truncated + '...';
+};
+
+const getCharCountColor = (current: number, limit: number): string => {
+  const percentage = (current / limit) * 100;
+  if (percentage < 90) return 'text-green-600';
+  if (percentage <= 100) return 'text-amber-600';
+  return 'text-destructive';
+};
+
+const getCharBadgeVariant = (current: number, limit: number): "default" | "secondary" | "destructive" => {
+  const percentage = (current / limit) * 100;
+  if (percentage < 90) return 'default';
+  if (percentage <= 100) return 'secondary';
+  return 'destructive';
+};
 
 interface MatieresTabProps {
   onNext: () => void;
@@ -33,6 +79,16 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
   const [classTone, setClassTone] = useState<AppreciationTone>('standard');
   const [currentFileName, setCurrentFileName] = useState<string>("");
+  const [charLimit, setCharLimit] = useState<number>(() => {
+    const saved = localStorage.getItem('classcouncil_char_limit');
+    return saved ? parseInt(saved, 10) : 255;
+  });
+  const [wasTruncated, setWasTruncated] = useState(false);
+
+  // Persist char limit preference
+  useEffect(() => {
+    localStorage.setItem('classcouncil_char_limit', charLimit.toString());
+  }, [charLimit]);
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
   const classeCSV = data?.classeCSV;
@@ -128,11 +184,21 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     } : undefined;
 
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'general', tone: classTone, classData },
+      body: { type: 'general', tone: classTone, classData, charLimit },
     });
 
     if (error) throw error;
-    return result.appreciation;
+    
+    // Apply truncation as safety net if AI exceeded limit
+    let appreciation = result.appreciation;
+    if (appreciation.length > charLimit) {
+      appreciation = truncateIntelligently(appreciation, charLimit);
+      setWasTruncated(true);
+    } else {
+      setWasTruncated(false);
+    }
+    
+    return appreciation;
   };
 
   const handleRegenerateGeneral = async () => {
@@ -203,16 +269,46 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         </div>
       </div>
 
-      {/* Tone Selector */}
+      {/* Settings Card: Tone & Character Limit */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Tonalité de l'appréciation</CardTitle>
-          <CardDescription>Choisissez le ton adapté à la dynamique de la classe</CardDescription>
+          <CardTitle className="text-base">Paramètres de génération</CardTitle>
+          <CardDescription>Choisissez le ton et la longueur de l'appréciation</CardDescription>
         </CardHeader>
-        <CardContent>
-          <ToneSelector value={classTone} onChange={setClassTone} />
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Tonalité</label>
+            <ToneSelector value={classTone} onChange={setClassTone} />
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Limite de caractères</label>
+            <Select
+              value={charLimit.toString()}
+              onValueChange={(value) => setCharLimit(parseInt(value, 10))}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHAR_LIMIT_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value.toString()}>
+                    {option.label} ({option.description})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
+
+      {/* Truncation Warning */}
+      {wasTruncated && (
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>Le texte a été tronqué intelligemment pour respecter la limite de {charLimit} caractères.</span>
+        </div>
+      )}
 
       {/* Class Appreciation Card */}
       <Card>
@@ -220,22 +316,40 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>Appréciation générale de la classe</CardTitle>
-              <CardDescription>Synthèse du trimestre (200-255 caractères)</CardDescription>
+              <CardDescription>Synthèse du trimestre (max. {charLimit} caractères)</CardDescription>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="gap-2"
-              onClick={handleRegenerateGeneral}
-              disabled={isLoadingGeneral}
-            >
-              {isLoadingGeneral ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
+            <div className="flex items-center gap-2">
+              {generalText.length > charLimit && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-2 text-amber-600 border-amber-300 hover:bg-amber-50"
+                  onClick={() => {
+                    const truncated = truncateIntelligently(generalText, charLimit);
+                    setGeneralText(truncated);
+                    onDataLoaded?.({ generalAppreciation: truncated });
+                    toast({ title: "Texte tronqué", description: "L'appréciation a été raccourcie intelligemment." });
+                  }}
+                >
+                  <Scissors className="h-4 w-4" />
+                  Tronquer
+                </Button>
               )}
-              Régénérer avec IA
-            </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                onClick={handleRegenerateGeneral}
+                disabled={isLoadingGeneral}
+              >
+                {isLoadingGeneral ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                Régénérer avec IA
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -244,18 +358,23 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               value={generalText}
               onChange={(e) => {
                 setGeneralText(e.target.value);
+                setWasTruncated(false);
                 onDataLoaded?.({ generalAppreciation: e.target.value });
               }}
               className="min-h-[120px] resize-none"
-              maxLength={255}
               placeholder="Cliquez sur 'Régénérer avec IA' pour générer l'appréciation..."
             />
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {generalText.length}/255 caractères
+              <span className={`text-sm font-medium ${getCharCountColor(generalText.length, charLimit)}`}>
+                {generalText.length}/{charLimit} caractères
+                {generalText.length > charLimit && (
+                  <Badge variant="destructive" className="ml-2">
+                    {generalText.length - charLimit} en trop
+                  </Badge>
+                )}
               </span>
-              <Badge variant={generalText.length > 240 ? "destructive" : generalText.length < 200 ? "secondary" : "default"}>
-                {255 - generalText.length} restants
+              <Badge variant={getCharBadgeVariant(generalText.length, charLimit)}>
+                {charLimit - generalText.length} restants
               </Badge>
             </div>
           </div>
