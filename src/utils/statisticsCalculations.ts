@@ -99,7 +99,47 @@ export function getStudentsBelow(eleves: EleveData[], threshold: number): number
   ).length;
 }
 
-// Get weak subjects for a student
+// Grade distribution for PDF export
+export interface GradeDistributionItem {
+  label: string;
+  emoji: string;
+  min: number;
+  max: number;
+  count: number;
+  percentage: number;
+  colorKey: string;
+}
+
+// Get grade distribution for students
+export function getGradeDistribution(eleves: EleveData[]): GradeDistributionItem[] {
+  const validEleves = eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale !== null);
+  const total = validEleves.length;
+  
+  const ranges = [
+    { label: 'Excellent', emoji: '***', min: 16, max: 20, colorKey: 'excellent' },
+    { label: 'Tres bien', emoji: '**+', min: 14, max: 16, colorKey: 'tresBien' },
+    { label: 'Bien', emoji: '**', min: 12, max: 14, colorKey: 'bien' },
+    { label: 'Moyen', emoji: '*', min: 10, max: 12, colorKey: 'moyen' },
+    { label: 'Insuffisant', emoji: '-', min: 8, max: 10, colorKey: 'insuffisant' },
+    { label: 'Inquietant', emoji: '--', min: 0, max: 8, colorKey: 'inquietant' },
+  ];
+  
+  return ranges.map(range => {
+    const count = validEleves.filter(e => {
+      if (range.min === 16) return e.moyenneGenerale >= 16;
+      if (range.min === 0) return e.moyenneGenerale < 8;
+      return e.moyenneGenerale >= range.min && e.moyenneGenerale < range.max;
+    }).length;
+    
+    return {
+      ...range,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+    };
+  });
+}
+
+
 export function getWeakSubjects(eleve: EleveData, threshold: number = 10): string[] {
   const weakSubjects: string[] = [];
   Object.entries(eleve.moyennesParMatiere).forEach(([subject, grade]) => {
