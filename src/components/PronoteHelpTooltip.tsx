@@ -149,7 +149,7 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" size="sm" className="gap-1.5 bg-orange-500 text-white hover:bg-orange-600 hover:text-white">
           <HelpCircle className="h-4 w-4" />
           <span className="text-xs">Comment exporter depuis PRONOTE ?</span>
         </Button>
