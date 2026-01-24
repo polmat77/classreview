@@ -15,66 +15,48 @@ interface ReportCardToneSelectorProps {
   showDescription?: boolean;
 }
 
-// Tone configuration with colors and icons
+// Unified tone configuration with solid colored backgrounds
 const toneConfig: Record<AppreciationTone, {
   icon: typeof AlertTriangle;
   label: string;
   shortLabel: string;
-  bgColor: string;
-  bgColorSelected: string;
-  borderColor: string;
-  iconColor: string;
-  hoverBg: string;
+  bg: string;
+  ring: string;
 }> = {
   ferme: {
     icon: AlertTriangle,
     label: 'Ferme mais juste',
     shortLabel: 'Ferme',
-    bgColor: 'bg-red-100',
-    bgColorSelected: 'bg-red-500',
-    borderColor: 'border-red-500',
-    iconColor: 'text-red-600',
-    hoverBg: 'hover:bg-red-50',
+    bg: 'bg-red-600',
+    ring: 'ring-red-600',
   },
   neutre: {
     icon: Minus,
     label: 'Neutre et factuel',
     shortLabel: 'Neutre',
-    bgColor: 'bg-gray-100',
-    bgColorSelected: 'bg-gray-500',
-    borderColor: 'border-gray-500',
-    iconColor: 'text-gray-600',
-    hoverBg: 'hover:bg-gray-50',
+    bg: 'bg-slate-600',
+    ring: 'ring-slate-600',
   },
   bienveillant: {
     icon: Heart,
     label: 'Bienveillant',
     shortLabel: 'Bienv.',
-    bgColor: 'bg-pink-100',
-    bgColorSelected: 'bg-pink-500',
-    borderColor: 'border-pink-500',
-    iconColor: 'text-pink-600',
-    hoverBg: 'hover:bg-pink-50',
+    bg: 'bg-emerald-500',
+    ring: 'ring-emerald-500',
   },
   encourageant: {
     icon: ThumbsUp,
     label: 'Encourageant',
     shortLabel: 'Encour.',
-    bgColor: 'bg-green-100',
-    bgColorSelected: 'bg-green-500',
-    borderColor: 'border-green-500',
-    iconColor: 'text-green-600',
-    hoverBg: 'hover:bg-green-50',
+    bg: 'bg-cyan-500',
+    ring: 'ring-cyan-500',
   },
   constructif: {
     icon: TrendingUp,
     label: 'Constructif',
     shortLabel: 'Constr.',
-    bgColor: 'bg-blue-100',
-    bgColorSelected: 'bg-blue-500',
-    borderColor: 'border-blue-500',
-    iconColor: 'text-blue-600',
-    hoverBg: 'hover:bg-blue-50',
+    bg: 'bg-violet-500',
+    ring: 'ring-violet-500',
   },
 };
 
@@ -93,7 +75,7 @@ const ReportCardToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
@@ -106,14 +88,14 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200",
-                      isActive
-                        ? `${config.bgColorSelected} text-white shadow-sm`
-                        : `${config.bgColor} ${config.hoverBg} ${config.iconColor} opacity-70 hover:opacity-100`
+                      "flex items-center gap-1 px-2 py-1.5 rounded-lg text-white font-medium text-xs transition-all duration-200 hover:opacity-90",
+                      config.bg,
+                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
+                      isActive && config.ring
                     )}
                   >
                     <Icon className="h-3.5 w-3.5" />
-                    {isActive && <span className="text-xs font-medium">{config.shortLabel}</span>}
+                    {isActive && <span>{config.shortLabel}</span>}
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -130,7 +112,7 @@ const ReportCardToneSelector = ({
   return (
     <div className="space-y-3">
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
@@ -143,19 +125,18 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-200",
-                      config.bgColor,
-                      config.hoverBg,
-                      isActive 
-                        ? `${config.borderColor} border-2 scale-110 shadow-md` 
-                        : "border border-transparent hover:-translate-y-0.5"
+                      "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-sm md:text-base text-white transition-all duration-200 hover:opacity-90",
+                      config.bg,
+                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
+                      isActive && config.ring
                     )}
                   >
-                    <Icon className={cn("w-6 h-6", config.iconColor)} />
+                    <Icon className="h-4 w-4" />
+                    <span>{config.label}</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
-                  {config.label}
+                  {getToneDescription(tone)}
                 </TooltipContent>
               </Tooltip>
             );
