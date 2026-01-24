@@ -1,14 +1,23 @@
 // Types for ReportCardAI application
 
+export interface StudentStats {
+  totalNotes: number;      // Total valid grades
+  nonRendus: number;       // "N.Rdu" count
+  notesAbove10: number;    // Grades >= 10
+  notesBelow10: number;    // Grades < 10
+}
+
 export interface Student {
   id: number;
   lastName: string;
   firstName: string;
   average: number | null;
-  seriousness?: number | null; // Note "Sérieux général en classe"
+  grades?: (number | string)[];  // Individual grades from PDF
+  stats?: StudentStats;          // Calculated statistics
+  seriousness?: number | null;   // Note "Sérieux général en classe"
   participation?: number | null; // Note "Participation orale"
   absences?: number;
-  nonRendus?: number; // "N.Rdu" count
+  nonRendus?: number;            // "N.Rdu" count (legacy, now in stats)
   appreciations?: string[];
 }
 
