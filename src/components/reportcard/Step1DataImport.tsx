@@ -14,20 +14,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Upload, FileText, Edit3, CheckCircle2, Trash2, HelpCircle, AlertCircle, AlertTriangle, BookOpen, Users, Calendar, Bug } from "lucide-react";
+import { Upload, FileText, Edit3, CheckCircle2, Trash2, AlertTriangle, BookOpen, Users, Calendar, Bug, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePronoteGradePDF, parseStudentsFromManualInput } from "@/utils/reportcardPdfParser";
 import StepResetButton from "./StepResetButton";
+import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 
 interface Step1DataImportProps {
   students: Student[];
@@ -36,6 +31,30 @@ interface Step1DataImportProps {
   onClassMetadataChange: (metadata: ClassMetadata | null) => void;
   onNext: () => void;
   onReset: () => void;
+}
+
+// Interface for calculated student statistics
+interface StudentStats {
+  totalNotes: number;
+  nonRendus: number;
+  notesAbove10: number;
+  notesBelow10: number;
+}
+
+// Calculate stats from student data (basic version based on available data)
+function calculateStudentStats(student: Student): StudentStats {
+  // Since we don't have individual grades stored, we use available data
+  // nonRendus comes directly from parsed data
+  const nonRendus = student.nonRendus || 0;
+  
+  // For now, we estimate based on average if available
+  // This is a simplified version - in production, individual grades would be stored
+  return {
+    totalNotes: 0, // Would need individual grades
+    nonRendus,
+    notesAbove10: 0, // Would need individual grades
+    notesBelow10: 0, // Would need individual grades
+  };
 }
 
 const Step1DataImport = ({ 
@@ -153,20 +172,6 @@ const Step1DataImport = ({
     setParseError(null);
   };
 
-  const getAverageBadgeVariant = (average: number | null) => {
-    if (average === null) return "secondary";
-    if (average >= 14) return "default"; // green via CSS
-    if (average >= 10) return "secondary"; // orange via CSS
-    return "destructive"; // red
-  };
-
-  const getAverageBadgeClass = (average: number | null) => {
-    if (average === null) return "";
-    if (average >= 14) return "bg-success text-success-foreground";
-    if (average >= 10) return "bg-warning text-warning-foreground";
-    return "";
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -188,67 +193,49 @@ const Step1DataImport = ({
         )}
       </div>
 
-      {/* Help accordion */}
-      <Accordion type="single" collapsible className="bg-card rounded-xl border">
-        <AccordionItem value="help" className="border-none">
-          <AccordionTrigger className="px-6 hover:no-underline">
-            <div className="flex items-center gap-2 text-primary">
-              <HelpCircle className="w-5 h-5" />
-              <span>Comment exporter depuis PRONOTE ?</span>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="px-6 pb-6">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                <li>Se rendre dans l'onglet <strong className="text-foreground">"Notes"</strong></li>
-                <li>Sélectionner la classe concernée dans le panneau de gauche</li>
-                <li>Cliquer sur l'icône <strong className="text-foreground">d'imprimante</strong> (Imprimer)</li>
-                <li>Dans "Données à imprimer", choisir <strong className="text-foreground">"Le service sélectionné"</strong></li>
-                <li>Dans "Type de sortie", choisir <strong className="text-foreground">PDF</strong></li>
-                <li className="text-destructive">
-                  <AlertCircle className="w-4 h-4 inline mr-1" />
-                  <strong>Ne surtout pas cocher "Protégé" !</strong>
-                </li>
-                <li>Cliquer sur <strong className="text-foreground">"Générer"</strong> en bas à droite</li>
-              </ol>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+      {/* Help section - Using PronoteHelpTooltip like ClassCouncil AI */}
+      <div className="flex justify-center">
+        <PronoteHelpTooltip type="resultats" />
+      </div>
 
-      {/* Class metadata display */}
+      {/* Class metadata display - Reorganized order */}
       {classMetadata && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardContent className="pt-6">
-            <div className="flex flex-wrap gap-4">
-              {classMetadata.className && (
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{classMetadata.className}</span>
-                </div>
-              )}
-              {classMetadata.subject && (
-                <div className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{classMetadata.subject}</span>
-                </div>
-              )}
-              {classMetadata.period && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{classMetadata.period}</span>
-                </div>
-              )}
-              {classMetadata.classAverage && (
-                <div className="flex items-center gap-2">
-                  <Badge className={getAverageBadgeClass(classMetadata.classAverage)}>
-                    Moyenne classe : {classMetadata.classAverage.toFixed(2)}
-                  </Badge>
-                </div>
-              )}
+        <div className="flex flex-wrap items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg border">
+          {/* 1. Class name */}
+          {classMetadata.className && (
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              <span className="font-semibold text-primary">{classMetadata.className}</span>
             </div>
-          </CardContent>
-        </Card>
+          )}
+          {/* 2. Period/Trimestre */}
+          {classMetadata.period && (
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{classMetadata.period}</span>
+            </div>
+          )}
+          {/* 3. Subject */}
+          {classMetadata.subject && (
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{classMetadata.subject}</span>
+            </div>
+          )}
+          {/* 4. Teacher */}
+          {classMetadata.teacher && (
+            <div className="flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm">{classMetadata.teacher}</span>
+            </div>
+          )}
+          {/* 5. Class average badge */}
+          {classMetadata.classAverage && (
+            <Badge className="bg-accent text-accent-foreground">
+              Moyenne classe : {classMetadata.classAverage.toFixed(2)}
+            </Badge>
+          )}
+        </div>
       )}
 
       {/* Import methods */}
@@ -384,7 +371,7 @@ Durand Emma`}
         </CardContent>
       </Card>
 
-      {/* Students list with enhanced columns */}
+      {/* Students list with new columns */}
       {students.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -406,84 +393,62 @@ Durand Emma`}
                   <TableRow className="bg-muted/50">
                     <TableHead className="w-14">N°</TableHead>
                     <TableHead>Nom Prénom</TableHead>
-                    <TableHead className="w-20 text-center">Moyenne</TableHead>
-                    <TableHead className="w-20 text-center">Sérieux</TableHead>
-                    <TableHead className="w-24 text-center">Particip.</TableHead>
-                    <TableHead className="w-16 text-center">Abs</TableHead>
-                    <TableHead className="w-16 text-center">N.Rdu</TableHead>
+                    <TableHead className="w-24 text-center">Moyenne</TableHead>
+                    <TableHead className="w-20 text-center">Nb N.Rdu</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {students.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell>
-                        <Badge variant="outline">{student.id}</Badge>
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {student.lastName} {student.firstName}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.average !== null ? (
-                          <Badge className={getAverageBadgeClass(student.average)}>
-                            {student.average.toFixed(1)}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.seriousness !== null && student.seriousness !== undefined ? (
-                          <span className="text-sm">{student.seriousness}/20</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.participation !== null && student.participation !== undefined ? (
-                          <span className="text-sm">{student.participation}/20</span>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.absences && student.absences > 0 ? (
-                          <div className="flex items-center justify-center gap-1">
-                            {student.absences > 2 && (
-                              <AlertTriangle className="w-3 h-3 text-warning" />
-                            )}
-                            <span className={student.absences > 2 ? "text-warning font-medium" : ""}>
-                              {student.absences}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {student.nonRendus && student.nonRendus > 0 ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <AlertCircle className="w-3 h-3 text-destructive" />
-                            <span className="text-destructive font-medium">
-                              {student.nonRendus}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemoveStudent(student.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {students.map((student) => {
+                    const stats = calculateStudentStats(student);
+                    const isLowAverage = student.average !== null && student.average < 10;
+                    
+                    return (
+                      <TableRow key={student.id} className="hover:bg-muted/30">
+                        <TableCell>
+                          <span className="text-muted-foreground">{student.id}</span>
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {student.lastName} {student.firstName}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {student.average !== null ? (
+                            <Badge 
+                              className={
+                                isLowAverage 
+                                  ? "bg-destructive/10 text-destructive border-destructive/20" 
+                                  : student.average >= 14 
+                                    ? "bg-success/10 text-success border-success/20"
+                                    : "bg-warning/10 text-warning border-warning/20"
+                              }
+                              variant="outline"
+                            >
+                              {student.average.toFixed(2)}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {stats.nonRendus > 0 ? (
+                            <span className="text-destructive font-medium">{stats.nonRendus}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => handleRemoveStudent(student.id)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
