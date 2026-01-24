@@ -15,48 +15,42 @@ interface ReportCardToneSelectorProps {
   showDescription?: boolean;
 }
 
-// Unified tone configuration with solid colored backgrounds
+// Tone configuration with gradients and icons
 const toneConfig: Record<AppreciationTone, {
   icon: typeof AlertTriangle;
   label: string;
   shortLabel: string;
-  bg: string;
-  ring: string;
+  gradient: string;
 }> = {
   ferme: {
     icon: AlertTriangle,
     label: 'Ferme mais juste',
     shortLabel: 'Ferme',
-    bg: 'bg-red-600',
-    ring: 'ring-red-600',
+    gradient: 'bg-gradient-to-b from-red-400 to-red-600',
   },
   neutre: {
     icon: Minus,
     label: 'Neutre et factuel',
     shortLabel: 'Neutre',
-    bg: 'bg-slate-600',
-    ring: 'ring-slate-600',
+    gradient: 'bg-gradient-to-b from-slate-400 to-slate-600',
   },
   bienveillant: {
     icon: Heart,
     label: 'Bienveillant',
     shortLabel: 'Bienv.',
-    bg: 'bg-emerald-500',
-    ring: 'ring-emerald-500',
+    gradient: 'bg-gradient-to-b from-emerald-400 to-emerald-600',
   },
   encourageant: {
     icon: ThumbsUp,
     label: 'Encourageant',
     shortLabel: 'Encour.',
-    bg: 'bg-cyan-500',
-    ring: 'ring-cyan-500',
+    gradient: 'bg-gradient-to-b from-cyan-400 to-cyan-600',
   },
   constructif: {
     icon: TrendingUp,
     label: 'Constructif',
     shortLabel: 'Constr.',
-    bg: 'bg-violet-500',
-    ring: 'ring-violet-500',
+    gradient: 'bg-gradient-to-b from-violet-400 to-violet-600',
   },
 };
 
@@ -75,11 +69,12 @@ const ReportCardToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-1.5">
-          {toneOrder.map((tone) => {
+        <div className="flex w-full max-w-[250px] rounded-md overflow-hidden border border-gray-200 shadow-sm">
+          {toneOrder.map((tone, index) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
             const isActive = value === tone;
+            const isLast = index === toneOrder.length - 1;
             
             return (
               <Tooltip key={tone}>
@@ -88,14 +83,13 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center gap-1 px-2 py-1.5 rounded-lg text-white font-medium text-xs transition-all duration-200 hover:opacity-90",
-                      config.bg,
-                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
-                      isActive && config.ring
+                      "flex-1 py-1.5 px-2 flex items-center justify-center text-white transition-all duration-200 hover:brightness-110",
+                      config.gradient,
+                      !isLast && "border-r border-white/20",
+                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    {isActive && <span>{config.shortLabel}</span>}
+                    <Icon className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -111,38 +105,39 @@ const ReportCardToneSelector = ({
 
   return (
     <div className="space-y-3">
-      <TooltipProvider delayDuration={200}>
-        <div className="flex flex-wrap items-center gap-2">
-          {toneOrder.map((tone) => {
-            const config = toneConfig[tone];
-            const Icon = config.icon;
-            const isActive = value === tone;
-            
-            return (
-              <Tooltip key={tone}>
+      <div className="flex w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+        {toneOrder.map((tone, index) => {
+          const config = toneConfig[tone];
+          const Icon = config.icon;
+          const isActive = value === tone;
+          const isLast = index === toneOrder.length - 1;
+          
+          return (
+            <Tooltip key={tone}>
+              <TooltipProvider delayDuration={200}>
                 <TooltipTrigger asChild>
                   <button
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-sm md:text-base text-white transition-all duration-200 hover:opacity-90",
-                      config.bg,
-                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
-                      isActive && config.ring
+                      "flex-1 py-2.5 px-3 flex items-center justify-center gap-2 text-white font-medium text-sm transition-all duration-200 hover:brightness-110",
+                      config.gradient,
+                      !isLast && "border-r border-white/20",
+                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
                     )}
                   >
-                    <Icon className="h-4 w-4" />
-                    <span>{config.label}</span>
+                    <Icon className="w-4 h-4" />
+                    <span className="hidden sm:inline">{config.shortLabel}</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
-                  {getToneDescription(tone)}
+                  {config.label}
                 </TooltipContent>
-              </Tooltip>
-            );
-          })}
-        </div>
-      </TooltipProvider>
+              </TooltipProvider>
+            </Tooltip>
+          );
+        })}
+      </div>
 
       {showDescription && (
         <div className="px-3 py-2 bg-muted/50 rounded-md min-h-[40px] flex items-center">

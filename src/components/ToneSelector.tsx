@@ -21,35 +21,27 @@ const iconMap = {
   Award,
 };
 
-// Unified color palette with solid backgrounds
-const toneColors: Record<AppreciationTone, {
-  bg: string;
-  ring: string;
+// Tone configuration with gradients
+const toneStyles: Record<AppreciationTone, {
+  gradient: string;
+  label: string;
 }> = {
   severe: {
-    bg: 'bg-red-600',
-    ring: 'ring-red-600',
+    gradient: 'bg-gradient-to-b from-red-400 to-red-600',
+    label: 'Sévère',
   },
   standard: {
-    bg: 'bg-slate-600',
-    ring: 'ring-slate-600',
+    gradient: 'bg-gradient-to-b from-slate-400 to-slate-600',
+    label: 'Standard',
   },
   caring: {
-    bg: 'bg-emerald-500',
-    ring: 'ring-emerald-500',
+    gradient: 'bg-gradient-to-b from-emerald-400 to-emerald-600',
+    label: 'Bienveillant',
   },
   praising: {
-    bg: 'bg-amber-500',
-    ring: 'ring-amber-500',
+    gradient: 'bg-gradient-to-b from-amber-400 to-amber-600',
+    label: 'Élogieux',
   },
-};
-
-// Short labels for compact mode
-const shortLabels: Record<AppreciationTone, string> = {
-  severe: 'Sév.',
-  standard: 'Std.',
-  caring: 'Bien.',
-  praising: 'Élog.',
 };
 
 const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) => {
@@ -58,12 +50,13 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-1.5">
-          {tones.map((tone) => {
+        <div className="flex w-full max-w-[200px] rounded-md overflow-hidden border border-gray-200 shadow-sm">
+          {tones.map((tone, index) => {
             const config = toneConfig[tone];
-            const colors = toneColors[tone];
+            const styles = toneStyles[tone];
             const Icon = iconMap[config.icon as keyof typeof iconMap];
             const isActive = value === tone;
+            const isLast = index === tones.length - 1;
             
             return (
               <Tooltip key={tone}>
@@ -72,18 +65,17 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center gap-1 px-2 py-1.5 rounded-lg text-white font-medium text-xs transition-all duration-200 hover:opacity-90",
-                      colors.bg,
-                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
-                      isActive && colors.ring
+                      "flex-1 py-1.5 px-2 flex items-center justify-center text-white transition-all duration-200 hover:brightness-110",
+                      styles.gradient,
+                      !isLast && "border-r border-white/20",
+                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" />
-                    {isActive && <span>{shortLabels[tone]}</span>}
+                    <Icon className="w-3.5 h-3.5" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
-                  {config.label}
+                  {styles.label}
                 </TooltipContent>
               </Tooltip>
             );
@@ -94,12 +86,13 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {tones.map((tone) => {
+    <div className="flex w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+      {tones.map((tone, index) => {
         const config = toneConfig[tone];
-        const colors = toneColors[tone];
+        const styles = toneStyles[tone];
         const Icon = iconMap[config.icon as keyof typeof iconMap];
         const isActive = value === tone;
+        const isLast = index === tones.length - 1;
         
         return (
           <button
@@ -107,14 +100,14 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             type="button"
             onClick={() => onChange(tone)}
             className={cn(
-              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-sm md:text-base text-white transition-all duration-200 hover:opacity-90",
-              colors.bg,
-              isActive && "ring-2 ring-offset-2 shadow-md scale-105",
-              isActive && colors.ring
+              "flex-1 py-2.5 px-3 flex items-center justify-center gap-2 text-white font-medium text-sm transition-all duration-200 hover:brightness-110",
+              styles.gradient,
+              !isLast && "border-r border-white/20",
+              isActive && "ring-2 ring-inset ring-white/50 brightness-110"
             )}
           >
-            <Icon className="h-4 w-4" />
-            <span>{config.label}</span>
+            <Icon className="w-4 h-4" />
+            <span className="hidden sm:inline">{styles.label}</span>
           </button>
         );
       })}
