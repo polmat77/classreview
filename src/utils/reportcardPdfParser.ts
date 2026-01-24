@@ -194,6 +194,58 @@ function isStudentLine(line: string): boolean {
 }
 
 /**
+ * Calculate student statistics from grades array
+ */
+function calculateStudentStats(grades: (number | string)[]): { totalNotes: number; nonRendus: number; notesAbove10: number; notesBelow10: number } {
+  let totalNotes = 0;
+  let nonRendus = 0;
+  let notesAbove10 = 0;
+  let notesBelow10 = 0;
+
+  grades.forEach(grade => {
+    // Count non-rendus
+    if (typeof grade === 'string') {
+      const gradeStr = grade.toString().toLowerCase();
+      if (gradeStr.includes('n.rdu') || gradeStr.includes('nrdu')) {
+        nonRendus++;
+      }
+      // Ignore: Abs, N.Not, X, "-", empty
+      return;
+    }
+    
+    // Process numeric grades
+    if (typeof grade === 'number' && !isNaN(grade)) {
+      // Normalize grades to /20 if > 20 (e.g., grades on 100)
+      let normalizedGrade = grade;
+      if (grade > 20) {
+        normalizedGrade = (grade / 100) * 20;
+      }
+      
+      totalNotes++;
+      if (normalizedGrade >= 10) {
+        notesAbove10++;
+      } else {
+        notesBelow10++;
+      }
+    }
+  });
+
+  return { totalNotes, nonRendus, notesAbove10, notesBelow10 };
+}
+
+/**
+ * Parse grade value from string
+ */
+function parseGradeValue(value: string): number | string {
+  const lower = value.toLowerCase().trim();
+  if (['abs', 'n.rdu', 'n.rdu*', 'n.not', 'x', '-', ''].includes(lower)) {
+    return value;
+  }
+  const num = parseFloat(value.replace(',', '.').replace('*', ''));
+  return isNaN(num) ? value : num;
+}
+
+/**
  * Parse a single student line from PRONOTE
  * Format: "NOM COMPOSÉ Prénom Composé 17,90 20,00 18,00 ... Abs N.Rdu"
  */
@@ -202,8 +254,7 @@ function parseStudentLine(line: string): Student | null {
   const parts = line.trim().split(/\s+/);
   if (parts.length < 3) return null;
   
-  // Find where name ends and numbers begin
-  // Names are uppercase, firstnames start with uppercase then lowercase
+  // Find where name ends and values begin
   let nameEndIndex = -1;
   let inFirstName = false;
   
@@ -211,7 +262,7 @@ function parseStudentLine(line: string): Student | null {
     const part = parts[i];
     
     // Check if this is a number or special value
-    if (/^[\d,.-]+$/.test(part) || part === 'Abs' || part.includes('N.Rdu')) {
+    if (/^[\d,.-]+$/.test(part) || part.toLowerCase() === 'abs' || part.toLowerCase().includes('n.rdu')) {
       nameEndIndex = i;
       break;
     }
@@ -220,18 +271,13 @@ function parseStudentLine(line: string): Student | null {
     if (/^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç'-]+$/.test(part)) {
       inFirstName = true;
     }
-    // If we were in firstname and now see uppercase again, might be compound
-    else if (inFirstName && /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç'-]+$/.test(part)) {
-      // Still firstname (compound firstname like "Jean-Pierre")
-    }
   }
   
   if (nameEndIndex === -1 || nameEndIndex < 2) {
     return null;
   }
   
-  // Now split name and firstname
-  // Strategy: walk through parts, uppercase = lastname, first mixed case = start of firstname
+  // Split name and firstname
   const nameParts: string[] = [];
   const firstNameParts: string[] = [];
   let hitFirstName = false;
@@ -249,7 +295,6 @@ function parseStudentLine(line: string): Student | null {
   }
   
   if (nameParts.length === 0 || firstNameParts.length === 0) {
-    // Fallback: first part is name, second is firstname
     if (nameEndIndex >= 2) {
       nameParts.push(parts[0]);
       firstNameParts.push(parts[1]);
@@ -261,50 +306,31 @@ function parseStudentLine(line: string): Student | null {
   const lastName = nameParts.join(' ');
   const firstName = firstNameParts.join(' ');
   
-  // Parse the numeric/special values
+  // Parse all values (grades and special values)
   const valueParts = parts.slice(nameEndIndex);
   
-  // Count absences and non-rendus
-  let absences = 0;
-  let nonRendus = 0;
+  // First value is the general average
+  const averageStr = valueParts[0];
+  const average = parseNote(averageStr);
   
-  for (const val of valueParts) {
-    if (val.toLowerCase() === 'abs') absences++;
-    if (val.toLowerCase().includes('n.rdu')) nonRendus++;
+  // Rest are individual grades
+  const grades: (number | string)[] = [];
+  for (let i = 1; i < valueParts.length; i++) {
+    const val = valueParts[i];
+    grades.push(parseGradeValue(val));
   }
   
-  // Get numeric values only
-  const numericValues: (number | null)[] = [];
-  for (const val of valueParts) {
-    if (/^[\d,.-]+$/.test(val)) {
-      numericValues.push(parseNote(val));
-    }
-  }
-  
-  // First number is the general average
-  const average = numericValues.length > 0 ? numericValues[0] : null;
-  
-  // Sérieux is typically the 2nd number (if exists and <=20)
-  let seriousness: number | null = null;
-  if (numericValues.length >= 2 && numericValues[1] !== null && numericValues[1] <= 20) {
-    seriousness = numericValues[1];
-  }
-  
-  // Participation is typically the 3rd number (if exists and <=20)
-  let participation: number | null = null;
-  if (numericValues.length >= 3 && numericValues[2] !== null && numericValues[2] <= 20) {
-    participation = numericValues[2];
-  }
+  // Calculate statistics from grades
+  const stats = calculateStudentStats(grades);
   
   return {
     id: 0, // Will be set later
     lastName,
     firstName,
     average,
-    seriousness,
-    participation,
-    absences: absences > 0 ? absences : undefined,
-    nonRendus: nonRendus > 0 ? nonRendus : undefined,
+    grades,
+    stats,
+    nonRendus: stats.nonRendus > 0 ? stats.nonRendus : undefined,
   };
 }
 

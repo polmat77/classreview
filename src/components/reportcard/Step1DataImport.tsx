@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Student, ClassMetadata } from "@/types/reportcard";
+import { Student, ClassMetadata, StudentStats } from "@/types/reportcard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,27 +33,17 @@ interface Step1DataImportProps {
   onReset: () => void;
 }
 
-// Interface for calculated student statistics
-interface StudentStats {
-  totalNotes: number;
-  nonRendus: number;
-  notesAbove10: number;
-  notesBelow10: number;
-}
-
-// Calculate stats from student data (basic version based on available data)
-function calculateStudentStats(student: Student): StudentStats {
-  // Since we don't have individual grades stored, we use available data
-  // nonRendus comes directly from parsed data
-  const nonRendus = student.nonRendus || 0;
-  
-  // For now, we estimate based on average if available
-  // This is a simplified version - in production, individual grades would be stored
+// Get stats from student, using stored stats or computing from legacy data
+function getStudentStats(student: Student): StudentStats {
+  if (student.stats) {
+    return student.stats;
+  }
+  // Fallback for legacy data without stats
   return {
-    totalNotes: 0, // Would need individual grades
-    nonRendus,
-    notesAbove10: 0, // Would need individual grades
-    notesBelow10: 0, // Would need individual grades
+    totalNotes: 0,
+    nonRendus: student.nonRendus || 0,
+    notesAbove10: 0,
+    notesBelow10: 0,
   };
 }
 
@@ -394,13 +384,16 @@ Durand Emma`}
                     <TableHead className="w-14">N°</TableHead>
                     <TableHead>Nom Prénom</TableHead>
                     <TableHead className="w-24 text-center">Moyenne</TableHead>
+                    <TableHead className="w-20 text-center">Nb Notes</TableHead>
                     <TableHead className="w-20 text-center">Nb N.Rdu</TableHead>
+                    <TableHead className="w-16 text-center">≥10</TableHead>
+                    <TableHead className="w-16 text-center">&lt;10</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {students.map((student) => {
-                    const stats = calculateStudentStats(student);
+                    const stats = getStudentStats(student);
                     const isLowAverage = student.average !== null && student.average < 10;
                     
                     return (
@@ -419,7 +412,7 @@ Durand Emma`}
                                   ? "bg-destructive/10 text-destructive border-destructive/20" 
                                   : student.average >= 14 
                                     ? "bg-success/10 text-success border-success/20"
-                                    : "bg-warning/10 text-warning border-warning/20"
+                                    : "bg-secondary/20 text-secondary-foreground border-secondary/30"
                               }
                               variant="outline"
                             >
@@ -430,8 +423,31 @@ Durand Emma`}
                           )}
                         </TableCell>
                         <TableCell className="text-center">
+                          {stats.totalNotes > 0 ? (
+                            <span className="font-medium text-foreground">{stats.totalNotes}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
                           {stats.nonRendus > 0 ? (
-                            <span className="text-destructive font-medium">{stats.nonRendus}</span>
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-200" variant="outline">
+                              {stats.nonRendus}
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {stats.notesAbove10 > 0 ? (
+                            <span className="font-semibold text-emerald-600">{stats.notesAbove10}</span>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {stats.notesBelow10 > 0 ? (
+                            <span className="font-semibold text-destructive">{stats.notesBelow10}</span>
                           ) : (
                             <span className="text-muted-foreground">—</span>
                           )}
