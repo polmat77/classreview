@@ -358,7 +358,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               )}
               <Button
                 size="sm"
-                className="gap-2 bg-black text-white hover:bg-gray-800 transition-colors"
+                className="gap-2 bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-sm"
                 onClick={handleCopyAppreciation}
                 disabled={!generalText.trim()}
                 title="Copier l'appréciation"
@@ -377,7 +377,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               </Button>
               <Button
                 size="sm"
-                className="gap-2 bg-black text-white hover:bg-gray-800 transition-colors"
+                className="gap-2 bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm"
                 onClick={handleRegenerateGeneral}
                 disabled={isLoadingGeneral}
               >
@@ -412,8 +412,8 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
                   </span>
                 )}
               </span>
-              <span className={`bg-white text-black px-2 py-1 rounded text-sm font-medium ${
-                generalText.length > charLimit ? 'border border-destructive' : ''
+              <span className={`bg-muted text-foreground px-2 py-1 rounded text-sm font-medium border ${
+                generalText.length > charLimit ? 'border-destructive bg-destructive/10' : 'border-border'
               }`}>
                 {charLimit - generalText.length} restants
               </span>

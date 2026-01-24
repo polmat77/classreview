@@ -528,8 +528,8 @@ const Step3Appreciations = ({
 
                       {/* Character count badge */}
                       <span 
-                        className={`bg-white text-black px-2 py-1 rounded text-sm font-medium ${
-                          appreciation.characterCount > appreciationSettings.maxCharacters ? 'border border-destructive' : ''
+                        className={`bg-muted text-foreground px-2 py-1 rounded text-sm font-medium border ${
+                          appreciation.characterCount > appreciationSettings.maxCharacters ? 'border-destructive bg-destructive/10' : 'border-border'
                         }`}
                       >
                         {appreciation.characterCount}/{appreciationSettings.maxCharacters}
@@ -566,7 +566,7 @@ const Step3Appreciations = ({
                       size="sm"
                       onClick={() => handleRegenerate(student.id)}
                       disabled={appreciation.isGenerating || isGeneratingAll}
-                      className="bg-black text-white hover:bg-gray-800 transition-colors"
+                      className="bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm"
                     >
                       {appreciation.isGenerating ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -578,7 +578,7 @@ const Step3Appreciations = ({
                     <Button
                       size="sm"
                       onClick={() => handleCopy(student.id, appreciation.text)}
-                      className="bg-black text-white hover:bg-gray-800 transition-colors"
+                      className="bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-sm"
                     >
                       {copiedId === student.id ? (
                         <Check className="w-4 h-4 mr-2" />
