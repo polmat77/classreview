@@ -505,19 +505,30 @@ const Step4ClassSummary = ({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle>Bilan de la classe</CardTitle>
-                <CardDescription className={getCharacterBadgeColor(classSummary.generatedText.length, maxCharacters)}>
-                  {classSummary.generatedText.length}/{maxCharacters} caractères
-                  {isOverLimit && " (dépassement)"}
+                <CardDescription className="flex items-center gap-2">
+                  <span className={`bg-white text-black px-2 py-1 rounded ${isOverLimit ? 'border border-destructive' : ''}`}>
+                    {classSummary.generatedText.length}/{maxCharacters} caractères
+                    {isOverLimit && " (dépassement)"}
+                  </span>
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={generateSummary} disabled={isGenerating}>
+                <Button 
+                  size="sm" 
+                  onClick={generateSummary} 
+                  disabled={isGenerating}
+                  className="bg-black text-white hover:bg-gray-800 transition-colors"
+                >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Régénérer
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleCopy}>
+                <Button 
+                  size="sm" 
+                  onClick={handleCopy}
+                  className="bg-black text-white hover:bg-gray-800 transition-colors"
+                >
                   {copied ? (
-                    <Check className="w-4 h-4 mr-2 text-success" />
+                    <Check className="w-4 h-4 mr-2" />
                   ) : (
                     <Copy className="w-4 h-4 mr-2" />
                   )}
