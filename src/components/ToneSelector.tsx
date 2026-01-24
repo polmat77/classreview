@@ -1,6 +1,6 @@
-import { AlertTriangle, Minus, Heart, Award } from "lucide-react";
-import { AppreciationTone, toneConfig } from "@/types/appreciation";
 import { cn } from "@/lib/utils";
+import { AppreciationTone, toneConfig } from "@/types/appreciation";
+import { AlertTriangle, Minus, Heart, Award } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +10,7 @@ import {
 
 interface ToneSelectorProps {
   value: AppreciationTone;
-  onChange: (tone: AppreciationTone) => void;
+  onChange: (value: AppreciationTone) => void;
   compact?: boolean;
 }
 
@@ -21,26 +21,23 @@ const iconMap = {
   Award,
 };
 
-// Tone configuration with gradients
-const toneStyles: Record<AppreciationTone, {
-  gradient: string;
-  label: string;
-}> = {
+// Unified tone styles with design system gradients
+const toneStyles: Record<AppreciationTone, { gradient: string; label: string }> = {
   severe: {
-    gradient: 'bg-gradient-to-b from-red-400 to-red-600',
-    label: 'Sévère',
+    gradient: "bg-gradient-to-b from-red-500 to-red-600",
+    label: "Sévère",
   },
   standard: {
-    gradient: 'bg-gradient-to-b from-slate-400 to-slate-600',
-    label: 'Standard',
+    gradient: "bg-gradient-to-b from-primary to-primary-dark",
+    label: "Standard",
   },
   caring: {
-    gradient: 'bg-gradient-to-b from-emerald-400 to-emerald-600',
-    label: 'Bienveillant',
+    gradient: "bg-gradient-to-b from-emerald-500 to-emerald-600",
+    label: "Bienveillant",
   },
   praising: {
-    gradient: 'bg-gradient-to-b from-amber-400 to-amber-600',
-    label: 'Élogieux',
+    gradient: "bg-gradient-to-b from-accent to-accent-hover",
+    label: "Élogieux",
   },
 };
 
@@ -50,7 +47,7 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex w-full max-w-[200px] rounded-md overflow-hidden border border-gray-200 shadow-sm">
+        <div className="flex w-full max-w-[200px] rounded-lg overflow-hidden border border-border shadow-sm">
           {tones.map((tone, index) => {
             const config = toneConfig[tone];
             const styles = toneStyles[tone];
@@ -86,7 +83,7 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   }
 
   return (
-    <div className="flex w-full rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+    <div className="flex w-full rounded-lg overflow-hidden border border-border shadow-sm">
       {tones.map((tone, index) => {
         const config = toneConfig[tone];
         const styles = toneStyles[tone];

@@ -505,8 +505,8 @@ const Step4ClassSummary = ({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle>Bilan de la classe</CardTitle>
-                <CardDescription className="flex items-center gap-2">
-                  <span className={`bg-white text-black px-2 py-1 rounded ${isOverLimit ? 'border border-destructive' : ''}`}>
+              <CardDescription className="flex items-center gap-2">
+                  <span className={`bg-muted text-foreground px-2 py-1 rounded border ${isOverLimit ? 'border-destructive bg-destructive/10' : 'border-border'}`}>
                     {classSummary.generatedText.length}/{maxCharacters} caractères
                     {isOverLimit && " (dépassement)"}
                   </span>
@@ -517,7 +517,7 @@ const Step4ClassSummary = ({
                   size="sm" 
                   onClick={generateSummary} 
                   disabled={isGenerating}
-                  className="bg-black text-white hover:bg-gray-800 transition-colors"
+                  className="bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm"
                 >
                   <RefreshCw className="w-4 h-4 mr-2" />
                   Régénérer
@@ -525,7 +525,7 @@ const Step4ClassSummary = ({
                 <Button 
                   size="sm" 
                   onClick={handleCopy}
-                  className="bg-black text-white hover:bg-gray-800 transition-colors"
+                  className="bg-primary text-primary-foreground hover:bg-primary-hover transition-colors shadow-sm"
                 >
                   {copied ? (
                     <Check className="w-4 h-4 mr-2" />

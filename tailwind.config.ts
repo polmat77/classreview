@@ -22,13 +22,20 @@ export default {
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          hover: "hsl(var(--primary-hover))",
           light: "hsl(var(--primary-light))",
           dark: "hsl(var(--primary-dark))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          vibrant: "hsl(var(--secondary-vibrant))",
           light: "hsl(var(--secondary-light))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+          hover: "hsl(var(--accent-hover))",
         },
         cyan: {
           DEFAULT: "hsl(var(--cyan))",
@@ -50,6 +57,10 @@ export default {
           foreground: "hsl(var(--warning-foreground))",
           light: "hsl(var(--warning-light))",
         },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
@@ -57,10 +68,6 @@ export default {
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -105,6 +112,7 @@ export default {
         'lg': 'var(--shadow-lg)',
         'elevated': 'var(--shadow-elevated)',
         'glow-cyan': 'var(--shadow-glow-cyan)',
+        'glow-gold': 'var(--shadow-glow-gold)',
       },
       transitionProperty: {
         'smooth': 'var(--transition-smooth)',
