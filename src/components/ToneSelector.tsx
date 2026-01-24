@@ -1,4 +1,4 @@
-import { AlertTriangle, Minus, Heart, Trophy } from "lucide-react";
+import { AlertTriangle, Minus, Heart, Award } from "lucide-react";
 import { AppreciationTone, toneConfig } from "@/types/appreciation";
 import { cn } from "@/lib/utils";
 import {
@@ -18,7 +18,30 @@ const iconMap = {
   AlertTriangle,
   Minus,
   Heart,
-  Trophy,
+  Award,
+};
+
+// Unified color palette with solid backgrounds
+const toneColors: Record<AppreciationTone, {
+  bg: string;
+  ring: string;
+}> = {
+  severe: {
+    bg: 'bg-red-600',
+    ring: 'ring-red-600',
+  },
+  standard: {
+    bg: 'bg-slate-600',
+    ring: 'ring-slate-600',
+  },
+  caring: {
+    bg: 'bg-emerald-500',
+    ring: 'ring-emerald-500',
+  },
+  praising: {
+    bg: 'bg-amber-500',
+    ring: 'ring-amber-500',
+  },
 };
 
 // Short labels for compact mode
@@ -35,9 +58,10 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {tones.map((tone) => {
             const config = toneConfig[tone];
+            const colors = toneColors[tone];
             const Icon = iconMap[config.icon as keyof typeof iconMap];
             const isActive = value === tone;
             
@@ -48,13 +72,13 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex items-center gap-1 px-2 py-1 rounded-md transition-all duration-200 text-xs font-medium",
-                      isActive
-                        ? `${config.bgColor} text-white shadow-sm`
-                        : `bg-muted/50 hover:bg-muted ${config.color} opacity-60 hover:opacity-100`
+                      "flex items-center gap-1 px-2 py-1.5 rounded-lg text-white font-medium text-xs transition-all duration-200 hover:opacity-90",
+                      colors.bg,
+                      isActive && "ring-2 ring-offset-2 shadow-md scale-105",
+                      isActive && colors.ring
                     )}
                   >
-                    <Icon className="h-3 w-3" />
+                    <Icon className="h-3.5 w-3.5" />
                     {isActive && <span>{shortLabels[tone]}</span>}
                   </button>
                 </TooltipTrigger>
@@ -73,6 +97,7 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
     <div className="flex flex-wrap items-center gap-2">
       {tones.map((tone) => {
         const config = toneConfig[tone];
+        const colors = toneColors[tone];
         const Icon = iconMap[config.icon as keyof typeof iconMap];
         const isActive = value === tone;
         
@@ -82,10 +107,10 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             type="button"
             onClick={() => onChange(tone)}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all duration-200 font-medium text-sm",
-              isActive
-                ? `${config.bgColor} text-white border-transparent shadow-md scale-105`
-                : `bg-background ${config.borderColor} ${config.color} hover:bg-muted/50`
+              "flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-lg font-medium text-sm md:text-base text-white transition-all duration-200 hover:opacity-90",
+              colors.bg,
+              isActive && "ring-2 ring-offset-2 shadow-md scale-105",
+              isActive && colors.ring
             )}
           >
             <Icon className="h-4 w-4" />
