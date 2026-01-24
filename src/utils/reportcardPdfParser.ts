@@ -57,6 +57,7 @@ async function extractTextFromPDF(file: File): Promise<string> {
 
 /**
  * Extract class metadata from PRONOTE PDF text
+ * IMPORTANT: Must NOT confuse evaluation averages with class name
  */
 function extractMetadata(text: string): ClassMetadata | null {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
@@ -67,37 +68,71 @@ function extractMetadata(text: string): ClassMetadata | null {
   let period = "";
 
   for (const line of lines) {
-    // Class or Group - multiple patterns
-    const classMatch = line.match(/(?:Classe|Groupe)\s*:\s*(.+)/i);
-    if (classMatch) {
-      className = classMatch[1].trim();
+    // Skip lines that are obviously evaluation averages (multiple numbers separated by spaces)
+    // e.g., "13,25 11,78 16,91 15,94 89,11 10,70 87,44"
+    const multipleNumbersPattern = /^[\d,.\s]+$/;
+    if (multipleNumbersPattern.test(line.replace(/\s+/g, ' ').trim())) {
+      continue;
     }
     
-    // Subject/Matière
-    const subjectMatch = line.match(/(?:Matière|MATIERE)\s*:\s*(.+)/i);
-    if (subjectMatch) {
-      subject = subjectMatch[1].trim();
+    // Class or Group - extract ONLY the class identifier (not numbers/averages)
+    // Pattern: "Classe : 42" or "Classe : 4e2" or "Groupe : 6A"
+    // Must NOT capture lines like "13,25 11,78 16,91..."
+    if (!className) {
+      const classMatch = line.match(/(?:Classe|Groupe)\s*:\s*([A-Za-z0-9éèêëàâäôöùûüçÉÈÊËÀÂÄÔÖÙÛÜÇ\s\-'°]+?)(?:\s+Matière|\s+Professeur|\s+Période|$)/i);
+      if (classMatch) {
+        let extractedClass = classMatch[1].trim();
+        // If the class is just numbers like "42", convert to "4e2"
+        // Pattern: first digit is the level (4, 3, 5, 6), second digit is the class number
+        extractedClass = extractedClass.replace(/^(\d)(\d)$/, '$1e$2');
+        // Also handle "4eme2" -> "4e2", "4ème2" -> "4e2"
+        extractedClass = extractedClass.replace(/(\d)(?:eme|ème|EME|ÈME)(\d)/i, '$1e$2');
+        // Clean up any trailing spaces or special chars
+        className = extractedClass.replace(/\s+$/, '');
+      }
     }
     
-    // Teacher/Professeur
-    const teacherMatch = line.match(/(?:Professeur|PROFESSEUR)\s*:\s*(.+)/i);
-    if (teacherMatch) {
-      teacher = teacherMatch[1].trim();
+    // Subject/Matière - extract only text, not numbers
+    if (!subject) {
+      const subjectMatch = line.match(/(?:Matière|MATIERE)\s*:\s*([A-Za-zÀ-ÿ\s\-'0-9]+?)(?:\s+Classe|\s+Professeur|\s+Période|$)/i);
+      if (subjectMatch) {
+        subject = subjectMatch[1].trim();
+      }
+    }
+    
+    // Teacher/Professeur - extract name (M., Mme, etc.)
+    if (!teacher) {
+      const teacherMatch = line.match(/(?:Professeur|PROFESSEUR)\s*:\s*((?:M\.|Mme|Mr|Mlle)?\s*[A-ZÉÈÊËÀÂÄÔÖÙÛÜÇ][A-ZÉÈÊËÀÂÄÔÖÙÛÜÇa-zéèêëàâäôöùûüç\s\-']+?)(?:\s+Classe|\s+Matière|\s+Période|$)/i);
+      if (teacherMatch) {
+        teacher = teacherMatch[1].trim();
+      }
     }
     
     // Period/Trimestre
-    const periodMatch = line.match(/(?:Période|Trimestre|TRIMESTRE)\s*:?\s*(\d)/i);
-    if (periodMatch) {
-      period = `Trimestre ${periodMatch[1]}`;
-    }
-    
-    // Also try: "Du XX/XX/XXXX au XX/XX/XXXX"
     if (!period) {
-      const dateMatch = line.match(/du\s+\d{2}\/\d{2}\/\d{4}\s+au\s+\d{2}\/\d{2}\/\d{4}/i);
-      if (dateMatch) {
-        period = dateMatch[0];
+      // Try "Trimestre 3" or "Période : Trimestre 3"
+      const periodMatch = line.match(/(?:Période|Trimestre|TRIMESTRE)\s*:?\s*(Trimestre\s*\d|T\d)/i);
+      if (periodMatch) {
+        let extractedPeriod = periodMatch[1].trim();
+        // Normalize "T3" to "Trimestre 3"
+        extractedPeriod = extractedPeriod.replace(/^T(\d)$/i, 'Trimestre $1');
+        period = extractedPeriod;
+      }
+      
+      // Also try: "Du XX/XX/XXXX au XX/XX/XXXX"
+      if (!period) {
+        const dateMatch = line.match(/du\s+\d{2}\/\d{2}\/\d{4}\s+au\s+\d{2}\/\d{2}\/\d{4}/i);
+        if (dateMatch) {
+          period = dateMatch[0];
+        }
       }
     }
+  }
+  
+  // If className still contains numbers that look like averages, clear it
+  // Averages have decimal separators: "13,25" or "13.25"
+  if (className && /^\d+[,.]/.test(className)) {
+    className = "";
   }
 
   if (!className && !subject) {
