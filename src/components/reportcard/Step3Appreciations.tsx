@@ -527,12 +527,13 @@ const Step3Appreciations = ({
                       />
 
                       {/* Character count badge */}
-                      <Badge 
-                        variant={getCharacterBadgeVariant(appreciation.characterCount, appreciationSettings.maxCharacters)}
-                        className={getCharacterBadgeColor(appreciation.characterCount, appreciationSettings.maxCharacters)}
+                      <span 
+                        className={`bg-white text-black px-2 py-1 rounded text-sm font-medium ${
+                          appreciation.characterCount > appreciationSettings.maxCharacters ? 'border border-destructive' : ''
+                        }`}
                       >
                         {appreciation.characterCount}/{appreciationSettings.maxCharacters}
-                      </Badge>
+                      </span>
                     </div>
                   </div>
                 </CardHeader>
@@ -562,10 +563,10 @@ const Step3Appreciations = ({
                   )}
                   <div className="flex justify-end gap-2">
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={() => handleRegenerate(student.id)}
                       disabled={appreciation.isGenerating || isGeneratingAll}
+                      className="bg-black text-white hover:bg-gray-800 transition-colors"
                     >
                       {appreciation.isGenerating ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -575,12 +576,12 @@ const Step3Appreciations = ({
                       Régénérer
                     </Button>
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={() => handleCopy(student.id, appreciation.text)}
+                      className="bg-black text-white hover:bg-gray-800 transition-colors"
                     >
                       {copiedId === student.id ? (
-                        <Check className="w-4 h-4 mr-2 text-success" />
+                        <Check className="w-4 h-4 mr-2" />
                       ) : (
                         <Copy className="w-4 h-4 mr-2" />
                       )}

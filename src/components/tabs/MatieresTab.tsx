@@ -358,16 +358,15 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               )}
               <Button
                 size="sm"
-                variant="outline"
-                className="gap-2"
+                className="gap-2 bg-black text-white hover:bg-gray-800 transition-colors"
                 onClick={handleCopyAppreciation}
                 disabled={!generalText.trim()}
                 title="Copier l'appréciation"
               >
                 {isCopied ? (
                   <>
-                    <Check className="h-4 w-4 text-green-600" />
-                    <span className="text-green-600">Copié ✓</span>
+                    <Check className="h-4 w-4" />
+                    Copié ✓
                   </>
                 ) : (
                   <>
@@ -378,8 +377,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               </Button>
               <Button
                 size="sm"
-                variant="outline"
-                className="gap-2"
+                className="gap-2 bg-black text-white hover:bg-gray-800 transition-colors"
                 onClick={handleRegenerateGeneral}
                 disabled={isLoadingGeneral}
               >
@@ -409,14 +407,16 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               <span className={`text-sm font-medium ${getCharCountColor(generalText.length, charLimit)}`}>
                 {generalText.length}/{charLimit} caractères
                 {generalText.length > charLimit && (
-                  <Badge variant="destructive" className="ml-2">
+                  <span className="ml-2 bg-destructive text-white px-2 py-0.5 rounded text-xs">
                     {generalText.length - charLimit} en trop
-                  </Badge>
+                  </span>
                 )}
               </span>
-              <Badge variant={getCharBadgeVariant(generalText.length, charLimit)}>
+              <span className={`bg-white text-black px-2 py-1 rounded text-sm font-medium ${
+                generalText.length > charLimit ? 'border border-destructive' : ''
+              }`}>
                 {charLimit - generalText.length} restants
-              </Badge>
+              </span>
             </div>
           </div>
         </CardContent>
