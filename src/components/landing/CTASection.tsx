@@ -4,23 +4,22 @@ import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
-    <section className="py-20 px-4 bg-gradient-to-r from-[#06b6d4] to-[#0891b2]">
+    <section className="py-16 lg:py-20 px-4 bg-gradient-to-r from-cyan-vibrant to-cyan">
       <div className="container mx-auto max-w-3xl text-center">
-        <h2 className="text-3xl md:text-4xl font-bold text-white mb-8">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-8">
           Prêt à gagner du temps ?
         </h2>
         
         <Link to="/classcouncil-ai">
           <Button
             size="lg"
-            className="bg-white text-[#06b6d4] hover:bg-white/90 px-8 py-6 text-lg rounded-lg shadow-lg transition-all hover:scale-105"
+            className="bg-white text-cyan-vibrant hover:bg-white/95 px-8 py-6 text-base font-semibold rounded-lg shadow-lg transition-all duration-300 hover:scale-105"
           >
-            Commencer avec ClassCouncil <span className="text-[#f0a830] ml-1">AI</span>
-            <ArrowRight className="w-5 h-5 ml-2" />
+            Commencer avec ClassCouncil <span className="text-gold ml-1">AI</span>
           </Button>
         </Link>
 
-        <p className="mt-6 text-white/90 text-sm">
+        <p className="mt-6 text-white/90 text-sm font-medium">
           Gratuit • Sans inscription • Compatible PRONOTE
         </p>
       </div>
