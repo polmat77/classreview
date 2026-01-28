@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Clock, Lock, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
-import heroImage from "@/assets/hero-illustration.png";
+import heroImage from "@/assets/Hero_Site.png";
 
 interface HeroSectionProps {
   onScrollToSection: (sectionId: string) => void;
