@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import logo from "@/assets/AIProject4You_logo.png";
 
 interface FooterProps {
   onScrollToSection: (sectionId: string) => void;
@@ -6,15 +7,16 @@ interface FooterProps {
 
 const Footer = ({ onScrollToSection }: FooterProps) => {
   return (
-    <footer className="py-16 bg-[#1e293b]">
+    <footer className="py-16 bg-navy">
       <div className="max-w-6xl mx-auto px-6">
         {/* Main Footer Content */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Column 1: Brand */}
           <div>
-            <div className="flex items-center mb-4">
+            <div className="flex items-center gap-2 mb-4">
+              <img src={logo} alt="AIProject4You" className="h-10 w-10 object-contain" />
               <span className="text-xl font-bold">
-                <span className="text-[#f0a830]">AI</span>
+                <span className="text-accent">AI</span>
                 <span className="text-white">Project4You</span>
               </span>
             </div>

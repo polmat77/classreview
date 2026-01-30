@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Home
 } from 'lucide-react';
-import logo from "@/assets/logo.png";
+import logo from "@/assets/ClassCouncilAI_logo.png";
 import { Button } from '@/components/ui/button';
 import {
   Tooltip,
@@ -101,23 +101,30 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
           isCollapsed ? "w-20" : "w-[280px]"
         )}
       >
-        {/* Logo Section - clickable to go back to landing page */}
-        <Link 
-          to="/"
-          className={cn(
-            "flex-shrink-0 flex items-center justify-center py-5 animate-slide-in-left group",
-            isCollapsed ? "px-2" : "px-4"
-          )}
-        >
-          <img 
-            src={logo} 
-            alt="ClassCouncil AI" 
-            className={cn(
-              "object-contain transition-all duration-300 group-hover:scale-105",
-              isCollapsed ? "h-12 w-12" : "w-full max-w-[240px] h-auto"
+        {/* Logo Section */}
+        <div className={cn(
+          "flex-shrink-0 py-5 animate-slide-in-left",
+          isCollapsed ? "px-3" : "px-4"
+        )}>
+          <div className="flex items-center gap-3">
+            <img 
+              src={logo} 
+              alt="ClassCouncil AI" 
+              className={cn(
+                "object-contain transition-all duration-300 flex-shrink-0",
+                isCollapsed ? "w-12 h-12" : "w-14 h-14"
+              )}
+            />
+            {!isCollapsed && (
+              <div className="flex flex-col">
+                <span className="text-white font-bold text-lg leading-tight">
+                  ClassCouncil<span className="text-gold">AI</span>
+                </span>
+                <span className="text-white/50 text-xs">Conseil de classe</span>
+              </div>
             )}
-          />
-        </Link>
+          </div>
+        </div>
 
         {/* Back to AIProject4You link */}
         <div className="px-3 mb-2">

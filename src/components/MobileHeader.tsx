@@ -1,6 +1,6 @@
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from "@/assets/logo.png";
+import logo from "@/assets/ClassCouncilAI_logo.png";
 
 interface MobileHeaderProps {
   isSidebarOpen: boolean;
@@ -24,13 +24,10 @@ export function MobileHeader({ isSidebarOpen, onToggleSidebar }: MobileHeaderPro
         <img 
           src={logo} 
           alt="ClassCouncil AI Logo" 
-          className="h-8 w-8 object-contain"
+          className="h-10 w-10 object-contain"
         />
         <span className="font-bold text-lg">
-          ClassCouncil
-          <span className="ml-1 bg-gradient-to-r from-gold to-gold-light text-navy px-1.5 py-0.5 rounded text-xs font-bold">
-            AI
-          </span>
+          ClassCouncil<span className="text-gold">AI</span>
         </span>
       </div>
       

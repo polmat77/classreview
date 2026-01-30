@@ -14,7 +14,7 @@ import {
   Check,
   FileSpreadsheet,
 } from 'lucide-react';
-import reportCardLogo from '@/assets/Logo_ReportCardAI.png';
+import reportCardLogo from '@/assets/ReportCardAI_logo.png';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -56,18 +56,20 @@ const workflowSteps = [
 // Composant Logo avec image
 const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3">
       <img 
         src={reportCardLogo} 
         alt="ReportCard AI Logo" 
         className={cn(
-          "flex-shrink-0 rounded-lg",
-          isCollapsed ? "w-10 h-10" : "w-14 h-14"
+          "flex-shrink-0 object-contain",
+          isCollapsed ? "w-12 h-12" : "w-14 h-14"
         )}
       />
       {!isCollapsed && (
         <div className="flex flex-col">
-          <span className="text-white font-bold text-lg leading-tight">ReportCard AI</span>
+          <span className="text-white font-bold text-lg leading-tight">
+            ReportCard<span className="text-gold">AI</span>
+          </span>
           <span className="text-white/50 text-xs">Génération d'appréciations</span>
         </div>
       )}

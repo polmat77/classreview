@@ -1,14 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, MessageSquare, FileText, HelpCircle } from "lucide-react";
+import { Check, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import classCouncilLogo from "@/assets/ClassCouncilAI_logo.png";
+import reportCardLogo from "@/assets/ReportCardAI_logo.png";
 
 interface Tool {
   name: string;
   aiSuffix: boolean;
   description: string;
   features: string[];
-  icon: React.ReactNode;
+  logo?: string;
+  icon?: React.ReactNode;
   href: string;
   comingSoon?: boolean;
 }
@@ -24,7 +27,7 @@ const ToolsSection = () => {
         "Analyse automatique des notes",
         "Appréciations personnalisées",
       ],
-      icon: <MessageSquare className="w-8 h-8 text-[#7dd3e8]" />,
+      logo: classCouncilLogo,
       href: "/classcouncil-ai",
     },
     {
@@ -36,7 +39,7 @@ const ToolsSection = () => {
         "Limite de caractères PRONOTE",
         "Export copier-coller",
       ],
-      icon: <FileText className="w-8 h-8 text-[#7dd3e8]" />,
+      logo: reportCardLogo,
       href: "/reportcard-ai",
     },
     {
@@ -48,7 +51,7 @@ const ToolsSection = () => {
         "QCM et questions ouvertes",
         "Export PDF",
       ],
-      icon: <HelpCircle className="w-8 h-8 text-slate-400" />,
+      icon: <HelpCircle className="w-12 h-12 text-muted-foreground" />,
       href: "#",
       comingSoon: true,
     },
@@ -76,26 +79,34 @@ const ToolsSection = () => {
                 tool.comingSoon ? "opacity-75" : ""
               }`}
             >
-              {/* Icon */}
+              {/* Logo/Icon */}
               <div className="mb-4 relative">
-                <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center">
-                  {tool.icon}
-                </div>
+                {tool.logo ? (
+                  <img 
+                    src={tool.logo} 
+                    alt={`${tool.name}AI logo`} 
+                    className="w-16 h-16 object-contain"
+                  />
+                ) : (
+                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                    {tool.icon}
+                  </div>
+                )}
                 {tool.comingSoon && (
-                  <span className="absolute top-0 right-0 bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-full">
+                  <span className="absolute top-0 right-0 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
                     Bientôt
                   </span>
                 )}
               </div>
 
               {/* Title */}
-              <h3 className="text-xl font-bold text-slate-900 mb-2">
+              <h3 className="text-xl font-bold text-foreground mb-2">
                 {tool.name}
-                {tool.aiSuffix && <span className="text-[#f0a830]">AI</span>}
+                {tool.aiSuffix && <span className="text-accent">AI</span>}
               </h3>
 
               {/* Description */}
-              <p className={`text-sm mb-4 ${tool.comingSoon ? "text-slate-400" : "text-slate-600"}`}>
+              <p className={`text-sm mb-4 ${tool.comingSoon ? "text-muted-foreground" : "text-muted-foreground"}`}>
                 {tool.description}
               </p>
 
@@ -105,10 +116,10 @@ const ToolsSection = () => {
                   <li
                     key={featureIndex}
                     className={`flex items-center gap-2 text-sm ${
-                      tool.comingSoon ? "text-slate-400" : "text-slate-600"
+                      tool.comingSoon ? "text-muted-foreground/60" : "text-muted-foreground"
                     }`}
                   >
-                    <Check className={`w-4 h-4 ${tool.comingSoon ? "text-slate-300" : "text-slate-500"}`} />
+                    <Check className={`w-4 h-4 ${tool.comingSoon ? "text-muted-foreground/40" : "text-secondary"}`} />
                     {feature}
                   </li>
                 ))}
@@ -118,7 +129,7 @@ const ToolsSection = () => {
               {tool.comingSoon ? (
                 <Button
                   variant="outline"
-                  className="w-full border-slate-200 text-slate-400 cursor-not-allowed"
+                  className="w-full border-border text-muted-foreground cursor-not-allowed"
                   disabled
                 >
                   Bientôt disponible
@@ -127,7 +138,7 @@ const ToolsSection = () => {
                 <Link to={tool.href}>
                   <Button
                     variant="outline"
-                    className="w-full border-[#7dd3e8] text-[#7dd3e8] hover:bg-[#7dd3e8] hover:text-white transition-colors"
+                    className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors"
                   >
                     Essayer gratuitement
                   </Button>
