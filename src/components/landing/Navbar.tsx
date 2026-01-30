@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import logo from "@/assets/AIProject4You_logo.png";
 
 interface NavbarProps {
   onScrollToSection: (sectionId: string) => void;
@@ -34,10 +35,11 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center">
+        <Link to="/" className="flex items-center gap-2">
+          <img src={logo} alt="AIProject4You" className="h-10 w-10 object-contain" />
           <span className="text-xl font-bold">
-            <span className="text-[#f0a830]">AI</span>
-            <span className="text-slate-800">Project4You</span>
+            <span className="text-accent">AI</span>
+            <span className="text-foreground">Project4You</span>
           </span>
         </Link>
 

@@ -1,5 +1,6 @@
-import { Menu, X, FileSpreadsheet } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/ReportCardAI_logo.png';
 
 interface ReportCardMobileHeaderProps {
   isSidebarOpen: boolean;
@@ -20,14 +21,13 @@ export function ReportCardMobileHeader({ isSidebarOpen, onToggleSidebar }: Repor
       </Button>
       
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-success to-success-light flex items-center justify-center">
-          <FileSpreadsheet className="h-4 w-4 text-white" />
-        </div>
+        <img 
+          src={logo} 
+          alt="ReportCard AI Logo" 
+          className="h-10 w-10 object-contain"
+        />
         <span className="font-bold text-lg">
-          ReportCard
-          <span className="ml-1 bg-gradient-to-r from-success to-success-light text-white px-1.5 py-0.5 rounded text-xs font-bold">
-            AI
-          </span>
+          ReportCard<span className="text-gold">AI</span>
         </span>
       </div>
       
