@@ -67,15 +67,13 @@ const HeroSection = ({ onScrollToSection }: HeroSectionProps) => {
             </div>
           </div>
 
-          {/* Right column - Logo/Image */}
+          {/* Right column - Logo SANS conteneur */}
           <div className="flex-1 flex justify-center lg:justify-end">
-            <div className="w-64 h-64 sm:w-80 sm:h-80 lg:w-96 lg:h-96 flex items-center justify-center">
-              <img
-                src={logo}
-                alt="AIProject4You - Arbre doré avec icônes éducatives"
-                className="w-full h-full object-contain drop-shadow-lg"
-              />
-            </div>
+            <img
+              src={logo}
+              alt="AIProject4You - Outils IA pour enseignants"
+              className="max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg h-auto drop-shadow-2xl"
+            />
           </div>
         </div>
       </div>
