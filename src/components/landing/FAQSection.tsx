@@ -1,5 +1,9 @@
-import { useState } from "react";
-import { Plus, Minus } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface FAQItem {
   question: string;
@@ -7,86 +11,69 @@ interface FAQItem {
 }
 
 const FAQSection = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const faqItems: FAQItem[] = [
+  const faqs: FAQItem[] = [
     {
-      question: "Mes données sont-elles en sécurité ?",
+      question: "Est-ce vraiment gratuit ?",
       answer:
-        "Absolument. Toutes les données sont traitées localement dans votre navigateur. Rien n'est stocké sur nos serveurs. Conformité RGPD totale.",
+        "Oui ! ClassCouncilAI est 100% gratuit et illimité. ReportCardAI offre 30 appréciations gratuites par mois. Pour un usage intensif, vous pouvez passer à l'offre Pro à partir de 3,25€/mois.",
     },
     {
-      question: "Les outils fonctionnent-ils avec PRONOTE ?",
+      question: "Mes données élèves sont-elles protégées ?",
       answer:
-        "Oui. ClassCouncil AI et ReportCard AI sont conçus pour importer directement les exports PDF de PRONOTE, la solution la plus utilisée en France.",
+        "Absolument. Toutes les données sont traitées localement dans votre navigateur. Aucune information personnelle n'est envoyée sur nos serveurs. Nous sommes 100% conformes RGPD.",
     },
     {
-      question: "Est-ce gratuit ?",
+      question: "Comment importer mes données depuis PRONOTE ?",
       answer:
-        "Oui, les outils sont actuellement gratuits pour tous les enseignants. Notre objectif est de faciliter votre quotidien.",
+        "C'est très simple ! Exportez votre bulletin ou conseil de classe en PDF depuis PRONOTE, puis glissez-déposez le fichier dans notre outil. L'extraction des données est automatique.",
     },
     {
-      question: "Puis-je suggérer un nouvel outil ?",
+      question: "Les appréciations générées sont-elles de qualité ?",
       answer:
-        "Bien sûr ! N'hésitez pas à nous contacter pour partager vos besoins. Ensemble, nous faisons évoluer la plateforme.",
+        "Oui ! Notre IA a été entraînée spécifiquement pour générer des appréciations professionnelles et personnalisées. Vous pouvez choisir parmi 6 tons différents (sévère, neutre, bienveillant, encourageant, élogieux, constructif) et ajuster le résultat à votre guise.",
+    },
+    {
+      question: "Puis-je utiliser les outils sur tablette ou mobile ?",
+      answer:
+        "Nos outils sont optimisés pour une utilisation sur ordinateur pour un confort optimal. Cependant, ils fonctionnent également sur tablette. L'utilisation sur smartphone est possible mais moins confortable.",
+    },
+    {
+      question: "Comment fonctionne la limite de caractères PRONOTE ?",
+      answer:
+        "Nos outils respectent automatiquement les limites de caractères de PRONOTE. Vous pouvez configurer la limite (généralement 300-500 caractères) et l'IA génèrera des appréciations qui s'y conforment.",
     },
   ];
 
   return (
-    <section id="faq" className="py-24 px-4 bg-[#f8fafc] scroll-mt-20">
-      <div className="container mx-auto max-w-3xl">
-        {/* Section Title */}
+    <section id="faq" className="py-20 bg-[#f8fafc]">
+      <div className="max-w-3xl mx-auto px-6">
+        {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-[#1a2332] mb-4">
+          <h2 className="text-3xl font-bold text-slate-900">
             Questions fréquentes
           </h2>
-          <p className="text-[#94a3b8] text-lg">
-            Tout ce que vous devez savoir sur nos outils
+          <p className="text-slate-600 mt-2">
+            Tout ce que vous devez savoir sur AIProject4You
           </p>
         </div>
 
-        {/* FAQ Items */}
-        <div className="space-y-4">
-          {faqItems.map((item, index) => (
-            <div
+        {/* FAQ Accordion */}
+        <Accordion type="single" collapsible className="space-y-4">
+          {faqs.map((faq, index) => (
+            <AccordionItem
               key={index}
-              className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-md"
+              value={`item-${index}`}
+              className="bg-white rounded-xl border border-slate-200 px-6 shadow-sm"
             >
-              <button
-                onClick={() =>
-                  setOpenIndex(openIndex === index ? null : index)
-                }
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
-              >
-                <span className="font-medium text-[#1a2332] pr-4">
-                  {item.question}
-                </span>
-                <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    openIndex === index
-                      ? "bg-[#06b6d4] text-white"
-                      : "bg-[#06b6d4]/10 text-[#06b6d4]"
-                  }`}
-                >
-                  {openIndex === index ? (
-                    <Minus className="w-4 h-4" />
-                  ) : (
-                    <Plus className="w-4 h-4" />
-                  )}
-                </div>
-              </button>
-              <div
-                className={`overflow-hidden transition-all duration-300 ${
-                  openIndex === index ? "max-h-48" : "max-h-0"
-                }`}
-              >
-                <p className="px-6 pb-5 text-[#94a3b8] leading-relaxed">
-                  {item.answer}
-                </p>
-              </div>
-            </div>
+              <AccordionTrigger className="text-left font-medium text-slate-900 hover:no-underline py-4">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-slate-600 pb-4">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
       </div>
     </section>
   );

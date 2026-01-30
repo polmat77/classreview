@@ -1,7 +1,10 @@
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import ToolsSection from "@/components/landing/ToolsSection";
-import TestimonialSection from "@/components/landing/TestimonialSection";
+import FeaturesSection from "@/components/landing/FeaturesSection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
 import CTASection from "@/components/landing/CTASection";
 import Footer from "@/components/landing/Footer";
@@ -15,11 +18,14 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a2332] overflow-x-hidden">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <Navbar onScrollToSection={scrollToSection} />
       <HeroSection onScrollToSection={scrollToSection} />
       <ToolsSection />
-      <TestimonialSection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <TestimonialsSection />
+      <PricingSection />
       <FAQSection />
       <CTASection />
       <Footer onScrollToSection={scrollToSection} />
