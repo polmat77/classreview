@@ -1,183 +1,138 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowRight } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Check, MessageSquare, FileText, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import classCouncilLogo from "@/assets/logo.png";
-import reportCardLogo from "@/assets/Logo_ReportCardAI.png";
+
+interface Tool {
+  name: string;
+  aiSuffix: boolean;
+  description: string;
+  features: string[];
+  icon: React.ReactNode;
+  href: string;
+  comingSoon?: boolean;
+}
 
 const ToolsSection = () => {
-  const tools = [
+  const tools: Tool[] = [
     {
-      id: "classcouncil",
       name: "ClassCouncil",
-      logo: classCouncilLogo,
-      title: "ClassCouncil AI: Préparez vos conseils de classe en un clic",
+      aiSuffix: true,
+      description: "Générez automatiquement les appréciations pour vos conseils de classe",
       features: [
-        "Génération automatique de synthèses",
-        "Suggestions de commentaires personnalisés",
-        "Analyse des résultats par élève et matière",
-        "Export compatible avec les logiciels scolaires",
+        "Import PDF PRONOTE",
+        "Analyse automatique des notes",
+        "Appréciations personnalisées",
       ],
-      available: true,
-      link: "/classcouncil-ai",
+      icon: <MessageSquare className="w-8 h-8 text-[#7dd3e8]" />,
+      href: "/classcouncil-ai",
     },
     {
-      id: "reportcard",
       name: "ReportCard",
-      logo: reportCardLogo,
-      title: "ReportCard AI: Rédigez vos bulletins plus rapidement",
+      aiSuffix: true,
+      description: "Rédigez des appréciations de bulletins personnalisées en quelques clics",
       features: [
-        "Commentaires détaillés et constructifs",
-        "Adaptation automatique au niveau de l'élève",
-        "Gain de temps significatif sur la saisie",
-        "Respect de votre style pédagogique",
+        "6 tons disponibles",
+        "Limite de caractères PRONOTE",
+        "Export copier-coller",
       ],
-      available: true,
-      link: "/reportcard-ai",
+      icon: <FileText className="w-8 h-8 text-[#7dd3e8]" />,
+      href: "/reportcard-ai",
     },
     {
-      id: "quizmaster",
       name: "QuizMaster",
-      logo: null,
-      title: "QuizMaster: Créez des évaluations interactives",
+      aiSuffix: true,
+      description: "Créez des quiz interactifs pour vos élèves à partir de vos cours",
       features: [
-        "Génération automatique de QCM",
-        "Évaluations adaptées au niveau",
-        "Correction automatisée",
-        "Statistiques de progression",
+        "Génération automatique",
+        "QCM et questions ouvertes",
+        "Export PDF",
       ],
-      available: false,
-      link: "#",
+      icon: <HelpCircle className="w-8 h-8 text-slate-400" />,
+      href: "#",
+      comingSoon: true,
     },
   ];
 
-  // App mockup component for the cards
-  const AppMockup = ({ tool }: { tool: typeof tools[0] }) => (
-    <div className="bg-slate-100 rounded-lg p-3 mb-4">
-      <div className="bg-white rounded-md shadow-sm overflow-hidden">
-        {/* App header mockup */}
-        <div className="bg-navy h-8 flex items-center px-3 gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-400" />
-          <div className="w-2 h-2 rounded-full bg-yellow-400" />
-          <div className="w-2 h-2 rounded-full bg-green-400" />
-        </div>
-        {/* App content mockup */}
-        <div className="p-3 space-y-2">
-          <div className="flex gap-2">
-            <div className="w-16 h-3 bg-cyan/30 rounded" />
-            <div className="w-12 h-3 bg-slate-200 rounded" />
-          </div>
-          <div className="space-y-1.5">
-            <div className="h-2 bg-slate-100 rounded w-full" />
-            <div className="h-2 bg-slate-100 rounded w-5/6" />
-            <div className="h-2 bg-slate-100 rounded w-4/6" />
-          </div>
-          <div className="flex gap-2 mt-3">
-            <div className="h-6 bg-cyan/20 rounded flex-1" />
-            <div className="h-6 bg-gold/20 rounded w-16" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Quiz mockup for QuizMaster
-  const QuizMockup = () => (
-    <div className="bg-slate-100 rounded-lg p-3 mb-4 flex items-center justify-center h-32">
-      <div className="text-4xl font-black text-navy/20 tracking-wider">
-        QUIZ
-      </div>
-    </div>
-  );
-
   return (
-    <section id="outils" className="py-20 lg:py-28 px-4 bg-muted scroll-mt-20">
-      <div className="container mx-auto max-w-6xl">
-        {/* Section Title */}
-        <div className="text-center mb-16">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-navy">
-            Nos solutions pour simplifier votre quotidien
+    <section id="outils" className="py-20 bg-[#f8fafc]">
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-slate-900">
+            Nos outils pour les enseignants
           </h2>
+          <p className="text-slate-600 mt-2">
+            Une suite complète pour automatiser vos tâches administratives
+          </p>
         </div>
 
         {/* Tools Grid */}
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {tools.map((tool) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {tools.map((tool, index) => (
             <Card
-              key={tool.id}
-              className={`bg-white border border-border relative overflow-hidden group transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-2xl ${
-                !tool.available ? "opacity-90" : ""
+              key={index}
+              className={`bg-white rounded-xl shadow-sm border border-slate-100 p-6 transition-all hover:shadow-md ${
+                tool.comingSoon ? "opacity-75" : ""
               }`}
             >
-              {/* Status Badge */}
-              {!tool.available && (
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge className="bg-slate-200 text-slate-600 border-0 font-medium">
-                    Coming Soon
-                  </Badge>
+              {/* Icon */}
+              <div className="mb-4 relative">
+                <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center">
+                  {tool.icon}
                 </div>
-              )}
-
-              <CardContent className="p-5">
-                {/* Logo header */}
-                <div className="flex items-center gap-3 mb-4">
-                  {tool.logo ? (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center">
-                      <img
-                        src={tool.logo}
-                        alt={tool.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl bg-gold/20 flex items-center justify-center">
-                      <span className="text-gold font-bold text-sm">Q</span>
-                    </div>
-                  )}
-                  <span className="font-semibold text-navy">
-                    {tool.name} <span className="text-gold">AI</span>
+                {tool.comingSoon && (
+                  <span className="absolute top-0 right-0 bg-slate-100 text-slate-500 text-xs px-2 py-1 rounded-full">
+                    Bientôt
                   </span>
-                </div>
-
-                {/* App Mockup */}
-                {tool.available ? <AppMockup tool={tool} /> : <QuizMockup />}
-
-                {/* Title */}
-                <h3 className="font-semibold text-navy text-sm mb-3">
-                  {tool.title.split(":")[0]}:{" "}
-                  <span className="font-normal text-muted-foreground">
-                    {tool.title.split(":")[1]}
-                  </span>
-                </h3>
-
-                {/* Features List */}
-                <ul className="space-y-1.5 text-xs text-muted-foreground mb-5">
-                  {tool.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-cyan mt-0.5">•</span>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                {/* CTA Button */}
-                {tool.available ? (
-                  <Link to={tool.link} className="block">
-                    <Button className="w-full bg-cyan hover:bg-cyan-vibrant text-white rounded-lg transition-all font-medium">
-                      Essayer
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button
-                    disabled
-                    variant="outline"
-                    className="w-full border-slate-300 text-slate-500 cursor-not-allowed rounded-lg"
-                  >
-                    Bientôt disponible
-                  </Button>
                 )}
-              </CardContent>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-bold text-slate-900 mb-2">
+                {tool.name}
+                {tool.aiSuffix && <span className="text-[#f0a830]">AI</span>}
+              </h3>
+
+              {/* Description */}
+              <p className={`text-sm mb-4 ${tool.comingSoon ? "text-slate-400" : "text-slate-600"}`}>
+                {tool.description}
+              </p>
+
+              {/* Features */}
+              <ul className="space-y-2 mb-6">
+                {tool.features.map((feature, featureIndex) => (
+                  <li
+                    key={featureIndex}
+                    className={`flex items-center gap-2 text-sm ${
+                      tool.comingSoon ? "text-slate-400" : "text-slate-600"
+                    }`}
+                  >
+                    <Check className={`w-4 h-4 ${tool.comingSoon ? "text-slate-300" : "text-slate-500"}`} />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA Button */}
+              {tool.comingSoon ? (
+                <Button
+                  variant="outline"
+                  className="w-full border-slate-200 text-slate-400 cursor-not-allowed"
+                  disabled
+                >
+                  Bientôt disponible
+                </Button>
+              ) : (
+                <Link to={tool.href}>
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#7dd3e8] text-[#7dd3e8] hover:bg-[#7dd3e8] hover:text-white transition-colors"
+                  >
+                    Essayer gratuitement
+                  </Button>
+                </Link>
+              )}
             </Card>
           ))}
         </div>
