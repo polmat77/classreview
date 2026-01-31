@@ -131,7 +131,7 @@ const Index = () => {
         </div>
 
         {/* Content */}
-        <div className="bg-card rounded-2xl shadow-sm border p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           {renderTabContent()}
         </div>
       </MainLayout>

@@ -21,7 +21,7 @@ const defaultSteps: Step[] = [
 
 export function Stepper({ currentStep, steps = defaultSteps, onStepClick }: StepperProps) {
   return (
-    <div className="flex items-center justify-center gap-0 py-4 px-6 bg-card rounded-xl shadow-sm border">
+    <div className="flex items-center justify-center gap-4 py-4 px-6 bg-white rounded-xl shadow-sm border border-slate-200">
       {steps.map((step, index) => (
         <div key={step.id} className="flex items-center">
           <button
@@ -34,10 +34,10 @@ export function Stepper({ currentStep, steps = defaultSteps, onStepClick }: Step
           >
             <div
               className={cn(
-                "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
-                currentStep > step.id && "bg-gold text-navy",
-                currentStep === step.id && "bg-card text-gold border-[3px] border-gold shadow-[0_0_0_4px_hsl(var(--gold)/0.2)]",
-                currentStep < step.id && "bg-muted text-muted-foreground",
+                "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300 shadow-sm",
+                currentStep > step.id && "bg-amber-500 text-white",
+                currentStep === step.id && "bg-amber-500 text-white shadow-md",
+                currentStep < step.id && "bg-slate-200 text-slate-500",
                 onStepClick && "group-hover:scale-105"
               )}
             >
@@ -49,9 +49,9 @@ export function Stepper({ currentStep, steps = defaultSteps, onStepClick }: Step
             </div>
             <span
               className={cn(
-                "text-sm font-medium mr-4 transition-colors",
-                currentStep >= step.id ? "text-foreground" : "text-muted-foreground",
-                onStepClick && "group-hover:text-gold"
+                "text-sm font-medium transition-colors",
+                currentStep >= step.id ? "text-slate-900" : "text-slate-400",
+                onStepClick && currentStep >= step.id && "group-hover:text-amber-600"
               )}
             >
               {step.label}
@@ -60,10 +60,10 @@ export function Stepper({ currentStep, steps = defaultSteps, onStepClick }: Step
           {index < steps.length - 1 && (
             <div
               className={cn(
-                "w-12 h-0.5 mr-4 rounded-full transition-all duration-300",
+                "w-[60px] h-0.5 ml-4 rounded-full transition-all duration-300",
                 currentStep > step.id 
-                  ? "bg-gradient-to-r from-gold to-gold-light" 
-                  : "bg-muted"
+                  ? "bg-amber-500" 
+                  : "bg-slate-200"
               )}
             />
           )}
