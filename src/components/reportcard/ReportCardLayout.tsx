@@ -43,7 +43,7 @@ const ReportCardLayout = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
       <ReportCardMobileHeader 
         isSidebarOpen={isMobileSidebarOpen} 
@@ -79,7 +79,7 @@ const ReportCardLayout = ({
       <main
         className={cn(
           "min-h-screen transition-all duration-300 flex flex-col",
-          "lg:ml-[280px]",
+          "lg:ml-[260px]",
           isCollapsed && "lg:ml-20",
           "pt-16 lg:pt-0"
         )}
