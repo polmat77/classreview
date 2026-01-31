@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
-import classCouncilLogo from "@/assets/ClassCouncilAI_logo.png";
-import reportCardLogo from "@/assets/ReportCardAI_logo.png";
+
+const classCouncilLogo = "/images/logos/ClassCouncilAI_logo.png";
+const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
 
 interface Tool {
   name: string;

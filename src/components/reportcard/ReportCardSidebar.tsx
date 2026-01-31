@@ -14,7 +14,8 @@ import {
   Check,
   FileSpreadsheet,
 } from 'lucide-react';
-import reportCardLogo from '@/assets/ReportCardAI_logo.png';
+
+const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {

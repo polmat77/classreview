@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from '@/assets/ReportCardAI_logo.png';
+
+const logo = "/images/logos/ReportCardAI_logo.png";
 
 interface ReportCardMobileHeaderProps {
   isSidebarOpen: boolean;
