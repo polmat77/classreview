@@ -126,7 +126,7 @@ const ToolsSection = () => {
                 ))}
               </ul>
 
-              {/* CTA Button */}
+              {/* CTA Buttons */}
               {tool.comingSoon ? (
                 <Button
                   variant="outline"
@@ -136,14 +136,21 @@ const ToolsSection = () => {
                   Bientôt disponible
                 </Button>
               ) : (
-                <Link to={tool.href}>
-                  <Button
-                    variant="outline"
-                    className="w-full border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors"
-                  >
-                    Essayer gratuitement
-                  </Button>
-                </Link>
+                <div className="space-y-2">
+                  <Link to={`${tool.href}/app`}>
+                    <Button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white hover:from-amber-500 hover:to-amber-600 shadow-sm">
+                      Essayer gratuitement
+                    </Button>
+                  </Link>
+                  <Link to={tool.href}>
+                    <Button
+                      variant="ghost"
+                      className="w-full text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      En savoir plus →
+                    </Button>
+                  </Link>
+                </div>
               )}
             </Card>
           ))}
