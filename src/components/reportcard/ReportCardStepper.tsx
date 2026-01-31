@@ -56,7 +56,7 @@ const ReportCardStepper = ({
   return (
     <div className="w-full">
       {/* Desktop stepper */}
-      <div className="hidden md:flex items-center justify-between">
+      <div className="hidden md:flex items-center justify-between bg-white rounded-xl shadow-sm border border-slate-200 px-6 py-4">
         {steps.map((step, index) => {
           const isActive = currentStep === step.id;
           const isCompleted = isStepCompleted(step.id);
@@ -75,25 +75,25 @@ const ReportCardStepper = ({
               >
                 <div
                   className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
-                    isActive && "bg-primary text-primary-foreground shadow-lg",
-                    isCompleted && !isActive && "bg-success text-success-foreground",
-                    !isActive && !isCompleted && "bg-muted text-muted-foreground",
-                    isAccessible && !isActive && "group-hover:bg-primary/10"
+                    "w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                    isActive && "bg-amber-500 text-white shadow-md",
+                    isCompleted && !isActive && "bg-emerald-500 text-white",
+                    !isActive && !isCompleted && "bg-slate-200 text-slate-500",
+                    isAccessible && !isActive && "group-hover:bg-amber-100"
                   )}
                 >
                   {isCompleted && !isActive ? (
-                    <Check className="w-6 h-6" />
+                    <Check className="w-5 h-5" />
                   ) : (
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-5 h-5" />
                   )}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs text-muted-foreground">Étape {step.id}</p>
+                  <p className="text-xs text-slate-400">Étape {step.id}</p>
                   <p
                     className={cn(
                       "font-medium text-sm",
-                      isActive ? "text-primary" : "text-foreground"
+                      isActive ? "text-slate-900" : "text-slate-600"
                     )}
                   >
                     {step.label}
@@ -103,8 +103,8 @@ const ReportCardStepper = ({
               {index < steps.length - 1 && (
                 <div
                   className={cn(
-                    "flex-1 h-0.5 mx-4",
-                    isStepCompleted(step.id) ? "bg-success" : "bg-border"
+                    "flex-1 h-0.5 mx-4 rounded-full",
+                    isStepCompleted(step.id) ? "bg-emerald-500" : "bg-slate-200"
                   )}
                 />
               )}
@@ -114,7 +114,7 @@ const ReportCardStepper = ({
       </div>
 
       {/* Mobile stepper */}
-      <div className="md:hidden">
+      <div className="md:hidden bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div className="flex items-center justify-between mb-4">
           {steps.map((step) => {
             const isActive = currentStep === step.id;
@@ -128,10 +128,10 @@ const ReportCardStepper = ({
                 onClick={() => isAccessible && onStepClick(step.id)}
                 disabled={!isAccessible}
                 className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
-                  isActive && "bg-primary text-primary-foreground shadow-lg",
-                  isCompleted && !isActive && "bg-success text-success-foreground",
-                  !isActive && !isCompleted && "bg-muted text-muted-foreground",
+                  "w-12 h-12 rounded-xl flex items-center justify-center transition-all shadow-sm",
+                  isActive && "bg-amber-500 text-white shadow-md",
+                  isCompleted && !isActive && "bg-emerald-500 text-white",
+                  !isActive && !isCompleted && "bg-slate-200 text-slate-500",
                   !isAccessible && "opacity-50 cursor-not-allowed"
                 )}
               >
@@ -145,10 +145,10 @@ const ReportCardStepper = ({
           })}
         </div>
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-400">
             Étape {currentStep} sur 4
           </p>
-          <p className="font-semibold text-foreground">
+          <p className="font-semibold text-slate-900">
             {steps.find((s) => s.id === currentStep)?.label}
           </p>
         </div>

@@ -63,15 +63,15 @@ const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
         alt="ReportCard AI Logo" 
         className={cn(
           "flex-shrink-0 object-contain",
-          isCollapsed ? "w-12 h-12" : "w-14 h-14"
+          isCollapsed ? "w-12 h-12" : "w-12 h-12"
         )}
       />
       {!isCollapsed && (
         <div className="flex flex-col">
-          <span className="text-white font-bold text-lg leading-tight">
-            ReportCard<span className="text-gold">AI</span>
+          <span className="text-slate-800 font-bold text-lg leading-tight">
+            ReportCard<span className="text-amber-500">AI</span>
           </span>
-          <span className="text-white/50 text-xs">Génération d'appréciations</span>
+          <span className="text-slate-400 text-xs">Génération d'appréciations</span>
         </div>
       )}
     </div>
@@ -121,7 +121,7 @@ export function ReportCardSidebar({
 
   const getStepStatus = (stepId: number) => {
     if (currentStep === stepId) return 'En cours';
-    if (isStepCompleted(stepId)) return 'Complété';
+    if (isStepCompleted(stepId)) return 'Terminé';
     if (!isStepAccessible(stepId)) return 'Verrouillé';
     return 'À faire';
   };
@@ -130,36 +130,36 @@ export function ReportCardSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-gradient-to-b from-navy to-navy-dark text-white transition-all duration-300",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white border-r border-slate-200 transition-all duration-300",
           "overflow-y-auto scrollbar-hide",
           isCollapsed ? "w-20" : "w-[260px]"
         )}
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex-shrink-0 py-4",
-          isCollapsed ? "px-3" : "px-4"
+          "flex-shrink-0 py-5 border-b border-slate-100",
+          isCollapsed ? "px-3" : "px-5"
         )}>
           <AppLogo isCollapsed={isCollapsed} />
         </div>
 
         {/* Back to AIProject4You */}
-        <div className="px-2 mb-2">
+        <div className="px-4 py-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 to="/"
                 className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
-                  "text-gold/80 hover:bg-gold/10 hover:text-gold border border-gold/30 hover:border-gold/50"
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-4 py-2.5 text-sm",
+                  "bg-gradient-to-r from-amber-400 to-amber-500 text-white font-medium shadow-sm hover:shadow-md hover:from-amber-500 hover:to-amber-600"
                 )}
               >
                 <Home className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && <span className="font-medium">Retour à AIProject4You</span>}
+                {!isCollapsed && <span>Retour à AIProject4You</span>}
               </Link>
             </TooltipTrigger>
             {isCollapsed && (
-              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+              <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                 Retour à AIProject4You
               </TooltipContent>
             )}
@@ -167,40 +167,38 @@ export function ReportCardSidebar({
         </div>
 
         {/* App Switcher */}
-        <div className="px-2 mb-3">
+        <div className="px-4 py-2">
           <div className={cn(
-            "rounded-lg bg-success/20 border border-success/30 p-2",
+            "rounded-xl bg-amber-50 border border-amber-200 p-3",
             isCollapsed && "p-2"
           )}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-success to-success-light flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center flex-shrink-0">
                 <FileSpreadsheet className="h-4 w-4 text-white" />
               </div>
               {!isCollapsed && (
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-white text-xs">ReportCard AI</p>
-                </div>
+                <span className="font-semibold text-amber-800 text-sm">ReportCard AI</span>
               )}
               {!isCollapsed && (
-                <Badge className="bg-success text-white text-[10px] px-1.5 py-0.5">
+                <Badge className="ml-auto bg-amber-500 text-white text-[10px] px-2 py-0.5 hover:bg-amber-600">
                   Actuel
                 </Badge>
               )}
             </div>
           </div>
-
         </div>
 
-        {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-3" />
+        {/* Navigation Title */}
+        {!isCollapsed && (
+          <div className="px-4 pt-4 pb-2">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Progression
+            </span>
+          </div>
+        )}
 
         {/* Workflow Steps */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5">
-          {!isCollapsed && (
-            <p className="text-[10px] uppercase tracking-wider text-white/50 px-3 mb-2 font-medium">
-              Progression
-            </p>
-          )}
+        <nav className="flex-1 px-4 space-y-1">
           {workflowSteps.map((step, index) => {
             const isActive = currentStep === step.id;
             const isCompleted = isStepCompleted(step.id);
@@ -212,48 +210,42 @@ export function ReportCardSidebar({
                 onClick={() => isAccessible && onStepClick(step.id)}
                 disabled={!isAccessible}
                 className={cn(
-                  "relative flex items-center gap-2 w-full rounded-lg transition-all duration-200 text-left px-2 py-2",
-                  isActive && "bg-primary/20",
-                  !isActive && isAccessible && "hover:bg-white/10",
+                  "flex items-start gap-3 w-full rounded-xl transition-all duration-200 text-left px-3 py-3",
+                  isActive && "bg-slate-50 border border-slate-200",
+                  !isActive && isAccessible && "hover:bg-slate-50",
                   !isAccessible && "opacity-40 cursor-not-allowed"
                 )}
               >
                 {/* Step indicator */}
                 <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-xs",
-                  isActive && "bg-primary text-white relative",
-                  isCompleted && !isActive && "bg-success text-white",
-                  !isActive && !isCompleted && "bg-white/10 text-white/60"
+                  "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all text-sm font-semibold",
+                  isActive && "bg-amber-500 text-white",
+                  isCompleted && !isActive && "bg-emerald-500 text-white",
+                  !isActive && !isCompleted && "bg-slate-200 text-slate-500"
                 )}>
                   {isCompleted && !isActive ? (
                     <Check className="h-4 w-4" />
                   ) : (
-                    <span className="font-semibold">{step.id}</span>
-                  )}
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-full border-2 border-primary animate-pulse" />
+                    <span>{step.id}</span>
                   )}
                 </div>
 
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
                     <p className={cn(
-                      "font-medium text-xs truncate",
-                      isActive ? "text-white" : "text-white/80"
+                      "font-medium text-sm",
+                      isActive ? "text-slate-900" : "text-slate-500"
                     )}>
                       {step.label}
                     </p>
                     <p className={cn(
-                      "text-[10px] truncate",
-                      isActive ? "text-primary-light" : "text-white/50"
+                      "text-xs",
+                      isActive ? "text-amber-600" : 
+                      isCompleted ? "text-emerald-600" : "text-slate-400"
                     )}>
                       {status}
                     </p>
                   </div>
-                )}
-
-                {isActive && !isCollapsed && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 bg-gradient-to-b from-success to-success-light rounded-r-full" />
                 )}
               </button>
             );
@@ -262,14 +254,9 @@ export function ReportCardSidebar({
               return (
                 <Tooltip key={step.id}>
                   <TooltipTrigger asChild>
-                    <div 
-                      className="animate-slide-in-left"
-                      style={{ animationDelay: `${0.05 + index * 0.03}s` }}
-                    >
-                      {content}
-                    </div>
+                    <div>{content}</div>
                   </TooltipTrigger>
-                  <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+                  <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                     <p className="font-medium text-xs">{step.label}</p>
                     <p className="text-[10px] text-white/60">{status}</p>
                   </TooltipContent>
@@ -277,23 +264,15 @@ export function ReportCardSidebar({
               );
             }
 
-            return (
-              <div 
-                key={step.id}
-                className="animate-slide-in-left"
-                style={{ animationDelay: `${0.05 + index * 0.03}s` }}
-              >
-                {content}
-              </div>
-            );
+            return <div key={step.id}>{content}</div>;
           })}
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-3" />
+        <div className="h-px bg-slate-100 mx-4" />
 
         {/* Secondary Navigation */}
-        <nav className="px-2 py-2 space-y-0.5">
+        <nav className="px-4 py-2 space-y-1 border-t border-slate-100">
           {/* New Session */}
           <AlertDialog>
             <Tooltip>
@@ -301,8 +280,8 @@ export function ReportCardSidebar({
                 <AlertDialogTrigger asChild>
                   <button
                     className={cn(
-                      "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
-                      "text-white/70 hover:bg-white/10 hover:text-white"
+                      "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
+                      "text-slate-500 hover:bg-slate-50"
                     )}
                   >
                     <RotateCcw className="h-4 w-4 flex-shrink-0" />
@@ -311,7 +290,7 @@ export function ReportCardSidebar({
                 </AlertDialogTrigger>
               </TooltipTrigger>
               {isCollapsed && (
-                <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+                <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                   Nouvelle session
                 </TooltipContent>
               )}
@@ -338,8 +317,8 @@ export function ReportCardSidebar({
               <Link
                 to="/politique-confidentialite"
                 className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
-                  "text-white/70 hover:bg-white/10 hover:text-white"
+                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
+                  "text-slate-500 hover:bg-slate-50"
                 )}
               >
                 <Shield className="h-4 w-4 flex-shrink-0" />
@@ -347,7 +326,7 @@ export function ReportCardSidebar({
               </Link>
             </TooltipTrigger>
             {isCollapsed && (
-              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+              <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                 Confidentialité
               </TooltipContent>
             )}
@@ -358,8 +337,8 @@ export function ReportCardSidebar({
             <TooltipTrigger asChild>
               <button
                 className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-3 py-2 text-xs",
-                  "text-white/70 hover:bg-white/10 hover:text-white"
+                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
+                  "text-slate-500 hover:bg-slate-50"
                 )}
               >
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
@@ -367,20 +346,23 @@ export function ReportCardSidebar({
               </button>
             </TooltipTrigger>
             {isCollapsed && (
-              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+              <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                 Aide
               </TooltipContent>
             )}
           </Tooltip>
         </nav>
 
-        {/* Footer */}
+        {/* Spacer */}
+        <div className="flex-grow min-h-4" />
+
+        {/* Footer Badge */}
         {!isCollapsed && (
-          <div className="px-3 py-3 text-center animate-slide-in-left" style={{ animationDelay: '0.2s' }}>
-            <span className="inline-block bg-gradient-to-r from-success to-success-light text-white px-2 py-1 rounded-full text-[10px] font-semibold mb-0.5">
-              👨‍🏫 Créé par un prof
+          <div className="p-4 border-t border-slate-100">
+            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+              🎓 Créé par un prof
             </span>
-            <p className="text-[10px] text-white/50">pour les profs</p>
+            <p className="text-xs text-slate-400 mt-1">pour les profs</p>
           </div>
         )}
 
@@ -389,7 +371,7 @@ export function ReportCardSidebar({
           variant="ghost"
           size="icon"
           onClick={() => onCollapsedChange(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-success border-2 border-navy text-white hover:bg-success-light hover:scale-110 transition-all shadow-md"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-amber-500 border-2 border-white text-white hover:bg-amber-600 hover:scale-110 transition-all shadow-md"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
