@@ -124,24 +124,24 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
           </div>
         </div>
 
-        {/* Back to AIProject4You link */}
+        {/* Back to ClassCouncil AI landing page */}
         <div className="px-4 py-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                to="/"
+                to="/classcouncil-ai"
                 className={cn(
                   "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-4 py-2.5 text-sm",
                   "bg-gradient-to-r from-amber-400 to-amber-500 text-white font-medium shadow-sm hover:shadow-md hover:from-amber-500 hover:to-amber-600"
                 )}
               >
                 <Home className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && <span>Retour à AIProject4You</span>}
+                {!isCollapsed && <span>Retour à ClassCouncil AI</span>}
               </Link>
             </TooltipTrigger>
             {isCollapsed && (
               <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
-                Retour à AIProject4You
+                Retour à ClassCouncil AI
               </TooltipContent>
             )}
           </Tooltip>
