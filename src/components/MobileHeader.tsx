@@ -1,6 +1,7 @@
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import logo from "@/assets/ClassCouncilAI_logo.png";
+
+const logo = "/images/logos/ClassCouncilAI_logo.png";
 
 interface MobileHeaderProps {
   isSidebarOpen: boolean;

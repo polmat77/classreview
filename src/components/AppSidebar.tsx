@@ -13,8 +13,9 @@ import {
   ChevronRight,
   Home
 } from 'lucide-react';
-import logo from "@/assets/ClassCouncilAI_logo.png";
 import { Button } from '@/components/ui/button';
+
+const logo = "/images/logos/ClassCouncilAI_logo.png";
 import {
   Tooltip,
   TooltipContent,
