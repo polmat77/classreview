@@ -57,25 +57,22 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
       <button
         onClick={onClick}
         className={cn(
-          "relative flex items-center gap-3 w-full rounded-lg transition-all duration-200 text-left",
-          isSecondary ? "px-3 py-2.5 text-sm" : "px-3 py-3",
+          "relative flex items-center gap-3 w-full rounded-xl transition-all duration-200 text-left",
+          isSecondary ? "px-4 py-2.5 text-sm" : "px-4 py-3",
           isActive 
-            ? "bg-sidebar-primary/20 text-white" 
-            : "text-white/70 hover:bg-white/10 hover:text-white"
+            ? "bg-amber-50 text-amber-700 font-medium border border-amber-200" 
+            : "text-slate-600 hover:bg-slate-50 transition-colors"
         )}
       >
-        {isActive && (
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 bg-gradient-to-b from-gold to-gold-light rounded-r-full" />
-        )}
         <Icon className={cn(
           "h-5 w-5 flex-shrink-0 transition-colors",
-          isActive && "text-gold"
+          isActive ? "text-amber-600" : "text-slate-500"
         )} />
         {!isCollapsed && (
-          <span className="font-medium truncate">{item.label}</span>
+          <span className="truncate">{item.label}</span>
         )}
         {isActive && !isCollapsed && (
-          <div className="absolute right-3 w-2 h-2 bg-gold rounded-full animate-pulse-gold" />
+          <span className="ml-auto w-2 h-2 rounded-full bg-amber-500" />
         )}
       </button>
     );
@@ -84,7 +81,7 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
       return (
         <Tooltip>
           <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+          <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
             {item.label}
           </TooltipContent>
         </Tooltip>
@@ -98,14 +95,14 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-gradient-to-b from-navy to-navy-dark text-white transition-all duration-300 overflow-hidden",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden",
           isCollapsed ? "w-20" : "w-[280px]"
         )}
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex-shrink-0 py-5 animate-slide-in-left",
-          isCollapsed ? "px-3" : "px-4"
+          "flex-shrink-0 py-5 border-b border-slate-100",
+          isCollapsed ? "px-3" : "px-5"
         )}>
           <div className="flex items-center gap-3">
             <img 
@@ -113,59 +110,56 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
               alt="ClassCouncil AI" 
               className={cn(
                 "object-contain transition-all duration-300 flex-shrink-0",
-                isCollapsed ? "w-12 h-12" : "w-14 h-14"
+                isCollapsed ? "w-12 h-12" : "w-12 h-12"
               )}
             />
             {!isCollapsed && (
               <div className="flex flex-col">
-                <span className="text-white font-bold text-lg leading-tight">
-                  ClassCouncil<span className="text-gold">AI</span>
+                <span className="text-slate-800 font-bold text-lg leading-tight">
+                  ClassCouncil<span className="text-amber-500">AI</span>
                 </span>
-                <span className="text-white/50 text-xs">Conseil de classe</span>
+                <span className="text-slate-400 text-xs">Conseil de classe</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Back to AIProject4You link */}
-        <div className="px-3 mb-2">
+        <div className="px-4 py-3">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 to="/"
                 className={cn(
-                  "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
-                  "text-gold/80 hover:bg-gold/10 hover:text-gold border border-gold/30 hover:border-gold/50"
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-4 py-2.5 text-sm",
+                  "bg-gradient-to-r from-amber-400 to-amber-500 text-white font-medium shadow-sm hover:shadow-md hover:from-amber-500 hover:to-amber-600"
                 )}
               >
                 <Home className="h-4 w-4 flex-shrink-0" />
-                {!isCollapsed && <span className="font-medium">Retour à AIProject4You</span>}
+                {!isCollapsed && <span>Retour à AIProject4You</span>}
               </Link>
             </TooltipTrigger>
             {isCollapsed && (
-              <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+              <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                 Retour à AIProject4You
               </TooltipContent>
             )}
           </Tooltip>
         </div>
 
-        {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4" />
+        {/* Navigation Title */}
+        {!isCollapsed && (
+          <div className="px-4 pt-4 pb-2">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Navigation
+            </span>
+          </div>
+        )}
 
         {/* Main Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide">
-          {!isCollapsed && (
-            <p className="text-[11px] uppercase tracking-wider text-white/50 px-3 mb-2 font-medium">
-              Navigation
-            </p>
-          )}
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide">
           {navigationItems.map((item, index) => (
-            <div 
-              key={item.id}
-              className="animate-slide-in-left"
-              style={{ animationDelay: `${0.1 + index * 0.05}s` }}
-            >
+            <div key={item.id}>
               <NavButton 
                 item={item} 
                 isActive={activeTab === item.id}
@@ -176,10 +170,10 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mx-4" />
+        <div className="h-px bg-slate-100 mx-3" />
 
         {/* Secondary Navigation */}
-        <nav className="px-3 py-3 space-y-1">
+        <nav className="px-3 py-2 space-y-1 border-t border-slate-100">
           {secondaryItems.map((item) => {
             const Icon = item.icon;
             
@@ -189,13 +183,13 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
                 <Link
                   to={item.to}
                   className={cn(
-                    "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2.5 text-sm",
+                    "flex items-center gap-3 w-full rounded-xl transition-all duration-200 px-4 py-2.5 text-sm",
                     isActive 
-                      ? "bg-sidebar-primary/20 text-white" 
-                      : "text-white/70 hover:bg-white/10 hover:text-white"
+                      ? "bg-amber-50 text-amber-700" 
+                      : "text-slate-500 hover:bg-slate-50"
                   )}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <Icon className="h-4 w-4 flex-shrink-0" />
                   {!isCollapsed && <span className="font-medium">{item.label}</span>}
                 </Link>
               );
@@ -204,7 +198,7 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
                 return (
                   <Tooltip key={item.id}>
                     <TooltipTrigger asChild>{content}</TooltipTrigger>
-                    <TooltipContent side="right" className="bg-navy text-white border-navy-light">
+                    <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
                       {item.label}
                     </TooltipContent>
                   </Tooltip>
@@ -229,13 +223,13 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
 
-        {/* Footer */}
+        {/* Footer Badge */}
         {!isCollapsed && (
-          <div className="px-4 py-4 text-center animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
-            <span className="inline-block bg-gradient-to-r from-gold to-gold-light text-navy px-3 py-1.5 rounded-full text-xs font-semibold mb-1">
-              👨‍🏫 Créé par un prof
+          <div className="p-4 border-t border-slate-100">
+            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+              🎓 Créé par un prof
             </span>
-            <p className="text-xs text-white/50">pour les profs</p>
+            <p className="text-xs text-slate-400 mt-1">pour les profs</p>
           </div>
         )}
 
@@ -244,7 +238,7 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
           variant="ghost"
           size="icon"
           onClick={() => onCollapsedChange(!isCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-gold border-2 border-navy text-navy hover:bg-gold-light hover:scale-110 transition-all shadow-md"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-amber-500 border-2 border-white text-white hover:bg-amber-600 hover:scale-110 transition-all shadow-md"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
