@@ -45,14 +45,14 @@ const FAQSection = () => {
   ];
 
   return (
-    <section id="faq" className="py-20 bg-[#f8fafc]">
+    <section id="faq" className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
       <div className="max-w-3xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Questions fréquentes
           </h2>
-          <p className="text-slate-600 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Tout ce que vous devez savoir sur AIProject4You
           </p>
         </div>
@@ -63,12 +63,12 @@ const FAQSection = () => {
             <AccordionItem
               key={index}
               value={`item-${index}`}
-              className="bg-white rounded-xl border border-slate-200 px-6 shadow-sm"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 px-6 shadow-sm dark:shadow-none transition-colors"
             >
-              <AccordionTrigger className="text-left font-medium text-slate-900 hover:no-underline py-4">
+              <AccordionTrigger className="text-left font-medium text-slate-900 dark:text-white hover:no-underline py-4">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-slate-600 pb-4">
+              <AccordionContent className="text-slate-600 dark:text-slate-400 pb-4">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>

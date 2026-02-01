@@ -36,14 +36,14 @@ const HowItWorksSection = () => {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 bg-[#f8fafc]">
+    <section id="how-it-works" className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Comment ça marche ?
           </h2>
-          <p className="text-slate-600 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             3 étapes simples pour gagner du temps
           </p>
         </div>
@@ -58,17 +58,17 @@ const HowItWorksSection = () => {
               </div>
 
               {/* Icon */}
-              <div className="w-14 h-14 rounded-xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 rounded-xl bg-white dark:bg-slate-800 shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-700 flex items-center justify-center mx-auto mb-4 transition-colors">
                 {step.icon}
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-slate-900 mb-2">
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
                 {step.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 leading-relaxed">
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 {step.description}
               </p>
             </div>

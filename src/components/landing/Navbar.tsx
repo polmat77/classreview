@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 const logo = "/images/logos/AIProject4You_logo.png";
 
@@ -30,8 +31,8 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 bg-white transition-shadow duration-300 ${
-        isScrolled ? "shadow-sm" : ""
+      className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-slate-900 transition-all duration-300 ${
+        isScrolled ? "shadow-sm dark:shadow-slate-800/50" : ""
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -50,15 +51,16 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
             <button
               key={link.sectionId}
               onClick={() => onScrollToSection(link.sectionId)}
-              className="text-slate-600 hover:text-slate-900 transition-colors text-sm font-medium"
+              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-sm font-medium"
             >
               {link.label}
             </button>
           ))}
         </div>
 
-        {/* CTA Button */}
-        <div className="hidden md:block">
+        {/* CTA Button + Dark Mode Toggle */}
+        <div className="hidden md:flex items-center gap-3">
+          <DarkModeToggle />
           <Button
             onClick={() => onScrollToSection("outils")}
             className="bg-[#f0a830] hover:bg-[#e09520] text-white px-6 rounded-lg font-medium"
@@ -68,18 +70,21 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
         </div>
 
         {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-slate-700 p-2"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle menu"
-        >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <DarkModeToggle />
+          <button
+            className="text-slate-700 dark:text-slate-300 p-2"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-t border-slate-100 py-4 px-6">
+        <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-4 px-6">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <button
@@ -88,7 +93,7 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
                   onScrollToSection(link.sectionId);
                   setIsMenuOpen(false);
                 }}
-                className="text-slate-600 hover:text-slate-900 transition-colors text-left py-2"
+                className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-left py-2"
               >
                 {link.label}
               </button>

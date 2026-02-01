@@ -53,7 +53,7 @@ const FeaturesSection = () => {
   ];
 
   return (
-    <section id="features" className="py-20 bg-white">
+    <section id="features" className="py-20 bg-white dark:bg-slate-900 transition-colors">
       <div className="max-w-6xl mx-auto px-6">
         <div className="space-y-24">
           {features.map((feature, index) => (
@@ -65,17 +65,17 @@ const FeaturesSection = () => {
             >
               {/* Text Content */}
               <div className="flex-1 text-center lg:text-left">
-                <h3 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-4">
+                <h3 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-4">
                   {feature.title}
                 </h3>
-                <p className="text-slate-600 mb-6 leading-relaxed">
+                <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
                   {feature.description}
                 </p>
                 <ul className="space-y-3">
                   {feature.miniFeatures.map((mini, miniIndex) => (
                     <li
                       key={miniIndex}
-                      className="flex items-center gap-2 text-sm text-slate-600 justify-center lg:justify-start"
+                      className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 justify-center lg:justify-start"
                     >
                       {mini.icon}
                       <span>{mini.text}</span>
@@ -86,7 +86,7 @@ const FeaturesSection = () => {
 
               {/* Image */}
               <div className="flex-1 flex justify-center">
-                <div className="w-full max-w-md rounded-xl overflow-hidden shadow-lg border border-slate-100 bg-white p-4">
+                <div className="w-full max-w-md rounded-xl overflow-hidden shadow-lg dark:shadow-none border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 transition-colors">
                   <img
                     src={feature.image}
                     alt={feature.imageAlt}

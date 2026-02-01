@@ -131,7 +131,7 @@ const Index = () => {
         </div>
 
         {/* Content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm dark:shadow-none border border-slate-200 dark:border-slate-700 p-6 transition-colors">
           {renderTabContent()}
         </div>
       </MainLayout>

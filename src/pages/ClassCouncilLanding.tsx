@@ -2,14 +2,20 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, ChevronDown, ArrowRight, ArrowLeft } from "lucide-react";
 import { useState } from "react";
+import DarkModeToggle from "@/components/DarkModeToggle";
 
 const logo = "/images/logos/ClassCouncilAI_logo.png";
 
 const ClassCouncilLanding = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 py-20 transition-colors">
+        {/* Dark Mode Toggle */}
+        <div className="absolute top-4 right-4 z-10">
+          <DarkModeToggle />
+        </div>
+        
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
@@ -17,23 +23,23 @@ const ClassCouncilLanding = () => {
               {/* Breadcrumb */}
               <Link 
                 to="/" 
-                className="inline-flex items-center gap-2 text-slate-500 hover:text-amber-600 text-sm transition-colors"
+                className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 text-sm transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
                 Retour à AIProject4You
               </Link>
 
               {/* Badge */}
-              <span className="inline-flex items-center px-4 py-2 bg-cyan-100 text-cyan-700 rounded-full text-sm font-medium">
+              <span className="inline-flex items-center px-4 py-2 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 rounded-full text-sm font-medium">
                 🎯 Conseils de classe
               </span>
 
-              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 leading-tight">
+              <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
                 Préparez vos conseils de classe en{" "}
                 <span className="text-amber-500">5 minutes</span>
               </h1>
 
-              <p className="text-xl text-slate-600">
+              <p className="text-xl text-slate-600 dark:text-slate-400">
                 Importez vos bulletins PRONOTE, l'IA analyse et génère automatiquement 
                 les appréciations pour chaque élève. Fini les heures de rédaction !
               </p>
@@ -42,15 +48,15 @@ const ClassCouncilLanding = () => {
               <div className="flex flex-wrap gap-6 py-4">
                 <div className="text-center">
                   <p className="text-3xl font-bold text-amber-500">2h</p>
-                  <p className="text-sm text-slate-500">gagnées par classe</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">gagnées par classe</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-amber-500">30 sec</p>
-                  <p className="text-sm text-slate-500">par appréciation</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">par appréciation</p>
                 </div>
                 <div className="text-center">
                   <p className="text-3xl font-bold text-amber-500">100%</p>
-                  <p className="text-sm text-slate-500">RGPD</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">RGPD</p>
                 </div>
               </div>
 
@@ -64,7 +70,7 @@ const ClassCouncilLanding = () => {
                 </Link>
                 <Button 
                   variant="outline" 
-                  className="px-8 py-6 border-2 border-slate-300 text-slate-700 font-semibold rounded-xl hover:border-slate-400 hover:bg-slate-50 transition-all text-lg"
+                  className="px-8 py-6 border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-semibold rounded-xl hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-lg"
                 >
                   Voir la démo
                 </Button>
@@ -90,16 +96,16 @@ const ClassCouncilLanding = () => {
       </section>
 
       {/* Problem / Solution Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-slate-900 transition-colors">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             {/* The Problem */}
-            <div className="bg-red-50 rounded-2xl p-8 border border-red-100">
-              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-8 border border-red-100 dark:border-red-500/20">
+              <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-2xl">😩</span>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Sans ClassCouncil AI</h3>
-              <ul className="space-y-3 text-slate-600">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Sans ClassCouncil AI</h3>
+              <ul className="space-y-3 text-slate-600 dark:text-slate-400">
                 <li className="flex items-start gap-3">
                   <span className="text-red-500 mt-1">✗</span>
                   <span>Des heures à rédiger les appréciations de chaque élève</span>
@@ -120,12 +126,12 @@ const ClassCouncilLanding = () => {
             </div>
 
             {/* The Solution */}
-            <div className="bg-emerald-50 rounded-2xl p-8 border border-emerald-100">
-              <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-4">
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl p-8 border border-emerald-100 dark:border-emerald-500/20">
+              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-2xl">✨</span>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-4">Avec ClassCouncil AI</h3>
-              <ul className="space-y-3 text-slate-600">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Avec ClassCouncil AI</h3>
+              <ul className="space-y-3 text-slate-600 dark:text-slate-400">
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-500 mt-1">✓</span>
                   <span><strong>5 minutes</strong> pour générer toutes les appréciations</span>
@@ -149,16 +155,16 @@ const ClassCouncilLanding = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-slate-50">
+      <section className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <span className="inline-flex items-center px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+            <span className="inline-flex items-center px-4 py-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium mb-4">
               Simple comme bonjour
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Comment ça marche ?
             </h2>
-            <p className="text-xl text-slate-500 max-w-2xl mx-auto">
+            <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
               3 étapes et c'est terminé. Vraiment.
             </p>
           </div>
@@ -166,12 +172,12 @@ const ClassCouncilLanding = () => {
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {/* Step 1 */}
             <div className="relative">
-              <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700 shadow-sm dark:shadow-none hover:shadow-lg dark:hover:border-slate-600 hover:-translate-y-1 transition-all">
                 <div className="w-14 h-14 bg-amber-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl mb-6">
                   1
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">Importez le PDF</h3>
-                <p className="text-slate-500">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Importez le PDF</h3>
+                <p className="text-slate-500 dark:text-slate-400">
                   Exportez les résultats depuis PRONOTE et déposez le fichier PDF. C'est tout !
                 </p>
               </div>

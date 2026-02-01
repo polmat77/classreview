@@ -18,6 +18,7 @@ import {
 const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import DarkModeToggle from '@/components/DarkModeToggle';
 import {
   Tooltip,
   TooltipContent,
@@ -68,7 +69,7 @@ const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
       />
       {!isCollapsed && (
         <div className="flex flex-col">
-          <span className="text-slate-800 font-bold text-lg leading-tight">
+          <span className="text-slate-800 dark:text-white font-bold text-lg leading-tight">
             ReportCard<span className="text-amber-500">AI</span>
           </span>
           <span className="text-slate-400 text-xs">Génération d'appréciations</span>
@@ -130,14 +131,14 @@ export function ReportCardSidebar({
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white border-r border-slate-200 transition-all duration-300",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300",
           "overflow-y-auto scrollbar-hide",
           isCollapsed ? "w-20" : "w-[260px]"
         )}
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex-shrink-0 py-5 border-b border-slate-100",
+          "flex-shrink-0 py-5 border-b border-slate-100 dark:border-slate-800",
           isCollapsed ? "px-3" : "px-5"
         )}>
           <AppLogo isCollapsed={isCollapsed} />
@@ -169,7 +170,7 @@ export function ReportCardSidebar({
         {/* App Switcher */}
         <div className="px-4 py-2">
           <div className={cn(
-            "rounded-xl bg-amber-50 border border-amber-200 p-3",
+            "rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3",
             isCollapsed && "p-2"
           )}>
             <div className="flex items-center gap-3">
@@ -177,7 +178,7 @@ export function ReportCardSidebar({
                 <FileSpreadsheet className="h-4 w-4 text-white" />
               </div>
               {!isCollapsed && (
-                <span className="font-semibold text-amber-800 text-sm">ReportCard AI</span>
+                <span className="font-semibold text-amber-800 dark:text-amber-400 text-sm">ReportCard AI</span>
               )}
               {!isCollapsed && (
                 <Badge className="ml-auto bg-amber-500 text-white text-[10px] px-2 py-0.5 hover:bg-amber-600">
@@ -211,8 +212,8 @@ export function ReportCardSidebar({
                 disabled={!isAccessible}
                 className={cn(
                   "flex items-start gap-3 w-full rounded-xl transition-all duration-200 text-left px-3 py-3",
-                  isActive && "bg-slate-50 border border-slate-200",
-                  !isActive && isAccessible && "hover:bg-slate-50",
+                  isActive && "bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700",
+                  !isActive && isAccessible && "hover:bg-slate-50 dark:hover:bg-slate-800",
                   !isAccessible && "opacity-40 cursor-not-allowed"
                 )}
               >
@@ -234,7 +235,7 @@ export function ReportCardSidebar({
                   <div className="flex-1 min-w-0">
                     <p className={cn(
                       "font-medium text-sm",
-                      isActive ? "text-slate-900" : "text-slate-500"
+                      isActive ? "text-slate-900 dark:text-white" : "text-slate-500 dark:text-slate-400"
                     )}>
                       {step.label}
                     </p>
@@ -269,10 +270,10 @@ export function ReportCardSidebar({
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-slate-100 mx-4" />
+        <div className="h-px bg-slate-100 dark:bg-slate-800 mx-4" />
 
         {/* Secondary Navigation */}
-        <nav className="px-4 py-2 space-y-1 border-t border-slate-100">
+        <nav className="px-4 py-2 space-y-1 border-t border-slate-100 dark:border-slate-800">
           {/* New Session */}
           <AlertDialog>
             <Tooltip>
@@ -281,7 +282,7 @@ export function ReportCardSidebar({
                   <button
                     className={cn(
                       "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
-                      "text-slate-500 hover:bg-slate-50"
+                      "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                     )}
                   >
                     <RotateCcw className="h-4 w-4 flex-shrink-0" />
@@ -318,7 +319,7 @@ export function ReportCardSidebar({
                 to="/politique-confidentialite"
                 className={cn(
                   "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
-                  "text-slate-500 hover:bg-slate-50"
+                  "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 <Shield className="h-4 w-4 flex-shrink-0" />
@@ -338,7 +339,7 @@ export function ReportCardSidebar({
               <button
                 className={cn(
                   "flex items-center gap-3 w-full rounded-lg transition-all duration-200 px-3 py-2 text-sm",
-                  "text-slate-500 hover:bg-slate-50"
+                  "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 <HelpCircle className="h-4 w-4 flex-shrink-0" />
@@ -356,10 +357,17 @@ export function ReportCardSidebar({
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
 
+        {/* Dark Mode Toggle */}
+        {!isCollapsed && (
+          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+            <DarkModeToggle variant="switch" showLabel />
+          </div>
+        )}
+
         {/* Footer Badge */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-slate-100">
-            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full">
               🎓 Créé par un prof
             </span>
             <p className="text-xs text-slate-400 mt-1">pour les profs</p>

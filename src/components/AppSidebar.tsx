@@ -14,6 +14,7 @@ import {
   Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import DarkModeToggle from '@/components/DarkModeToggle';
 
 const logo = "/images/logos/ClassCouncilAI_logo.png";
 import {
@@ -95,13 +96,13 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 overflow-hidden",
+          "fixed left-0 top-0 bottom-0 z-40 flex flex-col bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-all duration-300 overflow-hidden",
           isCollapsed ? "w-20" : "w-[280px]"
         )}
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex-shrink-0 py-5 border-b border-slate-100",
+          "flex-shrink-0 py-5 border-b border-slate-100 dark:border-slate-800",
           isCollapsed ? "px-3" : "px-5"
         )}>
           <div className="flex items-center gap-3">
@@ -115,7 +116,7 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
             />
             {!isCollapsed && (
               <div className="flex flex-col">
-                <span className="text-slate-800 font-bold text-lg leading-tight">
+                <span className="text-slate-800 dark:text-white font-bold text-lg leading-tight">
                   ClassCouncil<span className="text-amber-500">AI</span>
                 </span>
                 <span className="text-slate-400 text-xs">Conseil de classe</span>
@@ -170,10 +171,10 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-slate-100 mx-3" />
+        <div className="h-px bg-slate-100 dark:bg-slate-800 mx-3" />
 
         {/* Secondary Navigation */}
-        <nav className="px-3 py-2 space-y-1 border-t border-slate-100">
+        <nav className="px-3 py-2 space-y-1 border-t border-slate-100 dark:border-slate-800">
           {secondaryItems.map((item) => {
             const Icon = item.icon;
             
@@ -223,10 +224,17 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
 
+        {/* Dark Mode Toggle */}
+        {!isCollapsed && (
+          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+            <DarkModeToggle variant="switch" showLabel />
+          </div>
+        )}
+
         {/* Footer Badge */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-slate-100">
-            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full">
               🎓 Créé par un prof
             </span>
             <p className="text-xs text-slate-400 mt-1">pour les profs</p>
