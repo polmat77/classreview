@@ -18,7 +18,7 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-slate-900 overflow-x-hidden transition-colors">
       <Navbar onScrollToSection={scrollToSection} />
       <HeroSection onScrollToSection={scrollToSection} />
       <ToolsSection />

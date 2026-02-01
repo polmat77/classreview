@@ -59,14 +59,14 @@ const ToolsSection = () => {
   ];
 
   return (
-    <section id="outils" className="py-20 bg-[#f8fafc]">
+    <section id="outils" className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Nos outils pour les enseignants
           </h2>
-          <p className="text-slate-600 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Une suite complète pour automatiser vos tâches administratives
           </p>
         </div>
@@ -76,7 +76,7 @@ const ToolsSection = () => {
           {tools.map((tool, index) => (
             <Card
               key={index}
-              className={`bg-white rounded-xl shadow-sm border border-slate-100 p-6 transition-all hover:shadow-md ${
+              className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-700 p-6 transition-all hover:shadow-md dark:hover:border-slate-600 ${
                 tool.comingSoon ? "opacity-75" : ""
               }`}
             >
@@ -89,12 +89,12 @@ const ToolsSection = () => {
                     className="w-16 h-16 object-contain"
                   />
                 ) : (
-                  <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center">
+                  <div className="w-16 h-16 rounded-lg bg-muted dark:bg-slate-700 flex items-center justify-center">
                     {tool.icon}
                   </div>
                 )}
                 {tool.comingSoon && (
-                  <span className="absolute top-0 right-0 bg-muted text-muted-foreground text-xs px-2 py-1 rounded-full">
+                  <span className="absolute top-0 right-0 bg-muted dark:bg-slate-700 text-muted-foreground text-xs px-2 py-1 rounded-full">
                     Bientôt
                   </span>
                 )}

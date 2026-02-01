@@ -7,12 +7,12 @@ const AppFooter = () => {
   const appName = isReportCardAI ? 'ReportCard AI' : 'ClassCouncil AI';
 
   return (
-    <footer className="border-t border-slate-200 bg-white py-4 mt-auto">
-      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-slate-500">
-        <span>© 2025 {appName} - <Link to="/" className="hover:text-slate-700 transition-colors">AIProject4You</Link></span>
+    <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4 mt-auto transition-colors">
+      <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-slate-500 dark:text-slate-400">
+        <span>© 2025 {appName} - <Link to="/" className="hover:text-slate-700 dark:hover:text-slate-200 transition-colors">AIProject4You</Link></span>
         <Link 
           to="/politique-confidentialite" 
-          className="flex items-center gap-1.5 hover:text-slate-700 transition-colors"
+          className="flex items-center gap-1.5 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
         >
           <Shield className="h-4 w-4" />
           Politique de confidentialité

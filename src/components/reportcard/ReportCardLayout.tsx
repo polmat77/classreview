@@ -43,7 +43,7 @@ const ReportCardLayout = ({
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors">
       {/* Mobile Header */}
       <ReportCardMobileHeader 
         isSidebarOpen={isMobileSidebarOpen} 
@@ -53,7 +53,7 @@ const ReportCardLayout = ({
       {/* Mobile Overlay */}
       {isMobileSidebarOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
+          className="lg:hidden fixed inset-0 bg-black/50 dark:bg-black/70 z-30 transition-opacity"
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}

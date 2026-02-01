@@ -78,14 +78,14 @@ const PricingSection = () => {
   ];
 
   return (
-    <section id="pricing" className="py-20 bg-white">
+    <section id="pricing" className="py-20 bg-white dark:bg-slate-900 transition-colors">
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-slate-900">
+          <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
             Des prix pensés pour les enseignants
           </h2>
-          <p className="text-slate-600 mt-2">
+          <p className="text-slate-600 dark:text-slate-400 mt-2">
             Commencez gratuitement, évoluez selon vos besoins
           </p>
         </div>
@@ -97,7 +97,7 @@ const PricingSection = () => {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               !isYearly
                 ? "bg-[#f0a830] text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
             Mensuel
@@ -107,7 +107,7 @@ const PricingSection = () => {
             className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${
               isYearly
                 ? "bg-[#f0a830] text-white"
-                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >
             Annuel
@@ -124,10 +124,10 @@ const PricingSection = () => {
               key={index}
               className={`rounded-xl p-8 relative transition-all hover:shadow-lg ${
                 plan.highlighted
-                  ? "border-2 border-[#f0a830] shadow-lg scale-105 bg-white"
+                  ? "border-2 border-[#f0a830] shadow-lg scale-105 bg-white dark:bg-slate-800"
                   : plan.dark
                   ? "bg-slate-900 text-white border-slate-800"
-                  : "bg-white border border-slate-200"
+                  : "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
               }`}
             >
               {/* Recommended Badge */}
