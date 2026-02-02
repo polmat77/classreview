@@ -89,12 +89,13 @@ const ReportCardLanding = () => {
               </div>
             </div>
 
-            {/* Logo/Image */}
-            <div className="flex justify-center items-center">
+            {/* Logo/Image - aligned with H1 */}
+            <div className="flex justify-center items-start lg:items-center">
               <img
                 src={logo}
                 alt="ReportCard AI"
-                className="max-h-[280px] w-auto object-contain drop-shadow-2xl"
+                className="max-h-[200px] w-auto object-contain"
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}
               />
             </div>
           </div>
