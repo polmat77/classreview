@@ -86,7 +86,7 @@ const ToolsSection = () => {
                   <img 
                     src={tool.logo} 
                     alt={`${tool.name}AI logo`} 
-                    className="w-16 h-16 object-contain"
+                    className="h-16 max-h-[60px] w-auto object-contain"
                   />
                 ) : (
                   <div className="w-16 h-16 rounded-lg bg-muted dark:bg-slate-700 flex items-center justify-center">
