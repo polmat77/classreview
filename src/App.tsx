@@ -12,8 +12,6 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MentionsLegales from "./pages/MentionsLegales";
 import Confidentialite from "./pages/Confidentialite";
-import { RGPDModal } from "./components/RGPDModal";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -22,7 +20,6 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <RGPDModal />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           {/* Landing/Marketing pages for each tool */}
