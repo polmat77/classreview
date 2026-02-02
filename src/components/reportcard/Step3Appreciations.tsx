@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import ReportCardToneSelector from "./ReportCardToneSelector";
 import StepResetButton from "./StepResetButton";
+import { AIGenerationWarning } from "@/components/AIGenerationWarning";
 
 interface Step3AppreciationsProps {
   students: Student[];
@@ -420,7 +421,7 @@ const Step3Appreciations = ({
 
       {/* Generation controls */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-6 space-y-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button
               onClick={handleGenerateAll}
@@ -463,6 +464,9 @@ const Step3Appreciations = ({
               </p>
             </div>
           )}
+          
+          {/* AI Warning */}
+          <AIGenerationWarning className="pt-2 border-t" />
         </CardContent>
       </Card>
 

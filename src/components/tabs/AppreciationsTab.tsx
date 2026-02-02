@@ -30,6 +30,7 @@ import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelec
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
 import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
+import { AIGenerationWarning } from "@/components/AIGenerationWarning";
 import {
   Select,
   SelectContent,
@@ -636,6 +637,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             Tout générer
           </Button>
         </div>
+        
+        {/* AI Warning */}
+        <AIGenerationWarning />
       </div>
 
       {/* Student Cards */}
