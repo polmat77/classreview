@@ -26,7 +26,7 @@ export function ReportCardMobileHeader({ isSidebarOpen, onToggleSidebar }: Repor
         <img 
           src={logo} 
           alt="ReportCard AI Logo" 
-          className="h-10 w-10 object-contain"
+          className="h-10 w-auto object-contain"
         />
         <span className="font-bold text-lg text-slate-800 dark:text-white">
           ReportCard<span className="text-amber-500">AI</span>

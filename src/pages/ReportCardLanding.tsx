@@ -90,11 +90,11 @@ const ReportCardLanding = () => {
             </div>
 
             {/* Logo/Image */}
-            <div className="flex justify-center">
+            <div className="flex justify-center p-8 bg-slate-50 dark:bg-slate-800/50 rounded-2xl">
               <img
                 src={logo}
                 alt="ReportCard AI"
-                className="max-w-md w-full drop-shadow-2xl"
+                className="max-h-[200px] w-auto object-contain drop-shadow-2xl"
               />
             </div>
           </div>

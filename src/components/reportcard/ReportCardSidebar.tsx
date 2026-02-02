@@ -64,7 +64,7 @@ const AppLogo = ({ isCollapsed }: { isCollapsed: boolean }) => {
         alt="ReportCard AI Logo" 
         className={cn(
           "flex-shrink-0 object-contain",
-          isCollapsed ? "w-12 h-12" : "w-12 h-12"
+          isCollapsed ? "h-12 w-auto" : "h-12 w-auto"
         )}
       />
       {!isCollapsed && (
