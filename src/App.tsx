@@ -11,6 +11,8 @@ import ReportCardAI from "./pages/ReportCardAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MentionsLegales from "./pages/MentionsLegales";
+import Confidentialite from "./pages/Confidentialite";
+import { RGPDModal } from "./components/RGPDModal";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +22,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <RGPDModal />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           {/* Landing/Marketing pages for each tool */}
@@ -31,6 +34,7 @@ const App = () => (
           {/* Legal pages */}
           <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/confidentialite" element={<Confidentialite />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
