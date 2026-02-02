@@ -7,8 +7,8 @@ interface FooterProps {
 
 const Footer = ({ onScrollToSection }: FooterProps) => {
   return (
-    <footer className="py-16 bg-navy">
-      <div className="max-w-6xl mx-auto px-6">
+    <footer className="py-10 px-5 bg-[#1a2332]">
+      <div className="max-w-6xl mx-auto">
         {/* Main Footer Content */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           {/* Column 1: Brand */}
@@ -16,7 +16,7 @@ const Footer = ({ onScrollToSection }: FooterProps) => {
             <div className="flex items-center gap-2 mb-4">
               <img src={logo} alt="AIProject4You" className="h-10 w-10 object-contain" />
               <span className="text-xl font-bold">
-                <span className="text-accent">AI</span>
+                <span className="text-[#f0a830]">AI</span>
                 <span className="text-white">Project4You</span>
               </span>
             </div>
@@ -102,22 +102,22 @@ const Footer = ({ onScrollToSection }: FooterProps) => {
 
           {/* Column 4: Légal */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Légal</h4>
+            <h4 className="text-white font-semibold mb-4">Informations légales</h4>
             <ul className="space-y-2">
               <li>
                 <Link
                   to="/mentions-legales"
-                  className="text-slate-400 hover:text-white text-sm transition-colors"
+                  className="text-[#7dd3e8] hover:text-[#f0a830] text-sm transition-colors duration-300 hover:underline"
                 >
                   Mentions légales
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/politique-confidentialite"
-                  className="text-slate-400 hover:text-white text-sm transition-colors"
+                  to="/confidentialite"
+                  className="text-[#7dd3e8] hover:text-[#f0a830] text-sm transition-colors duration-300 hover:underline"
                 >
-                  Politique de confidentialité
+                  Confidentialité & RGPD
                 </Link>
               </li>
             </ul>
@@ -126,9 +126,26 @@ const Footer = ({ onScrollToSection }: FooterProps) => {
 
         {/* Bottom Bar */}
         <div className="border-t border-white/10 pt-8">
-          <p className="text-slate-500 text-sm text-center">
-            © {new Date().getFullYear()} AIProject4You. Tous droits réservés.
-          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p className="text-[#7dd3e8] text-sm text-center sm:text-left">
+              © {new Date().getFullYear()} AIProject4You - Par des profs, pour des profs
+            </p>
+            <div className="flex items-center gap-2 text-sm">
+              <Link
+                to="/mentions-legales"
+                className="text-[#7dd3e8] hover:text-[#f0a830] transition-colors duration-300 hover:underline"
+              >
+                Mentions légales
+              </Link>
+              <span className="text-[#7dd3e8]">|</span>
+              <Link
+                to="/confidentialite"
+                className="text-[#7dd3e8] hover:text-[#f0a830] transition-colors duration-300 hover:underline"
+              >
+                Confidentialité & RGPD
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </footer>
