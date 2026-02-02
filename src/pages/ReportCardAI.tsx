@@ -6,8 +6,8 @@ import Step2Observations from "@/components/reportcard/Step2Observations";
 import Step3Appreciations from "@/components/reportcard/Step3Appreciations";
 import Step4ClassSummary from "@/components/reportcard/Step4ClassSummary";
 import { useToast } from "@/hooks/use-toast";
-import { useRGPDModal } from "@/hooks/useRGPDModal";
-import { PrivacyBanner } from "@/components/PrivacyBanner";
+import { useRGPDConsent } from "@/hooks/useRGPDConsent";
+import { RGPDConsentModal } from "@/components/RGPDConsentModal";
 
 const STORAGE_KEY = "reportcard-ai-session";
 const PREFERENCES_KEY = "reportCardAI_preferences";
@@ -65,7 +65,7 @@ const getInitialState = (): ReportCardState => {
 
 const ReportCardAI = () => {
   const { toast } = useToast();
-  const { showModal, acceptRGPD } = useRGPDModal('reportcard');
+  const { showModal, acceptConsent } = useRGPDConsent('reportcard');
   
   const [state, setState] = useState<ReportCardState>(() => {
     // Load from localStorage on init
@@ -263,9 +263,9 @@ const ReportCardAI = () => {
 
   return (
     <>
-      <PrivacyBanner 
+      <RGPDConsentModal 
         isOpen={showModal} 
-        onAccept={acceptRGPD} 
+        onAccept={acceptConsent} 
         appName="reportcard" 
       />
       <ReportCardLayout 

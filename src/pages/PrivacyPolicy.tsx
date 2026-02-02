@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ArrowLeft, Shield, Lock, Server, Globe, UserCheck, Cookie, Mail } from "lucide-react";
+import { ArrowLeft, Shield, Lock, Server, Globe, UserCheck, Cookie, Mail, Bot, Building2, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -35,7 +35,7 @@ const PrivacyPolicy = () => {
         <Card>
           <CardContent className="prose prose-slate dark:prose-invert max-w-none p-8">
             <p className="text-sm text-muted-foreground mb-8">
-              <strong>Dernière mise à jour : janvier 2025</strong>
+              <strong>Dernière mise à jour : février 2025</strong>
             </p>
 
             {/* Section 1 */}
@@ -44,9 +44,15 @@ const PrivacyPolicy = () => {
                 <span className="text-primary">1.</span> Présentation de l'application
               </h2>
               <p className="text-muted-foreground">
-                <strong>ClassCouncil AI</strong> est une application web destinée aux professeurs principaux 
-                pour les aider à préparer les conseils de classe. Elle permet d'analyser les résultats 
-                des élèves et de générer des appréciations personnalisées à l'aide de l'intelligence artificielle.
+                <strong>AIProject4You</strong> propose une suite d'outils IA destinés aux enseignants français :
+              </p>
+              <ul className="mt-4 space-y-2 text-muted-foreground">
+                <li>• <strong>ClassCouncil AI</strong> : aide à la préparation des conseils de classe et génération d'appréciations</li>
+                <li>• <strong>ReportCardAI</strong> : génération d'appréciations pour les bulletins scolaires</li>
+              </ul>
+              <p className="text-muted-foreground mt-4">
+                Ces outils permettent d'analyser les résultats des élèves et de générer des appréciations 
+                personnalisées à l'aide de l'intelligence artificielle.
               </p>
             </section>
 
@@ -61,6 +67,9 @@ const PrivacyPolicy = () => {
                 Cette application est un outil mis à disposition des enseignants. L'utilisateur 
                 (professeur principal) est considéré comme responsable des données qu'il importe 
                 dans l'application dans le cadre de ses missions éducatives.
+              </p>
+              <p className="text-muted-foreground mt-4">
+                <strong>Éditeur :</strong> Mathieu POL (voir <Link to="/mentions-legales" className="text-primary hover:underline">mentions légales</Link>)
               </p>
             </section>
 
@@ -114,14 +123,218 @@ const PrivacyPolicy = () => {
 
             <Separator className="my-6" />
 
-            {/* Section 4 */}
+            {/* Section 4 - Traitement IA (NOUVELLE SECTION ENRICHIE) */}
+            <section className="mb-8" id="ia">
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
+                <Bot className="h-6 w-6 text-primary" />
+                <span className="text-primary">4.</span> Traitement des données par l'Intelligence Artificielle
+              </h2>
+              
+              <h3 className="text-lg font-semibold mt-6 mb-3">4.1 Fonctionnement de nos outils IA</h3>
+              <p className="text-muted-foreground mb-4">
+                Nos outils (ClassCouncil AI, ReportCardAI) utilisent l'intelligence artificielle pour 
+                générer des suggestions d'appréciations scolaires. Voici comment vos données sont traitées :
+              </p>
+
+              <h4 className="font-semibold mt-6 mb-2">Anonymisation systématique avant envoi</h4>
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg mb-4">
+                <p className="text-emerald-700 dark:text-emerald-400 font-medium mb-2">
+                  ✅ Aucune donnée personnelle identifiante n'est transmise à l'IA
+                </p>
+                <p className="text-muted-foreground text-sm">
+                  Avant tout envoi à notre service d'IA :
+                </p>
+              </div>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500">❌</span>
+                  Les <strong>prénoms</strong> des élèves sont remplacés par des balises génériques <code className="bg-muted px-1 rounded">{"{prénom}"}</code>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500">❌</span>
+                  Les <strong>noms de famille</strong> ne sont <strong>jamais</strong> transmis
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500">❌</span>
+                  Les <strong>notes chiffrées</strong> sont converties en descripteurs qualitatifs (ex: "excellent", "satisfaisant", "en progression")
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-red-500">❌</span>
+                  Les <strong>identifiants de classe</strong> et <strong>noms d'établissement</strong> ne sont pas transmis
+                </li>
+              </ul>
+
+              <h4 className="font-semibold mt-6 mb-2">Service d'IA utilisé</h4>
+              <Table>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Modèle</TableCell>
+                    <TableCell>Google Gemini 2.5 Flash</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Fournisseur</TableCell>
+                    <TableCell>Google LLC via Lovable AI Gateway</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Certification</TableCell>
+                    <TableCell>EU-US Data Privacy Framework</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Entraînement des modèles</TableCell>
+                    <TableCell><span className="text-red-500">❌</span> Les données API ne sont PAS utilisées pour entraîner les modèles</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Conservation</TableCell>
+                    <TableCell>Aucun historique de conversation conservé côté serveur</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              <h4 className="font-semibold mt-6 mb-2">Traitement local privilégié</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  Toutes les données saisies sont stockées <strong>uniquement dans votre navigateur</strong> (localStorage)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  Aucune base de données centralisée ne conserve les informations de vos élèves
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  La suppression des données se fait via le bouton "Réinitialiser" ou en effaçant les données de navigation
+                </li>
+              </ul>
+
+              <div className="mt-6 p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Exemple de données envoyées à l'API</h4>
+                <pre className="text-sm text-muted-foreground bg-background p-3 rounded overflow-x-auto">
+{`Génère une appréciation de bulletin scolaire.
+Niveau de résultats : satisfaisant
+Comportement : bon investissement, quelques bavardages
+Ton souhaité : Bienveillant
+Contexte : L'élève fait des efforts réguliers.`}
+                </pre>
+                <p className="text-sm text-muted-foreground mt-2 font-medium">
+                  ⚠️ Le nom, prénom et notes exactes de l'élève ne sont PAS inclus dans la requête.
+                </p>
+              </div>
+            </section>
+
+            <Separator className="my-6" />
+
+            {/* Section 5 - Sous-traitants (NOUVELLE) */}
+            <section className="mb-8">
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
+                <Building2 className="h-6 w-6 text-primary" />
+                <span className="text-primary">5.</span> Sous-traitants et transferts de données
+              </h2>
+              
+              <h3 className="text-lg font-semibold mt-4 mb-3">Liste des sous-traitants</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sous-traitant</TableHead>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Localisation</TableHead>
+                    <TableHead>Données concernées</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Hostinger International Ltd</TableCell>
+                    <TableCell>Hébergement web</TableCell>
+                    <TableCell>UE (Lituanie/Pays-Bas)</TableCell>
+                    <TableCell>Logs de connexion</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Google LLC</TableCell>
+                    <TableCell>API Intelligence Artificielle (Gemini)</TableCell>
+                    <TableCell>UE/US (DPF certifié)</TableCell>
+                    <TableCell>Requêtes anonymisées uniquement</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Lovable</TableCell>
+                    <TableCell>Passerelle API</TableCell>
+                    <TableCell>UE</TableCell>
+                    <TableCell>Requêtes anonymisées en transit</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+
+              <h3 className="text-lg font-semibold mt-6 mb-2">Garanties pour les transferts hors UE</h3>
+              <p className="text-muted-foreground">Les transferts vers les États-Unis (Google) sont encadrés par :</p>
+              <ul className="space-y-2 text-muted-foreground mt-2">
+                <li>• Le <strong>EU-US Data Privacy Framework</strong> (décision d'adéquation du 10 juillet 2023)</li>
+                <li>• Les <strong>clauses contractuelles types</strong> de la Commission européenne</li>
+                <li>• L'engagement de Google à <strong>ne pas utiliser les données API pour l'entraînement</strong></li>
+              </ul>
+
+              <div className="mt-4 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <p className="text-foreground font-medium">
+                  🔒 Aucune vente de données
+                </p>
+                <p className="text-muted-foreground text-sm mt-1">
+                  Nous ne vendons, ne louons et ne partageons jamais vos données avec des tiers 
+                  à des fins commerciales ou publicitaires.
+                </p>
+              </div>
+            </section>
+
+            <Separator className="my-6" />
+
+            {/* Section 6 - Cadre éducatif (NOUVELLE) */}
+            <section className="mb-8">
+              <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
+                <GraduationCap className="h-6 w-6 text-primary" />
+                <span className="text-primary">6.</span> Conformité au cadre éducatif français
+              </h2>
+              
+              <h3 className="text-lg font-semibold mt-4 mb-3">Respect du Cadre d'usage de l'IA en éducation (juin 2025)</h3>
+              <p className="text-muted-foreground mb-4">
+                Nos outils sont conçus dans le respect du cadre publié par le Ministère de l'Éducation nationale :
+              </p>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong className="text-foreground">Assistance, non substitution :</strong> L'IA génère des suggestions 
+                    que l'enseignant valide, modifie ou rejette. La décision finale reste humaine.
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong className="text-foreground">Supervision humaine :</strong> Chaque appréciation doit être relue 
+                    et validée par l'enseignant avant utilisation.
+                  </div>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-green-500">✅</span>
+                  <div>
+                    <strong className="text-foreground">Transparence :</strong> Nous documentons clairement le fonctionnement 
+                    de nos algorithmes et le traitement des données.
+                  </div>
+                </li>
+              </ul>
+
+              <h3 className="text-lg font-semibold mt-6 mb-2">Recommandations de la CNIL suivies</h3>
+              <ul className="space-y-2 text-muted-foreground">
+                <li>• Anonymisation des données avant tout envoi à des services tiers</li>
+                <li>• Information claire des utilisateurs sur le traitement</li>
+                <li>• Possibilité de suppression immédiate des données (bouton "Réinitialiser")</li>
+                <li>• Pas de profilage ni de décision automatisée sans intervention humaine</li>
+              </ul>
+            </section>
+
+            <Separator className="my-6" />
+
+            {/* Section 7 - Traitement local */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Server className="h-6 w-6 text-primary" />
-                <span className="text-primary">4.</span> Comment vos données sont-elles traitées ?
+                <span className="text-primary">7.</span> Traitement local (dans votre navigateur)
               </h2>
-              
-              <h3 className="text-lg font-semibold mt-6 mb-3">4.1 Traitement local (dans votre navigateur)</h3>
               <p className="text-muted-foreground mb-4">
                 Les opérations suivantes sont effectuées <strong>localement sur votre ordinateur</strong>, 
                 sans transmission à un serveur externe :
@@ -151,153 +364,28 @@ const PrivacyPolicy = () => {
               <p className="text-muted-foreground mt-4 font-medium">
                 Aucune de ces données n'est envoyée à nos serveurs.
               </p>
-
-              <h3 className="text-lg font-semibold mt-8 mb-3">4.2 Génération des appréciations par Intelligence Artificielle</h3>
-              <p className="text-muted-foreground mb-4">
-                Lorsque vous utilisez la fonctionnalité de <strong>génération automatique d'appréciations</strong>, 
-                certaines données sont transmises à un service d'IA externe.
-              </p>
-
-              <h4 className="font-semibold mt-4 mb-2">Prestataire utilisé</h4>
-              <Table>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Fournisseur</TableCell>
-                    <TableCell>OpenAI (ChatGPT)</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Siège social</TableCell>
-                    <TableCell>San Francisco, États-Unis 🇺🇸</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Localisation des serveurs</TableCell>
-                    <TableCell>États-Unis</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Politique de confidentialité</TableCell>
-                    <TableCell>
-                      <a 
-                        href="https://openai.com/privacy" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
-                      >
-                        openai.com/privacy
-                      </a>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-
-              <h4 className="font-semibold mt-6 mb-2">Données transmises à OpenAI</h4>
-              <p className="text-muted-foreground mb-4">
-                Pour protéger la vie privée des élèves, nous appliquons une <strong>stratégie d'anonymisation</strong> :
-              </p>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Donnée</TableHead>
-                    <TableHead>Transmise à OpenAI ?</TableHead>
-                    <TableHead>Détail</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell>Nom de famille</TableCell>
-                    <TableCell><span className="text-red-500">❌ Non</span></TableCell>
-                    <TableCell>Jamais transmis</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Prénom</TableCell>
-                    <TableCell><span className="text-amber-500">⚠️ Optionnel</span></TableCell>
-                    <TableCell>Peut être remplacé par "{"{prénom}"}"</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Classe</TableCell>
-                    <TableCell><span className="text-red-500">❌ Non</span></TableCell>
-                    <TableCell>Non transmis</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Moyenne générale</TableCell>
-                    <TableCell><span className="text-green-500">✅ Oui</span></TableCell>
-                    <TableCell>Nécessaire pour contextualiser</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Mots-clés de conduite</TableCell>
-                    <TableCell><span className="text-green-500">✅ Oui</span></TableCell>
-                    <TableCell>Ex: "bavard", "travail insuffisant"</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Attribution choisie</TableCell>
-                    <TableCell><span className="text-green-500">✅ Oui</span></TableCell>
-                    <TableCell>Ex: "Encouragements"</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Ton souhaité</TableCell>
-                    <TableCell><span className="text-green-500">✅ Oui</span></TableCell>
-                    <TableCell>Ex: "Bienveillant"</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-
-              <div className="mt-6 p-4 bg-muted rounded-lg">
-                <h4 className="font-semibold mb-2">Exemple de données envoyées à l'API</h4>
-                <pre className="text-sm text-muted-foreground bg-background p-3 rounded overflow-x-auto">
-{`Génère une appréciation de conseil de classe.
-Moyenne : 12.5/20
-Attribution : Encouragements
-Ton : Bienveillant
-Contexte : L'élève fait des efforts mais des difficultés
-persistent en mathématiques.`}
-                </pre>
-                <p className="text-sm text-muted-foreground mt-2 font-medium">
-                  Le nom et les informations directement identifiantes de l'élève ne sont PAS inclus dans la requête.
-                </p>
-              </div>
-
-              <h4 className="font-semibold mt-6 mb-2">Utilisation des données par OpenAI</h4>
-              <p className="text-muted-foreground">
-                Conformément à la politique d'OpenAI pour les utilisateurs de l'API :
-              </p>
-              <ul className="space-y-2 text-muted-foreground mt-2">
-                <li>• Les données envoyées via l'API <strong>ne sont pas utilisées pour entraîner les modèles</strong></li>
-                <li>• Les données sont conservées <strong>30 jours maximum</strong> pour détecter les abus, puis supprimées</li>
-                <li>• OpenAI est certifié <strong>SOC 2 Type II</strong> pour la sécurité des données</li>
-              </ul>
-              <p className="text-sm text-muted-foreground mt-4">
-                📄 Plus d'informations :{" "}
-                <a 
-                  href="https://openai.com/policies/api-data-usage-policies" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  OpenAI API Data Usage Policy
-                </a>
-              </p>
             </section>
 
             <Separator className="my-6" />
 
-            {/* Section 5 */}
+            {/* Section 8 - Transferts hors UE */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Globe className="h-6 w-6 text-primary" />
-                <span className="text-primary">5.</span> Transfert de données hors Union Européenne
+                <span className="text-primary">8.</span> Transfert de données hors Union Européenne
               </h2>
               <p className="text-muted-foreground mb-4">
-                L'utilisation de l'API OpenAI implique un <strong>transfert de données vers les États-Unis</strong>.
+                L'utilisation de l'API Google Gemini peut impliquer un <strong>transfert de données vers les États-Unis</strong>.
               </p>
 
               <h3 className="text-lg font-semibold mt-4 mb-2">Base légale du transfert</h3>
               <p className="text-muted-foreground">Ce transfert est encadré par :</p>
               <ul className="space-y-2 text-muted-foreground mt-2">
+                <li>• Le <strong>EU-US Data Privacy Framework</strong> (décision d'adéquation)</li>
                 <li>• Les <strong>Clauses Contractuelles Types (CCT)</strong> de la Commission Européenne</li>
-                <li>• Le <strong>Data Processing Addendum (DPA)</strong> d'OpenAI</li>
               </ul>
 
               <h3 className="text-lg font-semibold mt-6 mb-2">Mesures de protection supplémentaires</h3>
-              <p className="text-muted-foreground">Pour limiter les risques liés à ce transfert :</p>
               <ol className="space-y-2 text-muted-foreground mt-2 list-decimal list-inside">
                 <li><strong>Anonymisation</strong> : Les noms des élèves ne sont jamais transmis</li>
                 <li><strong>Minimisation</strong> : Seules les données strictement nécessaires sont envoyées</li>
@@ -307,17 +395,17 @@ persistent en mathématiques.`}
 
             <Separator className="my-6" />
 
-            {/* Section 6 */}
+            {/* Section 9 - Stockage */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Lock className="h-6 w-6 text-primary" />
-                <span className="text-primary">6.</span> Stockage des données
+                <span className="text-primary">9.</span> Stockage des données
               </h2>
 
               <h3 className="text-lg font-semibold mt-4 mb-2">Sur nos serveurs</h3>
               <p className="text-muted-foreground">
-                <strong>Aucune donnée n'est stockée sur nos serveurs.</strong> ClassCouncil AI est une 
-                application "stateless" qui ne conserve pas vos informations.
+                <strong>Aucune donnée n'est stockée sur nos serveurs.</strong> Nos applications sont 
+                "stateless" et ne conservent pas vos informations.
               </p>
 
               <h3 className="text-lg font-semibold mt-6 mb-2">Dans votre navigateur</h3>
@@ -332,8 +420,8 @@ persistent en mathématiques.`}
                 <TableBody>
                   <TableRow>
                     <TableCell>Données des élèves</TableCell>
-                    <TableCell>Mémoire vive (RAM)</TableCell>
-                    <TableCell>Jusqu'à fermeture/rechargement de la page</TableCell>
+                    <TableCell>localStorage</TableCell>
+                    <TableCell>Jusqu'à réinitialisation manuelle</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Préférences utilisateur</TableCell>
@@ -341,31 +429,25 @@ persistent en mathématiques.`}
                     <TableCell>Permanent (jusqu'à effacement manuel)</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>Acceptation du bandeau RGPD</TableCell>
+                    <TableCell>Consentement RGPD</TableCell>
                     <TableCell>localStorage</TableCell>
-                    <TableCell>Permanent</TableCell>
+                    <TableCell>Permanent (avec date de consentement)</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
               <p className="text-muted-foreground mt-4">
-                <strong>Pour effacer toutes vos données</strong> : fermez l'onglet ou rechargez la page. 
-                Les données importées seront immédiatement supprimées.
-              </p>
-
-              <h3 className="text-lg font-semibold mt-6 mb-2">Chez OpenAI</h3>
-              <p className="text-muted-foreground">
-                Les requêtes API sont conservées <strong>30 jours maximum</strong> par OpenAI pour la 
-                détection d'abus, puis automatiquement supprimées.
+                <strong>Pour effacer toutes vos données</strong> : utilisez le bouton "Réinitialiser" 
+                dans l'application ou effacez les données de votre navigateur.
               </p>
             </section>
 
             <Separator className="my-6" />
 
-            {/* Section 7 */}
+            {/* Section 10 - Sécurité */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Shield className="h-6 w-6 text-primary" />
-                <span className="text-primary">7.</span> Sécurité
+                <span className="text-primary">10.</span> Sécurité
               </h2>
               <Table>
                 <TableHeader>
@@ -397,60 +479,77 @@ persistent en mathématiques.`}
 
             <Separator className="my-6" />
 
-            {/* Section 8 */}
+            {/* Section 11 - Droits RGPD */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <UserCheck className="h-6 w-6 text-primary" />
-                <span className="text-primary">8.</span> Vos droits (RGPD)
+                <span className="text-primary">11.</span> Vos droits selon le RGPD
               </h2>
               <p className="text-muted-foreground mb-4">
-                Conformément au Règlement Général sur la Protection des Données, vous disposez des droits suivants :
+                Conformément au Règlement Général sur la Protection des Données (UE 2016/679), vous disposez des droits suivants :
               </p>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Droit</TableHead>
+                    <TableHead>Description</TableHead>
                     <TableHead>Comment l'exercer</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
                     <TableCell className="font-medium">Accès</TableCell>
+                    <TableCell>Obtenir confirmation que des données vous concernant sont traitées</TableCell>
                     <TableCell>Les données sont visibles dans l'application</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Rectification</TableCell>
+                    <TableCell>Corriger des données inexactes</TableCell>
                     <TableCell>Modifiez directement dans l'application</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Effacement</TableCell>
-                    <TableCell>Rechargez la page ou fermez l'onglet</TableCell>
+                    <TableCell>Demander la suppression de vos données</TableCell>
+                    <TableCell>Bouton "Réinitialiser" ou effacer données navigateur</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Opposition</TableCell>
+                    <TableCell>Vous opposer au traitement de vos données</TableCell>
                     <TableCell>N'utilisez pas la fonction de génération IA</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-medium">Portabilité</TableCell>
+                    <TableCell>Récupérer vos données dans un format structuré</TableCell>
                     <TableCell>Exportez vos données depuis l'application</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
-              <p className="text-muted-foreground mt-4">
-                Étant donné que nous ne stockons aucune donnée de manière permanente, ces droits s'exercent 
-                principalement <strong>directement dans votre navigateur</strong>.
-              </p>
+
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <h4 className="font-semibold mb-2">Comment exercer vos droits</h4>
+                <p className="text-muted-foreground text-sm">
+                  Comme nos outils fonctionnent en traitement local (localStorage), vos données d'élèves 
+                  ne sont stockées que sur votre appareil. Pour les supprimer, utilisez simplement le 
+                  bouton "Réinitialiser" dans l'application.
+                </p>
+                <p className="text-muted-foreground text-sm mt-2">
+                  Vous pouvez également contacter la CNIL :{" "}
+                  <a href="https://www.cnil.fr" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                    www.cnil.fr
+                  </a>
+                </p>
+              </div>
             </section>
 
             <Separator className="my-6" />
 
-            {/* Section 9 */}
+            {/* Section 12 - Mineurs */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
-                <span className="text-primary">9.</span> Utilisation des données de mineurs
+                <span className="text-primary">12.</span> Utilisation des données de mineurs
               </h2>
               <p className="text-muted-foreground mb-4">
-                ClassCouncil AI traite des données d'élèves, potentiellement <strong>mineurs de moins de 18 ans</strong>.
+                Nos outils traitent des données d'élèves, potentiellement <strong>mineurs de moins de 18 ans</strong>.
               </p>
 
               <h3 className="text-lg font-semibold mt-4 mb-2">Responsabilités de l'utilisateur</h3>
@@ -474,10 +573,6 @@ persistent en mathématiques.`}
                   <span className="text-green-500">✅</span>
                   Vérifier et corriger les appréciations générées avant utilisation officielle
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-green-500">✅</span>
-                  Ne pas importer de données d'élèves inutiles au traitement
-                </li>
               </ul>
 
               <h3 className="text-lg font-semibold mt-6 mb-2">Pas de collecte directe auprès des mineurs</h3>
@@ -489,11 +584,11 @@ persistent en mathématiques.`}
 
             <Separator className="my-6" />
 
-            {/* Section 10 */}
+            {/* Section 13 - Cookies */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Cookie className="h-6 w-6 text-primary" />
-                <span className="text-primary">10.</span> Cookies et traceurs
+                <span className="text-primary">13.</span> Cookies et traceurs
               </h2>
               <Table>
                 <TableHeader>
@@ -517,7 +612,7 @@ persistent en mathématiques.`}
                   <TableRow>
                     <TableCell>localStorage</TableCell>
                     <TableCell><span className="text-green-500">✅ Oui</span></TableCell>
-                    <TableCell>Uniquement pour vos préférences</TableCell>
+                    <TableCell>Uniquement pour vos préférences et données de session</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -528,10 +623,10 @@ persistent en mathématiques.`}
 
             <Separator className="my-6" />
 
-            {/* Section 11 */}
+            {/* Section 14 - Modifications */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
-                <span className="text-primary">11.</span> Modifications de cette politique
+                <span className="text-primary">14.</span> Modifications de cette politique
               </h2>
               <p className="text-muted-foreground">
                 Cette politique de confidentialité peut être mise à jour pour refléter :
@@ -549,34 +644,38 @@ persistent en mathématiques.`}
 
             <Separator className="my-6" />
 
-            {/* Section 12 */}
+            {/* Section 15 - Contact */}
             <section className="mb-8">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
                 <Mail className="h-6 w-6 text-primary" />
-                <span className="text-primary">12.</span> Contact
+                <span className="text-primary">15.</span> Contact
               </h2>
               <p className="text-muted-foreground">
-                Pour les questions spécifiques à OpenAI, consultez leur politique :
+                Pour toute question concernant cette politique de confidentialité, consultez nos{" "}
+                <Link to="/mentions-legales" className="text-primary hover:underline">
+                  mentions légales
+                </Link>
+                {" "}pour les coordonnées de contact.
               </p>
-              <p className="mt-2">
-                🔗{" "}
+              <p className="text-muted-foreground mt-4">
+                Pour les questions relatives au RGPD, vous pouvez également contacter la CNIL :{" "}
                 <a 
-                  href="https://openai.com/privacy" 
+                  href="https://www.cnil.fr" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  openai.com/privacy
+                  www.cnil.fr
                 </a>
               </p>
             </section>
 
             <Separator className="my-6" />
 
-            {/* Section 13 - Summary */}
+            {/* Section 16 - Résumé */}
             <section className="mb-4">
               <h2 className="text-2xl font-bold flex items-center gap-2 mb-4">
-                <span className="text-primary">13.</span> Résumé
+                <span className="text-primary">16.</span> Résumé
               </h2>
               <Table>
                 <TableHeader>
@@ -591,12 +690,16 @@ persistent en mathématiques.`}
                     <TableCell><span className="text-red-500">❌ Non</span>, traitement local</TableCell>
                   </TableRow>
                   <TableRow>
-                    <TableCell>Les noms des élèves sont-ils envoyés à ChatGPT ?</TableCell>
+                    <TableCell>Les noms des élèves sont-ils envoyés à l'IA ?</TableCell>
                     <TableCell><span className="text-red-500">❌ Non</span>, données anonymisées</TableCell>
                   </TableRow>
                   <TableRow>
+                    <TableCell>Quelle IA est utilisée ?</TableCell>
+                    <TableCell>Google Gemini 2.5 Flash (via Lovable AI Gateway)</TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell>Mes données sont-elles conservées ?</TableCell>
-                    <TableCell><span className="text-red-500">❌ Non</span>, effacées à la fermeture</TableCell>
+                    <TableCell><span className="text-red-500">❌ Non</span>, uniquement en local (navigateur)</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Y a-t-il des cookies ?</TableCell>
@@ -615,7 +718,13 @@ persistent en mathématiques.`}
 
       <footer className="border-t bg-card py-6 mt-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          © 2025 ClassCouncil AI
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link to="/" className="hover:text-foreground transition-colors">Accueil</Link>
+            <span>|</span>
+            <Link to="/mentions-legales" className="hover:text-foreground transition-colors">Mentions légales</Link>
+            <span>|</span>
+            <span>© 2025 AIProject4You - Mathieu POL</span>
+          </div>
         </div>
       </footer>
     </div>

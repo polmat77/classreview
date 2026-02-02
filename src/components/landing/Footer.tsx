@@ -106,7 +106,7 @@ const Footer = ({ onScrollToSection }: FooterProps) => {
             <ul className="space-y-2">
               <li>
                 <Link
-                  to="#"
+                  to="/mentions-legales"
                   className="text-slate-400 hover:text-white text-sm transition-colors"
                 >
                   Mentions légales
@@ -118,14 +118,6 @@ const Footer = ({ onScrollToSection }: FooterProps) => {
                   className="text-slate-400 hover:text-white text-sm transition-colors"
                 >
                   Politique de confidentialité
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="#"
-                  className="text-slate-400 hover:text-white text-sm transition-colors"
-                >
-                  RGPD
                 </Link>
               </li>
             </ul>

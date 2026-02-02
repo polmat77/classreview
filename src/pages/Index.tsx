@@ -7,8 +7,8 @@ import AppreciationsTab from "@/components/tabs/AppreciationsTab";
 import ExportTab from "@/components/tabs/ExportTab";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
 import { ClasseDataCSV } from "@/utils/csvParser";
-import { useRGPDModal } from "@/hooks/useRGPDModal";
-import { PrivacyBanner } from "@/components/PrivacyBanner";
+import { useRGPDConsent } from "@/hooks/useRGPDConsent";
+import { RGPDConsentModal } from "@/components/RGPDConsentModal";
 
 const tabs = [
   { value: "analyse", label: "Résultats" },
@@ -28,7 +28,7 @@ export interface ClasseDataState {
 const Index = () => {
   const [activeTab, setActiveTab] = useState("analyse");
   const [classeData, setClasseData] = useState<ClasseDataState>({});
-  const { showModal, acceptRGPD } = useRGPDModal('classcouncil');
+  const { showModal, acceptConsent } = useRGPDConsent('classcouncil');
 
   const getStepNumber = () => {
     return tabs.findIndex((tab) => tab.value === activeTab) + 1;
@@ -115,9 +115,9 @@ const Index = () => {
 
   return (
     <>
-      <PrivacyBanner 
+      <RGPDConsentModal 
         isOpen={showModal} 
-        onAccept={acceptRGPD} 
+        onAccept={acceptConsent} 
         appName="classcouncil" 
       />
       <MainLayout activeTab={activeTab} onTabChange={setActiveTab}>

@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ReportCardAI from "./pages/ReportCardAI";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import MentionsLegales from "./pages/MentionsLegales";
 
 const queryClient = new QueryClient();
 
@@ -27,7 +28,9 @@ const App = () => (
           {/* Actual application pages */}
           <Route path="/classcouncil-ai/app" element={<Index />} />
           <Route path="/reportcard-ai/app" element={<ReportCardAI />} />
+          {/* Legal pages */}
           <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
