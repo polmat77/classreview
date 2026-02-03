@@ -15,42 +15,48 @@ interface ReportCardToneSelectorProps {
   showDescription?: boolean;
 }
 
-// Subtle tone configuration with border-based design
+// Tone configuration with colored icons
 const toneConfig: Record<AppreciationTone, {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   shortLabel: string;
   description: string;
+  iconColor: string;
 }> = {
   ferme: {
     icon: AlertTriangle,
     label: "Ferme",
     shortLabel: "Ferme",
     description: "Ton strict pour les élèves en difficulté de comportement ou de travail",
+    iconColor: "#ef4444", // Red
   },
   neutre: {
     icon: Minus,
     label: "Neutre",
     shortLabel: "Neutre",
     description: "Ton objectif et factuel, sans jugement particulier",
+    iconColor: "#64748b", // Slate
   },
   bienveillant: {
     icon: Heart,
     label: "Bienveillant",
     shortLabel: "Bienv.",
     description: "Ton doux et encourageant, mettant en avant le positif",
+    iconColor: "#10b981", // Emerald
   },
   encourageant: {
     icon: TrendingUp,
     label: "Encourageant",
     shortLabel: "Encour.",
     description: "Ton motivant pour les élèves en progression",
+    iconColor: "#f0a830", // Gold
   },
   constructif: {
     icon: Wrench,
     label: "Constructif",
     shortLabel: "Constr.",
     description: "Ton équilibré, axé sur les axes d'amélioration",
+    iconColor: "#3b82f6", // Blue
   },
 };
 
@@ -69,7 +75,7 @@ const ReportCardToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex gap-1.5 flex-wrap md:flex-nowrap">
           {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
@@ -84,11 +90,11 @@ const ReportCardToneSelector = ({
                     className={cn(
                       "p-1.5 rounded-md border-2 transition-all duration-200",
                       isActive 
-                        ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
-                        : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
+                        ? "border-secondary-vibrant bg-secondary-vibrant/10" 
+                        : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
                     )}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3.5 h-3.5" style={{ color: config.iconColor }} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -104,7 +110,7 @@ const ReportCardToneSelector = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 md:gap-3">
+      <div className="flex items-center gap-2 md:gap-3 flex-wrap md:flex-nowrap">
         {toneOrder.map((tone) => {
           const config = toneConfig[tone];
           const Icon = config.icon;
@@ -116,14 +122,20 @@ const ReportCardToneSelector = ({
               type="button"
               onClick={() => onChange(tone)}
               className={cn(
-                "px-3 py-2 rounded-lg border-2 transition-all duration-200 flex items-center gap-2",
+                "flex-1 min-w-[90px] px-3 py-2 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
                 isActive 
-                  ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
-                  : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
+                  ? "border-secondary-vibrant bg-secondary-vibrant/10" 
+                  : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
               )}
             >
-              <Icon className="w-4 h-4" />
-              <span className="font-medium text-sm hidden sm:inline">{config.shortLabel}</span>
+              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: config.iconColor }} />
+              <span className={cn(
+                "font-medium text-sm",
+                isActive ? "text-secondary-vibrant" : "text-slate-600"
+              )}>
+                <span className="hidden sm:inline">{config.label}</span>
+                <span className="sm:hidden">{config.shortLabel}</span>
+              </span>
             </button>
           );
         })}

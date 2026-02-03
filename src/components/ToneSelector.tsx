@@ -21,23 +21,31 @@ const iconMap = {
   Award,
 };
 
-// Subtle tone styles with border-based design
-const toneStyles: Record<AppreciationTone, { label: string; description: string }> = {
+// Tone styles with colored icons
+const toneStyles: Record<AppreciationTone, { label: string; shortLabel: string; description: string; iconColor: string }> = {
   severe: {
     label: "Sévère",
+    shortLabel: "Sévère",
     description: "Ton strict pour les élèves en difficulté",
+    iconColor: "#ef4444", // Red
   },
   standard: {
     label: "Standard",
+    shortLabel: "Standard",
     description: "Ton objectif et factuel",
+    iconColor: "#64748b", // Slate
   },
   caring: {
     label: "Bienveillant",
+    shortLabel: "Bienv.",
     description: "Ton doux et encourageant",
+    iconColor: "#10b981", // Emerald
   },
   praising: {
     label: "Élogieux",
+    shortLabel: "Élogieux",
     description: "Ton très positif et valorisant",
+    iconColor: "#f0a830", // Gold
   },
 };
 
@@ -47,7 +55,7 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex gap-1.5 flex-wrap md:flex-nowrap">
           {tones.map((tone) => {
             const config = toneConfig[tone];
             const styles = toneStyles[tone];
@@ -63,11 +71,11 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
                     className={cn(
                       "p-1.5 rounded-md border-2 transition-all duration-200",
                       isActive 
-                        ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
-                        : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
+                        ? "border-secondary-vibrant bg-secondary-vibrant/10" 
+                        : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
                     )}
                   >
-                    <Icon className="w-3.5 h-3.5" />
+                    <Icon className="w-3.5 h-3.5" style={{ color: styles.iconColor }} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -82,7 +90,7 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   }
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex items-center gap-2 md:gap-3 flex-wrap md:flex-nowrap">
       {tones.map((tone) => {
         const config = toneConfig[tone];
         const styles = toneStyles[tone];
@@ -95,14 +103,20 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             type="button"
             onClick={() => onChange(tone)}
             className={cn(
-              "px-4 py-2 rounded-lg border-2 transition-all duration-200 flex items-center gap-2",
+              "flex-1 min-w-[100px] px-3 py-2 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
               isActive 
-                ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
-                : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
+                ? "border-secondary-vibrant bg-secondary-vibrant/10" 
+                : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
             )}
           >
-            <Icon className="w-4 h-4" />
-            <span className="font-medium text-sm">{styles.label}</span>
+            <Icon className="w-4 h-4 flex-shrink-0" style={{ color: styles.iconColor }} />
+            <span className={cn(
+              "font-medium text-sm",
+              isActive ? "text-secondary-vibrant" : "text-slate-600"
+            )}>
+              <span className="hidden sm:inline">{styles.label}</span>
+              <span className="sm:hidden">{styles.shortLabel}</span>
+            </span>
           </button>
         );
       })}
