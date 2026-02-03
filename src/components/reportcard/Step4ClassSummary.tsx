@@ -47,16 +47,13 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import ReportCardToneSelector from "./ReportCardToneSelector";
-import ClassSyntheticSummary from "./ClassSyntheticSummary";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 import StepResetButton from "./StepResetButton";
-import { ClassMetadata } from "@/types/reportcard";
 
 interface Step4ClassSummaryProps {
   students: Student[];
-  metadata: ClassMetadata | null;
   classSummary: ClassSummary;
   onClassSummaryChange: (classSummary: ClassSummary) => void;
   appreciations: GeneratedAppreciation[];
@@ -66,7 +63,6 @@ interface Step4ClassSummaryProps {
 
 const Step4ClassSummary = ({
   students,
-  metadata,
   classSummary,
   onClassSummaryChange,
   appreciations,
@@ -121,21 +117,23 @@ const Step4ClassSummary = ({
 
   const isOverLimit = classSummary.generatedText.length > maxCharacters;
 
-  // Calculate grade distribution with new ranges (matching specs)
+  // Calculate grade distribution
   const gradeDistribution = useMemo(() => {
     const ranges = [
-      { label: "< 8", min: 0, max: 8, color: "hsl(var(--destructive))" },
-      { label: "8-10", min: 8, max: 10, color: "#f97316" },
+      { label: "0-5", min: 0, max: 5, color: "hsl(var(--destructive))" },
+      { label: "5-8", min: 5, max: 8, color: "hsl(var(--destructive))" },
+      { label: "8-10", min: 8, max: 10, color: "hsl(var(--warning))" },
       { label: "10-12", min: 10, max: 12, color: "hsl(var(--warning))" },
       { label: "12-14", min: 12, max: 14, color: "hsl(var(--primary))" },
-      { label: "14-16", min: 14, max: 16, color: "#22c55e" },
-      { label: "≥ 16", min: 16, max: 21, color: "hsl(var(--success))" },
+      { label: "14-16", min: 14, max: 16, color: "hsl(var(--success))" },
+      { label: "16-18", min: 16, max: 18, color: "hsl(var(--success))" },
+      { label: "18-20", min: 18, max: 20, color: "hsl(var(--success))" },
     ];
 
     return ranges.map(range => ({
       ...range,
       count: students.filter(s => 
-        s.average !== null && s.average >= range.min && s.average < range.max
+        s.average !== null && s.average >= range.min && s.average < (range.max === 20 ? 21 : range.max)
       ).length,
     }));
   }, [students]);
@@ -310,12 +308,6 @@ const Step4ClassSummary = ({
           />
         )}
       </div>
-
-      {/* Factual Synthetic Summary - NEW */}
-      <ClassSyntheticSummary
-        students={students}
-        metadata={metadata}
-      />
 
       {/* Class stats and distribution */}
       <Card>
