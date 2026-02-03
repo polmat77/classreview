@@ -36,3 +36,16 @@ export const toneConfig: Record<AppreciationTone, {
     borderColor: 'border-amber-500',
   },
 };
+
+// Justification type for enriched appreciations
+export interface AppreciationJustification {
+  sentence: string;
+  source: string;
+  quotes: string[];
+}
+
+// Enriched appreciation with justifications
+export interface EnrichedStudentAppreciation {
+  text: string;
+  justifications: AppreciationJustification[];
+}

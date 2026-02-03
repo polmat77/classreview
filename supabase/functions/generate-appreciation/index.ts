@@ -95,6 +95,11 @@ interface StudentInput {
   name?: string;
   average?: number;
   subjects?: SubjectInput[];
+  // Enriched analysis context
+  analysisContext?: string;
+  absences?: number;
+  retards?: number;
+  recurringIssues?: { type: string; count: number }[];
 }
 
 interface ValidatedRequest {
@@ -111,6 +116,10 @@ interface ValidatedRequest {
     name: string;
     average: number;
     subjects: { name: string; grade: number; classAverage?: number; appreciation?: string }[];
+    analysisContext?: string;
+    absences?: number;
+    retards?: number;
+    recurringIssues?: { type: string; count: number }[];
   };
 }
 
@@ -168,6 +177,15 @@ function validateRequest(body: unknown): ValidatedRequest | null {
       name: sanitizeString(st.name, 100) || 'Élève',
       average: validateNumber(st.average, 0, 20),
       subjects: [],
+      analysisContext: st.analysisContext ? sanitizeString(st.analysisContext, 2000) : undefined,
+      absences: st.absences !== undefined ? validateNumber(st.absences, 0, 200) : undefined,
+      retards: st.retards !== undefined ? validateNumber(st.retards, 0, 200) : undefined,
+      recurringIssues: Array.isArray(st.recurringIssues) 
+        ? st.recurringIssues.slice(0, 10).map(i => ({
+            type: sanitizeString(i?.type, 50),
+            count: validateNumber(i?.count, 0, 20)
+          })).filter(i => i.type)
+        : undefined,
     };
     
     if (Array.isArray(st.subjects)) {
@@ -350,6 +368,30 @@ ${toneInstruction}`;
         return `${s.name}: des efforts nécessaires${appreciation}`;
       }).join(', ') || 'Synthèse non disponible';
 
+      // Build enriched context if available
+      let enrichedSection = '';
+      
+      // Add recurring issues if present
+      if (student?.recurringIssues && student.recurringIssues.length > 0) {
+        const issues = student.recurringIssues.map(i => 
+          `${i.type} (mentionné ${i.count} fois par les professeurs)`
+        ).join(', ');
+        enrichedSection += `\n\nProblèmes récurrents identifiés : ${issues}`;
+      }
+      
+      // Add attendance data if significant
+      if (student?.absences && student.absences > 10) {
+        enrichedSection += `\n\nAssiduité : ${student.absences} demi-journées d'absence`;
+      }
+      if (student?.retards && student.retards >= 5) {
+        enrichedSection += student.absences ? `, ${student.retards} retards` : `\n\nPonctualité : ${student.retards} retards`;
+      }
+      
+      // Add analysis context if provided
+      if (student?.analysisContext) {
+        enrichedSection += `\n\nAnalyse détaillée des appréciations :\n${student.analysisContext}`;
+      }
+
       userPrompt = `Rédige l'appréciation du conseil de classe pour cet élève.
 IMPORTANT: Utilise {prénom} comme placeholder pour le prénom (ne PAS inventer de prénom).
 
@@ -361,7 +403,7 @@ Synthèse des appréciations des professeurs :
 ${syntheseAppreciations}
 
 Points forts relevés : ${pointsForts}
-Axes d'amélioration : ${axesAmelioration}`;
+Axes d'amélioration : ${axesAmelioration}${enrichedSection}`;
     }
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
