@@ -358,63 +358,61 @@ const Step3Appreciations = ({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            {/* Character limit */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="maxCharacters">Longueur maximale</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[280px]">
-                      <p>Adaptez selon les paramètres de votre établissement (généralement entre 300 et 600 caractères pour PRONOTE)</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="maxCharacters"
-                  type="number"
-                  min={200}
-                  max={800}
-                  value={appreciationSettings.maxCharacters}
-                  onChange={(e) => onAppreciationSettingsChange({
-                    ...appreciationSettings,
-                    maxCharacters: Math.max(200, Math.min(800, parseInt(e.target.value) || 400)),
-                  })}
-                  className="w-24"
-                />
-                <span className="text-sm text-muted-foreground">caractères</span>
-              </div>
+          {/* Character limit */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="maxCharacters">Longueur maximale</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[280px]">
+                    <p>Adaptez selon les paramètres de votre établissement (généralement entre 300 et 600 caractères pour PRONOTE)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
-
-            {/* Default tone */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label>Ton par défaut</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-[280px]">
-                      <p>Le ton utilisé pour toutes les appréciations, sauf si un ton spécifique est défini pour un élève</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <ReportCardToneSelector
-                value={appreciationSettings.defaultTone}
-                onChange={(value) => onAppreciationSettingsChange({
+            <div className="flex items-center gap-2">
+              <Input
+                id="maxCharacters"
+                type="number"
+                min={200}
+                max={800}
+                value={appreciationSettings.maxCharacters}
+                onChange={(e) => onAppreciationSettingsChange({
                   ...appreciationSettings,
-                  defaultTone: value,
+                  maxCharacters: Math.max(200, Math.min(800, parseInt(e.target.value) || 400)),
                 })}
-                showDescription
+                className="w-24"
               />
+              <span className="text-sm text-muted-foreground">caractères</span>
             </div>
+          </div>
+
+          {/* Default tone - full width */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label>Ton par défaut</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[280px]">
+                    <p>Le ton utilisé pour toutes les appréciations, sauf si un ton spécifique est défini pour un élève</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <ReportCardToneSelector
+              value={appreciationSettings.defaultTone}
+              onChange={(value) => onAppreciationSettingsChange({
+                ...appreciationSettings,
+                defaultTone: value,
+              })}
+              showDescription
+            />
           </div>
         </CardContent>
       </Card>
