@@ -49,7 +49,7 @@ const toneConfig: Record<AppreciationTone, {
     label: "Encourageant",
     shortLabel: "Encour.",
     description: "Ton motivant pour les élèves en progression",
-    iconColor: "#f0a830", // Gold
+    iconColor: "#eab308", // Gold/Yellow
   },
   constructif: {
     icon: Wrench,
@@ -88,13 +88,13 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex-1 p-1.5 rounded-md border-2 transition-all duration-200 flex items-center justify-center",
+                      "flex-1 p-1.5 rounded-lg border transition-all duration-200 flex items-center justify-center",
                       isActive 
-                        ? "border-secondary-vibrant bg-secondary-vibrant/10" 
-                        : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
+                        ? "border-blue-400 bg-blue-50" 
+                        : "border-slate-200 bg-white hover:border-blue-300"
                     )}
                   >
-                    <Icon className="w-3.5 h-3.5" style={{ color: config.iconColor }} />
+                    <Icon className="w-4 h-4" style={{ color: config.iconColor }} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -122,17 +122,14 @@ const ReportCardToneSelector = ({
               type="button"
               onClick={() => onChange(tone)}
               className={cn(
-                "flex-1 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
+                "flex-1 px-4 py-2.5 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2",
                 isActive 
-                  ? "border-secondary-vibrant bg-secondary-vibrant/10" 
-                  : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
+                  ? "border-blue-400 bg-blue-50" 
+                  : "border-slate-200 bg-white hover:border-blue-300"
               )}
             >
-              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: config.iconColor }} />
-              <span className={cn(
-                "font-medium text-sm whitespace-nowrap",
-                isActive ? "text-secondary-vibrant" : "text-slate-600"
-              )}>
+              <Icon className="w-5 h-5 flex-shrink-0" style={{ color: config.iconColor }} />
+              <span className="font-medium text-slate-700 whitespace-nowrap">
                 <span className="hidden sm:inline">{config.label}</span>
                 <span className="sm:hidden">{config.shortLabel}</span>
               </span>

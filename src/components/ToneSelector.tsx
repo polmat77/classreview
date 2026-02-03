@@ -24,14 +24,14 @@ const iconMap = {
 // Tone styles with colored icons
 const toneStyles: Record<AppreciationTone, { label: string; shortLabel: string; description: string; iconColor: string }> = {
   severe: {
-    label: "Sévère",
-    shortLabel: "Sévère",
+    label: "Ferme",
+    shortLabel: "Ferme",
     description: "Ton strict pour les élèves en difficulté",
     iconColor: "#ef4444", // Red
   },
   standard: {
-    label: "Standard",
-    shortLabel: "Standard",
+    label: "Neutre",
+    shortLabel: "Neutre",
     description: "Ton objectif et factuel",
     iconColor: "#64748b", // Slate
   },
@@ -69,13 +69,13 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex-1 p-1.5 rounded-md border-2 transition-all duration-200 flex items-center justify-center",
+                      "flex-1 p-1.5 rounded-lg border transition-all duration-200 flex items-center justify-center",
                       isActive 
-                        ? "border-secondary-vibrant bg-secondary-vibrant/10" 
-                        : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
+                        ? "border-blue-400 bg-blue-50" 
+                        : "border-slate-200 bg-white hover:border-blue-300"
                     )}
                   >
-                    <Icon className="w-3.5 h-3.5" style={{ color: styles.iconColor }} />
+                    <Icon className="w-4 h-4" style={{ color: styles.iconColor }} />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
@@ -103,17 +103,14 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             type="button"
             onClick={() => onChange(tone)}
             className={cn(
-              "flex-1 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
+              "flex-1 px-4 py-2.5 rounded-lg border transition-all duration-200 flex items-center justify-center gap-2",
               isActive 
-                ? "border-secondary-vibrant bg-secondary-vibrant/10" 
-                : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
+                ? "border-blue-400 bg-blue-50" 
+                : "border-slate-200 bg-white hover:border-blue-300"
             )}
           >
-            <Icon className="w-4 h-4 flex-shrink-0" style={{ color: styles.iconColor }} />
-            <span className={cn(
-              "font-medium text-sm whitespace-nowrap",
-              isActive ? "text-secondary-vibrant" : "text-slate-600"
-            )}>
+            <Icon className="w-5 h-5 flex-shrink-0" style={{ color: styles.iconColor }} />
+            <span className="font-medium text-slate-700 whitespace-nowrap">
               <span className="hidden sm:inline">{styles.label}</span>
               <span className="sm:hidden">{styles.shortLabel}</span>
             </span>
