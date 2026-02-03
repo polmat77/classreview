@@ -100,7 +100,7 @@ export const UnifiedToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className={cn("flex justify-between gap-1.5 w-full", className)}>
+        <div className={cn("flex items-center justify-between gap-1 w-full flex-wrap sm:flex-nowrap", className)}>
           {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
@@ -113,17 +113,20 @@ export const UnifiedToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex-1 p-1.5 rounded-lg border transition-all duration-200 flex items-center justify-center",
+                      "flex-1 px-2 py-1.5 rounded-lg border transition-all duration-200 flex items-center justify-center gap-1.5",
                       isActive 
                         ? "border-blue-400 bg-blue-50" 
                         : "border-slate-200 bg-white hover:border-blue-300"
                     )}
                   >
-                    <Icon className="w-4 h-4" style={{ color: config.iconColor }} />
+                    <Icon className="w-4 h-4 flex-shrink-0" style={{ color: config.iconColor }} />
+                    <span className="font-medium text-slate-700 text-xs whitespace-nowrap">
+                      {config.shortLabel}
+                    </span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="text-xs">
-                  {config.label}
+                  {config.description}
                 </TooltipContent>
               </Tooltip>
             );
