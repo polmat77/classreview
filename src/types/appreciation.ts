@@ -1,4 +1,4 @@
-export type AppreciationTone = 'severe' | 'standard' | 'caring' | 'praising';
+export type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
 
 export const toneConfig: Record<AppreciationTone, {
   label: string;
@@ -16,21 +16,21 @@ export const toneConfig: Record<AppreciationTone, {
   },
   standard: {
     label: 'Standard',
-    icon: 'Minus',
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-600',
-    borderColor: 'border-slate-600',
+    icon: 'BarChart3',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-600',
+    borderColor: 'border-blue-600',
   },
-  caring: {
-    label: 'Bienveillant',
-    icon: 'Heart',
+  encourageant: {
+    label: 'Encourageant',
+    icon: 'ThumbsUp',
     color: 'text-emerald-500',
     bgColor: 'bg-emerald-500',
     borderColor: 'border-emerald-500',
   },
-  praising: {
+  elogieux: {
     label: 'Élogieux',
-    icon: 'Award',
+    icon: 'Star',
     color: 'text-amber-500',
     bgColor: 'bg-amber-500',
     borderColor: 'border-amber-500',

@@ -1,5 +1,5 @@
 // Re-export UnifiedToneSelector as ToneSelector for backwards compatibility with ClassCouncil AI
-import { UnifiedToneSelector, UnifiedTone, legacyToUnifiedToneMap, unifiedToLegacyMap } from "@/components/shared/UnifiedToneSelector";
+import { UnifiedToneSelector, UnifiedTone } from "@/components/shared/UnifiedToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
 
 interface ToneSelectorProps {
@@ -8,17 +8,26 @@ interface ToneSelectorProps {
   compact?: boolean;
 }
 
+// Migration des anciens tons vers les nouveaux
+const migrateLegacyTone = (tone: string): AppreciationTone => {
+  const migration: Record<string, AppreciationTone> = {
+    'caring': 'encourageant',
+    'praising': 'elogieux',
+  };
+  return migration[tone] || (tone as AppreciationTone);
+};
+
 const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) => {
-  // Map legacy AppreciationTone to UnifiedTone for the component
+  // Migrate legacy tone value if needed
+  const normalizedValue = migrateLegacyTone(value);
+  
   const handleChange = (unifiedTone: UnifiedTone) => {
-    // Convert back to legacy tone for ClassCouncil compatibility
-    const legacyTone = unifiedToLegacyMap[unifiedTone] as AppreciationTone;
-    onChange(legacyTone);
+    onChange(unifiedTone as AppreciationTone);
   };
 
   return (
     <UnifiedToneSelector
-      value={value}
+      value={normalizedValue}
       onChange={handleChange}
       compact={compact}
       showDescription={false}

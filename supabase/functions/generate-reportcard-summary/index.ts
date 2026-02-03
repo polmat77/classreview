@@ -5,14 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
+type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
+
+// Migration des anciens tons vers les nouveaux
+const migrateTone = (tone: string): AppreciationTone => {
+  const migration: Record<string, AppreciationTone> = {
+    'ferme': 'severe',
+    'neutre': 'standard',
+    'bienveillant': 'encourageant',
+    'constructif': 'standard',
+  };
+  return migration[tone] || (tone as AppreciationTone) || 'standard';
+};
 
 const toneInstructions: Record<AppreciationTone, string> = {
-  neutre: "Reste factuel et objectif, décris la situation sans jugement excessif.",
-  encourageant: "Mets en avant les points positifs de la classe et encourage les efforts collectifs.",
-  constructif: "Identifie les axes d'amélioration avec bienveillance tout en valorisant les acquis.",
-  ferme: "Sois direct sur les problèmes identifiés, les attentes doivent être claires pour le prochain trimestre.",
-  bienveillant: "Adopte un ton chaleureux et encourageant, mets en avant le potentiel du groupe.",
+  severe: "Sois direct et strict sur les problèmes identifiés. Le bilan doit pointer clairement les manquements collectifs et exiger un changement d'attitude.",
+  standard: "Adopte un ton FACTUEL et RAISONNÉ. Le bilan doit être une analyse objective de la dynamique de classe, basée sur les observations concrètes. Équilibre entre constats positifs et axes d'amélioration.",
+  encourageant: "Mets en avant les points positifs de la classe et valorise les efforts collectifs. Le ton doit être bienveillant et motivant pour la suite.",
+  elogieux: "Félicite chaleureusement la classe pour son excellent trimestre. Utilise des formulations enthousiastes et valorisantes pour souligner la qualité du travail collectif.",
 };
 
 // Helper function to truncate intelligently
@@ -42,7 +52,8 @@ serve(async (req) => {
   }
 
   try {
-    const { options, classStats, labels, maxCharacters = 400, tone = 'neutre' } = await req.json();
+    const { options, classStats, labels, maxCharacters = 400, tone: rawTone = 'standard' } = await req.json();
+    const tone = migrateTone(rawTone);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -62,7 +73,7 @@ serve(async (req) => {
     ].filter(Boolean).length;
 
     const classProfile = positiveIndicators >= 3 ? "positif" : positiveIndicators >= 2 ? "nuance" : "difficile";
-    const toneInstruction = toneInstructions[tone as AppreciationTone] || toneInstructions.neutre;
+    const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
 
     const systemPrompt = `Tu es un assistant pour enseignants français. Génère un bilan de classe pour le bulletin du conseil de classe.
 

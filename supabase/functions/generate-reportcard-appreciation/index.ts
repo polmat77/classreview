@@ -5,14 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
+type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
+
+// Migration des anciens tons vers les nouveaux
+const migrateTone = (tone: string): AppreciationTone => {
+  const migration: Record<string, AppreciationTone> = {
+    'ferme': 'severe',
+    'neutre': 'standard',
+    'bienveillant': 'encourageant',
+    'constructif': 'standard',
+  };
+  return migration[tone] || (tone as AppreciationTone) || 'standard';
+};
 
 const toneInstructions: Record<AppreciationTone, string> = {
-  neutre: "Reste factuel et objectif, sans jugement personnel. Base-toi uniquement sur les observations concrètes.",
-  encourageant: "Valorise les efforts et les réussites, même modestes. Souligne les progrès et le potentiel. Termine sur une note positive.",
-  constructif: "Identifie les difficultés avec bienveillance et propose des pistes d'amélioration concrètes. Équilibre points positifs et axes de travail.",
-  ferme: "Sois direct sur les problèmes identifiés tout en restant professionnel. Les attentes doivent être claires et les axes d'amélioration explicites.",
-  bienveillant: "Adopte un ton chaleureux et empathique. Mets en valeur les efforts même modestes. Particulièrement adapté aux élèves fragiles.",
+  severe: "Sois direct et strict sur les problèmes identifiés. Le ton doit être ferme et les attentes clairement exprimées. Mentionne les manquements et exige un ressaisissement. Pas de complaisance.",
+  standard: "Adopte un ton FACTUEL et RAISONNÉ. Base ton analyse sur le CROISEMENT OBJECTIF des données disponibles (moyenne, sérieux, participation, absences). L'appréciation doit être équilibrée, professionnelle et refléter fidèlement la réalité de l'élève. Pas de jugement émotionnel, uniquement des constats étayés.",
+  encourageant: "Valorise les efforts et les progrès, même modestes. Souligne les points positifs et le potentiel de l'élève. Adopte un ton bienveillant et motivant. Termine sur une perspective positive d'amélioration.",
+  elogieux: "Félicite chaleureusement l'élève pour ses excellents résultats. Utilise des superlatifs adaptés (remarquable, brillant, exemplaire). Mets en avant les qualités exceptionnelles. Le ton doit refléter la fierté du professeur.",
 };
 
 // Helper to determine work level description from average
@@ -53,7 +63,8 @@ serve(async (req) => {
   }
 
   try {
-    const { student, classAverage, subject, trimester, maxCharacters = 400, tone = 'neutre' } = await req.json();
+    const { student, classAverage, subject, trimester, maxCharacters = 400, tone: rawTone = 'standard' } = await req.json();
+    const tone = migrateTone(rawTone);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -80,7 +91,7 @@ serve(async (req) => {
     // Get work level description instead of numerical average
     const workLevel = getWorkLevel(average);
 
-    const toneInstruction = toneInstructions[tone as AppreciationTone] || toneInstructions.neutre;
+    const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
 
     const systemPrompt = `Tu es un professeur expérimenté rédigeant une appréciation pour un bulletin scolaire de collège/lycée.
 

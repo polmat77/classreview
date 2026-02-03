@@ -9,21 +9,33 @@ interface ReportCardToneSelectorProps {
   showDescription?: boolean;
 }
 
+// Migration des anciens tons vers les nouveaux
+const migrateLegacyTone = (tone: string): AppreciationTone => {
+  const migration: Record<string, AppreciationTone> = {
+    'ferme': 'severe',
+    'neutre': 'standard',
+    'bienveillant': 'encourageant',
+    'constructif': 'standard',
+  };
+  return migration[tone] || (tone as AppreciationTone);
+};
+
 const ReportCardToneSelector = ({ 
   value, 
   onChange, 
   compact = false,
   showDescription = false 
 }: ReportCardToneSelectorProps) => {
-  // ReportCardAI already uses the unified tone values (ferme, neutre, etc.)
-  // so we can pass them directly
+  // Migrate legacy tone value if needed
+  const normalizedValue = migrateLegacyTone(value);
+  
   const handleChange = (tone: UnifiedTone) => {
     onChange(tone as AppreciationTone);
   };
 
   return (
     <UnifiedToneSelector
-      value={value}
+      value={normalizedValue}
       onChange={handleChange}
       compact={compact}
       showDescription={showDescription}
