@@ -523,10 +523,11 @@ const Step3Appreciations = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      {/* Tone selector per student */}
+                      {/* Tone selector per student - compact version */}
                       <ReportCardToneSelector
                         value={studentTone}
                         onChange={(value) => setStudentTone(student.id, value)}
+                        compact
                       />
 
                       {/* Character count badge */}

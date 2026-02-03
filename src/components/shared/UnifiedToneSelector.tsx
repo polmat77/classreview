@@ -78,6 +78,7 @@ const toneOrder: UnifiedTone[] = ['ferme', 'neutre', 'bienveillant', 'encouragea
 interface UnifiedToneSelectorProps {
   value: UnifiedTone | string;
   onChange: (value: UnifiedTone) => void;
+  compact?: boolean;
   showDescription?: boolean;
   className?: string;
 }
@@ -85,6 +86,7 @@ interface UnifiedToneSelectorProps {
 export const UnifiedToneSelector = ({
   value,
   onChange,
+  compact = false,
   showDescription = false,
   className = "",
 }: UnifiedToneSelectorProps) => {
@@ -94,6 +96,42 @@ export const UnifiedToneSelector = ({
   const getToneDescription = (tone: UnifiedTone) => {
     return toneConfig[tone]?.description || '';
   };
+
+  if (compact) {
+    return (
+      <TooltipProvider delayDuration={200}>
+        <div className={cn("flex justify-between gap-1.5 w-full", className)}>
+          {toneOrder.map((tone) => {
+            const config = toneConfig[tone];
+            const Icon = config.icon;
+            const isActive = normalizedValue === tone;
+            
+            return (
+              <Tooltip key={tone}>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => onChange(tone)}
+                    className={cn(
+                      "flex-1 p-1.5 rounded-lg border transition-all duration-200 flex items-center justify-center",
+                      isActive 
+                        ? "border-blue-400 bg-blue-50" 
+                        : "border-slate-200 bg-white hover:border-blue-300"
+                    )}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: config.iconColor }} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {config.label}
+                </TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <div className={cn("space-y-3", className)}>
