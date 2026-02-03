@@ -31,6 +31,7 @@ import AIRecommendations from "@/components/analysis/AIRecommendations";
 import GradeDistribution from "@/components/analysis/GradeDistribution";
 import ClassInfoHeader from "@/components/analysis/ClassInfoHeader";
 import ClassSynthesisSummary from "@/components/analysis/ClassSynthesisSummary";
+import ClassAppreciationCard from "@/components/analysis/ClassAppreciationCard";
 import { getSubjectAverages } from "@/utils/statisticsCalculations";
 import { generateClassSummary } from "@/utils/classSummaryGenerator";
 
@@ -193,8 +194,11 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         onMainTeacherChange={setMainTeacher}
       />
 
-      {/* Automatic Class Summary */}
+      {/* Automatic Class Summary (factual statistics) */}
       <ClassSynthesisSummary summary={classSummary} />
+
+      {/* AI-Generated Class Appreciation (thematic synthesis) */}
+      <ClassAppreciationCard classeData={classeCSV} metadata={metadata} />
 
       {/* File action buttons */}
       <div className="flex items-center justify-end gap-2">
