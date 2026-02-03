@@ -1,9 +1,7 @@
-import { useState, useEffect } from "react";
-import { PenLine, Sparkles, User, Edit2, Loader2, Copy, Check, Lightbulb, Info } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { PenLine, Sparkles, Loader2, Lightbulb, Info } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
@@ -13,8 +11,7 @@ import { ClasseDataCSV } from "@/utils/csvParser";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
-import ToneSelector from "@/components/ToneSelector";
-import { AppreciationTone } from "@/types/appreciation";
+import { AppreciationTone, AppreciationJustification } from "@/types/appreciation";
 import { Attribution, ConductAnalysis, StudentAttribution } from "@/types/attribution";
 import { 
   suggestAttribution, 
@@ -23,14 +20,18 @@ import {
   generateAttributionSummary,
   truncateIntelligently
 } from "@/utils/attributionAnalysis";
-import AttributionSelector from "@/components/AttributionSelector";
-import ConductIssuesIndicator from "@/components/ConductIssuesIndicator";
+import { 
+  analyzeStudentBulletin, 
+  buildAnalysisContext,
+  Justification 
+} from "@/utils/studentBulletinAnalyzer";
 import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
 import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelector";
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
 import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
 import { AIGenerationWarning } from "@/components/AIGenerationWarning";
+import StudentAppreciationCard from "@/components/analysis/StudentAppreciationCard";
 import {
   Select,
   SelectContent,
@@ -39,10 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
   Popover,
@@ -76,9 +74,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
   const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
   const [studentTexts, setStudentTexts] = useState<string[]>(data?.studentAppreciations || []);
+  const [studentJustifications, setStudentJustifications] = useState<Record<number, Justification[]>>({});
   const [isLoadingAll, setIsLoadingAll] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
+  const [editingStudent, setEditingStudent] = useState<number | null>(null);
   
   // Anonymization level
   const [anonymizationLevel, setAnonymizationLevel] = useAnonymizationLevel();
@@ -100,6 +100,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   
   // Manual attribution removal tracking
   const [manuallyRemovedAttributions, setManuallyRemovedAttributions] = useState<Set<number>>(new Set());
+  
+  // Loading state for individual students
+  const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
 
   // Save character limit preference to localStorage
   useEffect(() => {
@@ -155,6 +158,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         // Reset related state for new file
         setStudentTones({});
         setStudentTexts([]);
+        setStudentJustifications({});
         setStudentAttributions({});
         setManuallyRemovedAttributions(new Set());
       } else {
@@ -178,6 +182,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setCurrentFileName("");
     setStudentTones({});
     setStudentTexts([]);
+    setStudentJustifications({});
     setStudentAttributions({});
     setManuallyRemovedAttributions(new Set());
     onDataLoaded?.({ bulletinsEleves: null });
@@ -246,8 +251,18 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const hasBulletinsEleves = bulletinsEleves.length > 0;
   const hasStudents = students.length > 0;
 
-  const [editingStudent, setEditingStudent] = useState<number | null>(null);
-  const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
+  // Compute student analyses for enriched appreciation generation
+  const studentAnalyses = useMemo(() => {
+    if (bulletinsEleves.length === 0) return {};
+    
+    const analyses: Record<number, ReturnType<typeof analyzeStudentBulletin>> = {};
+    bulletinsEleves.forEach((bulletin, index) => {
+      const totalMoyenne = bulletin.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
+      const moyenneGenerale = bulletin.matieres.length > 0 ? totalMoyenne / bulletin.matieres.length : 0;
+      analyses[index] = analyzeStudentBulletin(bulletin, moyenneGenerale);
+    });
+    return analyses;
+  }, [bulletinsEleves]);
 
   // Analyze and suggest attributions when students change (only if enabled)
   useEffect(() => {
@@ -387,7 +402,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       .replace(/\[prenom\]/gi, firstName);
   };
 
-  const generateAppreciation = async (student: StudentData, tone: AppreciationTone): Promise<string> => {
+  const generateAppreciation = async (
+    student: StudentData, 
+    tone: AppreciationTone,
+    studentIndex: number
+  ): Promise<{ appreciation: string; justifications: Justification[] }> => {
     const classData = classeCSV ? {
       className: "3ème",
       trimester: "1er trimestre",
@@ -400,8 +419,37 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       subjects: data.bulletinClasse.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
     } : undefined;
 
+    // Get enriched analysis if available
+    const analysis = studentAnalyses[studentIndex];
+    const bulletin = bulletinsEleves[studentIndex];
+    
+    let enrichedStudent: any = { ...student };
+    let localJustifications: Justification[] = [];
+    
+    if (analysis && bulletin) {
+      const { analysisContext, localJustifications: justifs } = buildAnalysisContext(
+        bulletin,
+        analysis,
+        student.average
+      );
+      
+      localJustifications = justifs;
+      
+      // Add enriched data to the student object
+      enrichedStudent = {
+        ...student,
+        analysisContext,
+        absences: bulletin.absences,
+        retards: bulletin.retards,
+        recurringIssues: analysis.recurringIssues.map(i => ({
+          type: i.type,
+          count: i.count
+        }))
+      };
+    }
+
     const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'individual', tone, classData, student, charLimit: individualCharLimit },
+      body: { type: 'individual', tone, classData, student: enrichedStudent, charLimit: individualCharLimit },
     });
 
     if (error) throw error;
@@ -418,7 +466,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       appreciation = truncateIntelligently(appreciation, individualCharLimit);
     }
     
-    return appreciation;
+    return { appreciation, justifications: localJustifications };
   };
 
   const handleRegenerateStudent = async (index: number) => {
@@ -426,10 +474,18 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     try {
       const student = students[index];
       const tone = studentTones[index] || 'standard';
-      const appreciation = await generateAppreciation(student, tone);
+      const { appreciation, justifications } = await generateAppreciation(student, tone, index);
+      
       const newTexts = [...studentTexts];
       newTexts[index] = appreciation;
       setStudentTexts(newTexts);
+      
+      // Store justifications
+      setStudentJustifications(prev => ({
+        ...prev,
+        [index]: justifications
+      }));
+      
       onDataLoaded?.({ studentAppreciations: newTexts });
       toast({ title: "Appréciation générée", description: `L'appréciation de ${student.name} a été générée.` });
     } catch (error) {
@@ -444,11 +500,15 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setIsLoadingAll(true);
     try {
       const newTexts = [...studentTexts];
+      const newJustifications: Record<number, Justification[]> = {};
+      
       for (let i = 0; i < students.length; i++) {
         const tone = studentTones[i] || 'standard';
-        const appreciation = await generateAppreciation(students[i], tone);
+        const { appreciation, justifications } = await generateAppreciation(students[i], tone, i);
         newTexts[i] = appreciation;
+        newJustifications[i] = justifications;
         setStudentTexts([...newTexts]);
+        setStudentJustifications({ ...studentJustifications, ...newJustifications });
         onDataLoaded?.({ studentAppreciations: [...newTexts] });
       }
 
@@ -646,168 +706,23 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       <div className="grid gap-4">
         {students.map((student, index) => {
           const attribution = studentAttributions[index];
-          const conductAnalysis = attribution?.conductAnalysis || {
+          const conductAnalysis: ConductAnalysis = attribution?.conductAnalysis || {
             hasConductIssues: false,
             detectedKeywords: [],
             relevantExcerpts: [],
           };
-          const currentText = studentTexts[index] || "";
-          const charCount = currentText.length;
-          const isOverLimit = charCount > individualCharLimit;
+          const justifications = studentJustifications[index] || [];
           
-          return (
-            <Card key={index} className="hover:shadow-md transition-all duration-200">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col gap-3">
-                  {/* Row 1: Name, average, and actions */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                        <User className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-base">{student.name}</CardTitle>
-                        <CardDescription>Moyenne: {student.average.toFixed(2)}/20</CardDescription>
-                      </div>
-                    </div>
-                    <TooltipProvider delayDuration={200}>
-                      <div className="flex items-center gap-1">
-                        {student.status === "excellent" && (
-                          <Badge className="bg-success text-success-foreground">Excellent</Badge>
-                        )}
-                        {student.status === "good" && (
-                          <Badge className="bg-accent text-accent-foreground">Satisfaisant</Badge>
-                        )}
-                        {student.status === "needs-improvement" && (
-                          <Badge className="bg-warning text-warning-foreground">Fragile</Badge>
-                        )}
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleCopyToClipboard(studentTexts[index] || "", index)}
-                              disabled={!studentTexts[index]}
-                            >
-                              {copiedIndex === index ? (
-                                <Check className="h-4 w-4 text-success" />
-                              ) : (
-                                <Copy className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Copier l'appréciation</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleRegenerateStudent(index)}
-                              disabled={loadingStudentIndex === index || isLoadingAll}
-                            >
-                              {loadingStudentIndex === index ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Sparkles className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Générer l'appréciation</p>
-                          </TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() =>
-                                setEditingStudent(editingStudent === index ? null : index)
-                              }
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="bottom">
-                            <p>Modifier l'appréciation</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                    </TooltipProvider>
+          // Handle maximal anonymization mode with ManualFirstNameReplacer
+          if (anonymizationLevel === 'maximal' && studentTexts[index]?.includes(FIRST_NAME_PLACEHOLDER)) {
+            return (
+              <Card key={index} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-400">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <CardTitle className="text-base">{student.name}</CardTitle>
                   </div>
-                  
-                  {/* Row 2: Attribution and Tone selectors */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-2 border-t">
-                    {attributionsEnabled && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">Attribution :</span>
-                        <AttributionSelector
-                          value={attribution?.attribution || null}
-                          suggestedValue={attribution?.suggestedAttribution || null}
-                          onChange={(attr) => handleAttributionChange(index, attr)}
-                          compact
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">Ton :</span>
-                      <ToneSelector 
-                        value={studentTones[index] || 'standard'} 
-                        onChange={(tone) => handleToneChange(index, tone)}
-                        compact
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Row 3: Conduct analysis (only when attributions enabled) */}
-                  {attributionsEnabled && (
-                    <div className="pt-2">
-                      <ConductIssuesIndicator 
-                        analysis={conductAnalysis}
-                        compact
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {editingStudent === index ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      value={studentTexts[index] || ""}
-                      onChange={(e) => {
-                        const newTexts = [...studentTexts];
-                        newTexts[index] = e.target.value;
-                        setStudentTexts(newTexts);
-                        onDataLoaded?.({ studentAppreciations: newTexts });
-                      }}
-                      className="min-h-[120px] resize-none"
-                      placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
-                    />
-                    <div className="flex items-center justify-between">
-                      <span className={`text-sm font-medium ${getCharCountColor(charCount, individualCharLimit)}`}>
-                        {charCount}/{individualCharLimit} caractères
-                        {isOverLimit && (
-                          <span className="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs">
-                            {charCount - individualCharLimit} en trop
-                          </span>
-                        )}
-                      </span>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingStudent(null)}
-                        >
-                          Fermer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : anonymizationLevel === 'maximal' && studentTexts[index]?.includes(FIRST_NAME_PLACEHOLDER) ? (
+                </CardHeader>
+                <CardContent>
                   <ManualFirstNameReplacer
                     appreciation={studentTexts[index]}
                     firstName={student.firstName}
@@ -818,32 +733,49 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                     }}
                     onCopy={() => setCopiedIndex(index)}
                   />
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
-                      {studentTexts[index] || (
-                        <span className="text-muted-foreground italic">
-                          Aucune appréciation générée. Cliquez sur ✨ pour générer.
-                        </span>
-                      )}
-                    </p>
-                    {/* Character counter when not editing */}
-                    {currentText && (
-                      <div className="flex items-center justify-end">
-                        <span className={`text-xs font-medium ${getCharCountColor(charCount, individualCharLimit)}`}>
-                          {charCount}/{individualCharLimit}
-                          {isOverLimit && (
-                            <span className="ml-1 px-1.5 py-0.5 bg-red-100 text-red-700 rounded text-xs">
-                              -{charCount - individualCharLimit}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            );
+          }
+          
+          return (
+            <StudentAppreciationCard
+              key={index}
+              index={index}
+              name={student.name}
+              firstName={student.firstName}
+              average={student.average}
+              status={student.status}
+              appreciation={studentTexts[index] || ""}
+              justifications={justifications}
+              tone={studentTones[index] || 'standard'}
+              attribution={attribution?.attribution || null}
+              suggestedAttribution={attribution?.suggestedAttribution || null}
+              conductAnalysis={conductAnalysis}
+              charLimit={individualCharLimit}
+              attributionsEnabled={attributionsEnabled}
+              isLoading={loadingStudentIndex === index}
+              isCopied={copiedIndex === index}
+              isEditing={editingStudent === index}
+              onToneChange={(tone) => handleToneChange(index, tone)}
+              onAttributionChange={(attr) => handleAttributionChange(index, attr)}
+              onAppreciationChange={(text) => {
+                const newTexts = [...studentTexts];
+                newTexts[index] = text;
+                setStudentTexts(newTexts);
+                onDataLoaded?.({ studentAppreciations: newTexts });
+              }}
+              onRegenerate={() => handleRegenerateStudent(index)}
+              onCopy={() => handleCopyToClipboard(studentTexts[index] || "", index)}
+              onEditToggle={() => setEditingStudent(editingStudent === index ? null : index)}
+              onTruncate={() => {
+                const truncated = truncateIntelligently(studentTexts[index] || "", individualCharLimit);
+                const newTexts = [...studentTexts];
+                newTexts[index] = truncated;
+                setStudentTexts(newTexts);
+                onDataLoaded?.({ studentAppreciations: newTexts });
+              }}
+            />
           );
         })}
       </div>
