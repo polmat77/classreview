@@ -247,6 +247,7 @@ const ReportCardAI = () => {
         return (
           <Step4ClassSummary
             students={state.students}
+            metadata={state.classMetadata}
             classSummary={state.classSummary}
             onClassSummaryChange={setClassSummary}
             appreciations={state.appreciations}
