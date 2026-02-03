@@ -75,7 +75,7 @@ const ReportCardToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex gap-1.5 flex-wrap md:flex-nowrap">
+        <div className="flex justify-between gap-1.5 w-full">
           {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
@@ -88,7 +88,7 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "p-1.5 rounded-md border-2 transition-all duration-200",
+                      "flex-1 p-1.5 rounded-md border-2 transition-all duration-200 flex items-center justify-center",
                       isActive 
                         ? "border-secondary-vibrant bg-secondary-vibrant/10" 
                         : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
@@ -110,7 +110,7 @@ const ReportCardToneSelector = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 md:gap-3 flex-wrap md:flex-nowrap">
+      <div className="flex items-center justify-between gap-2 w-full flex-wrap sm:flex-nowrap">
         {toneOrder.map((tone) => {
           const config = toneConfig[tone];
           const Icon = config.icon;
@@ -122,7 +122,7 @@ const ReportCardToneSelector = ({
               type="button"
               onClick={() => onChange(tone)}
               className={cn(
-                "flex-1 min-w-[90px] px-3 py-2 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
+                "flex-1 px-3 py-2.5 rounded-lg border-2 transition-all duration-200 flex items-center justify-center gap-2",
                 isActive 
                   ? "border-secondary-vibrant bg-secondary-vibrant/10" 
                   : "border-slate-300 bg-white hover:border-secondary-vibrant/50"
@@ -130,7 +130,7 @@ const ReportCardToneSelector = ({
             >
               <Icon className="w-4 h-4 flex-shrink-0" style={{ color: config.iconColor }} />
               <span className={cn(
-                "font-medium text-sm",
+                "font-medium text-sm whitespace-nowrap",
                 isActive ? "text-secondary-vibrant" : "text-slate-600"
               )}>
                 <span className="hidden sm:inline">{config.label}</span>
