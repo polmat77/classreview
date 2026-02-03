@@ -757,7 +757,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                       <ToneSelector 
                         value={studentTones[index] || 'standard'} 
                         onChange={(tone) => handleToneChange(index, tone)}
-                        compact
                       />
                     </div>
                   </div>
