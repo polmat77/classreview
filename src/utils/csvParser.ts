@@ -16,6 +16,13 @@ export interface EleveData {
   moyennesParPole: Record<string, number>;
 }
 
+export interface ClassMetadata {
+  className: string;
+  period: string;
+  studentCount: number;
+  mainTeacher: string;
+}
+
 export interface ClasseDataCSV {
   eleves: EleveData[];
   matieres: string[];
@@ -26,6 +33,59 @@ export interface ClasseDataCSV {
     totalAbsences: number;
     totalRetards: number;
   };
+  metadata?: ClassMetadata;
+}
+
+/**
+ * Extract metadata from PDF raw text
+ */
+function extractMetadataFromRawText(rawText: string): Partial<ClassMetadata> {
+  const metadata: Partial<ClassMetadata> = {};
+  
+  // Extract class name - patterns like "Classe : 53" or "Classe : 5E3" or "5ème 3"
+  const classeMatch = rawText.match(/Classe\s*[:\-]?\s*([^\n]+)/i);
+  if (classeMatch) {
+    let className = classeMatch[1].trim().split(/\s+/)[0]; // Take first word
+    // Normalize class codes: "53" → "5e3", "42" → "4e2"
+    const codeMatch = className.match(/^(\d)(\d)$/);
+    if (codeMatch) {
+      className = `${codeMatch[1]}e${codeMatch[2]}`;
+    }
+    // Normalize "5ème 3" or "5E3"
+    const altMatch = className.match(/(\d)(?:ème|e|E)\s*(\d)/i);
+    if (altMatch) {
+      className = `${altMatch[1]}e${altMatch[2]}`;
+    }
+    metadata.className = className;
+  }
+  
+  // Extract period - patterns like "Période : Trimestre 1"
+  const periodeMatch = rawText.match(/Période\s*[:\-]?\s*([^\n]+)/i);
+  if (periodeMatch) {
+    metadata.period = periodeMatch[1].trim();
+  }
+  
+  // Also try "Trimestre X" pattern directly
+  if (!metadata.period) {
+    const trimestreMatch = rawText.match(/Trimestre\s*(\d)/i);
+    if (trimestreMatch) {
+      metadata.period = `Trimestre ${trimestreMatch[1]}`;
+    }
+  }
+  
+  // Extract student count - patterns like "23 élèves"
+  const elevesMatch = rawText.match(/(\d+)\s*élèves?/i);
+  if (elevesMatch) {
+    metadata.studentCount = parseInt(elevesMatch[1]);
+  }
+  
+  // Extract main teacher - patterns like "Professeur principal : M. DUPONT"
+  const ppMatch = rawText.match(/Professeur\s+principal\s*[:\-]?\s*([^\n]+)/i);
+  if (ppMatch) {
+    metadata.mainTeacher = ppMatch[1].trim();
+  }
+  
+  return metadata;
 }
 
 // Parser le tableau PDF de moyennes
@@ -36,6 +96,7 @@ export async function parseTableauMoyennesPDF(file: File): Promise<ClasseDataCSV
     
     // Extraire le texte avec positions pour reconstituer le tableau
     const allItems: { str: string; x: number; y: number; page: number }[] = [];
+    let rawTextForMetadata = '';
     
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
@@ -50,9 +111,13 @@ export async function parseTableauMoyennesPDF(file: File): Promise<ClasseDataCSV
             y: Math.round(textItem.transform[5]),
             page: pageNum
           });
+          rawTextForMetadata += textItem.str + '\n';
         }
       }
     }
+    
+    // Extract metadata from raw text
+    const extractedMetadata = extractMetadataFromRawText(rawTextForMetadata);
     
     // Trier par page, puis par Y décroissant (haut vers bas), puis par X croissant (gauche vers droite)
     allItems.sort((a, b) => {
@@ -269,6 +334,12 @@ export async function parseTableauMoyennesPDF(file: File): Promise<ClasseDataCSV
         totalEleves: eleves.length,
         totalAbsences,
         totalRetards
+      },
+      metadata: {
+        className: extractedMetadata.className || '',
+        period: extractedMetadata.period || '',
+        studentCount: eleves.length,
+        mainTeacher: extractedMetadata.mainTeacher || ''
       }
     };
   } catch (error) {

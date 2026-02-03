@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { BarChart3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   Legend,
 } from "recharts";
 import { BulletinClasseData, BulletinEleveData } from "@/utils/pdfParser";
-import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF } from "@/utils/csvParser";
+import { ClasseDataCSV, parseCSVClasse, parseTableauMoyennesPDF, ClassMetadata } from "@/utils/csvParser";
 import { useToast } from "@/hooks/use-toast";
 import TabUploadPlaceholder from "@/components/TabUploadPlaceholder";
 import FileActionButtons from "@/components/FileActionButtons";
@@ -29,7 +29,10 @@ import StudentsMonitoring from "@/components/analysis/StudentsMonitoring";
 import SubjectAnalysis from "@/components/analysis/SubjectAnalysis";
 import AIRecommendations from "@/components/analysis/AIRecommendations";
 import GradeDistribution from "@/components/analysis/GradeDistribution";
+import ClassInfoHeader from "@/components/analysis/ClassInfoHeader";
+import ClassSynthesisSummary from "@/components/analysis/ClassSynthesisSummary";
 import { getSubjectAverages } from "@/utils/statisticsCalculations";
+import { generateClassSummary } from "@/utils/classSummaryGenerator";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -46,6 +49,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [localClasseCSV, setLocalClasseCSV] = useState<ClasseDataCSV | null>(null);
   const [currentFileName, setCurrentFileName] = useState<string>("");
+  const [mainTeacher, setMainTeacher] = useState<string>("");
 
   const classeCSV = data?.classeCSV || localClasseCSV;
 
@@ -80,6 +84,10 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         setLocalClasseCSV(parsedData);
         setCurrentFileName(file.name);
         onDataLoaded?.({ classeCSV: parsedData });
+        // Set main teacher from metadata if available
+        if (parsedData.metadata?.mainTeacher) {
+          setMainTeacher(parsedData.metadata.mainTeacher);
+        }
         toast({
           title: "✓ Tableau de résultats chargé",
           description: `${parsedData.statistiques.totalEleves} élèves • ${parsedData.matieres.length} matières`,
@@ -103,6 +111,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   const handleRemoveFile = () => {
     setLocalClasseCSV(null);
     setCurrentFileName("");
+    setMainTeacher("");
     onDataLoaded?.({ classeCSV: null });
   };
 
@@ -125,6 +134,19 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
       />
     );
   }
+
+  // Generate class metadata
+  const metadata: ClassMetadata = useMemo(() => ({
+    className: classeCSV.metadata?.className || '',
+    period: classeCSV.metadata?.period || '',
+    studentCount: classeCSV.statistiques.totalEleves,
+    mainTeacher: mainTeacher || classeCSV.metadata?.mainTeacher || ''
+  }), [classeCSV, mainTeacher]);
+
+  // Generate automatic class summary
+  const classSummary = useMemo(() => {
+    return generateClassSummary(classeCSV, metadata);
+  }, [classeCSV, metadata]);
 
   // STATE B: File loaded - Show analysis dashboard
   const gradeDistribution = [
@@ -162,30 +184,29 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with file action buttons */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <BarChart3 className="h-6 w-6" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Analyse des résultats</h2>
-            <p className="text-muted-foreground">
-              {classeCSV.statistiques.totalEleves} élèves • {classeCSV.matieres.length} matières
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <PronoteHelpTooltip type="resultats" />
-          <FileActionButtons
-            accept=".csv,.pdf"
-            isLoading={isProcessing}
-            currentFileName={currentFileName || "Tableau de résultats"}
-            loadedInfo={`${classeCSV.statistiques.totalEleves} élèves • ${classeCSV.matieres.length} matières`}
-            onReplace={handleTableauResultatsUpload}
-            onRemove={handleRemoveFile}
-          />
-        </div>
+      {/* Class Info Header */}
+      <ClassInfoHeader
+        className={metadata.className}
+        period={metadata.period}
+        studentCount={metadata.studentCount}
+        mainTeacher={mainTeacher || metadata.mainTeacher}
+        onMainTeacherChange={setMainTeacher}
+      />
+
+      {/* Automatic Class Summary */}
+      <ClassSynthesisSummary summary={classSummary} />
+
+      {/* File action buttons */}
+      <div className="flex items-center justify-end gap-2">
+        <PronoteHelpTooltip type="resultats" />
+        <FileActionButtons
+          accept=".csv,.pdf"
+          isLoading={isProcessing}
+          currentFileName={currentFileName || "Tableau de résultats"}
+          loadedInfo={`${classeCSV.statistiques.totalEleves} élèves • ${classeCSV.matieres.length} matières`}
+          onReplace={handleTableauResultatsUpload}
+          onRemove={handleRemoveFile}
+        />
       </div>
 
       {/* KPI Cards */}
