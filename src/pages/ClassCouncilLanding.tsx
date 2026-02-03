@@ -89,12 +89,13 @@ const ClassCouncilLanding = () => {
               </div>
             </div>
 
-            {/* Logo/Image */}
-            <div className="flex justify-center">
+            {/* Logo/Image - responsive sizing */}
+            <div className="flex justify-center items-center">
               <img
                 src={logo}
                 alt="ClassCouncil AI"
-                className="max-w-md w-full drop-shadow-2xl"
+                className="w-40 md:w-44 lg:w-48 h-auto object-contain"
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}
               />
             </div>
           </div>
