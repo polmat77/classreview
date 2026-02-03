@@ -50,7 +50,7 @@ export interface StudentObservations {
   specific: SpecificObservation[];
 }
 
-export type AppreciationTone = 'neutre' | 'encourageant' | 'constructif' | 'ferme' | 'bienveillant';
+export type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
 
 export interface ToneOption {
   value: AppreciationTone;
@@ -59,11 +59,10 @@ export interface ToneOption {
 }
 
 export const toneOptions: ToneOption[] = [
-  { value: 'neutre', label: 'Neutre et factuel', description: 'Ton professionnel et objectif, basé sur les faits' },
-  { value: 'encourageant', label: 'Encourageant', description: 'Souligne les points positifs et motive l\'élève' },
-  { value: 'constructif', label: 'Constructif', description: 'Met l\'accent sur les axes d\'amélioration avec bienveillance' },
-  { value: 'ferme', label: 'Ferme mais juste', description: 'Ton plus direct pour les situations problématiques' },
-  { value: 'bienveillant', label: 'Bienveillant', description: 'Ton chaleureux et empathique, adapté aux élèves fragiles' },
+  { value: 'severe', label: 'Sévère', description: 'Ton direct et strict pour les situations problématiques' },
+  { value: 'standard', label: 'Standard', description: 'Ton factuel et objectif, basé sur l\'analyse des données' },
+  { value: 'encourageant', label: 'Encourageant', description: 'Valorise les efforts et motive l\'élève à progresser' },
+  { value: 'elogieux', label: 'Élogieux', description: 'Félicitations chaleureuses pour les excellents résultats' },
 ];
 
 export interface AppreciationSettings {

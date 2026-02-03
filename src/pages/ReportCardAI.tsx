@@ -24,7 +24,7 @@ const getDefaultPreferences = (): SavedPreferences => {
       return JSON.parse(saved);
     }
   } catch {}
-  return { maxCharacters: 400, defaultTone: 'neutre' };
+  return { maxCharacters: 400, defaultTone: 'standard' };
 };
 
 const initialObservations: StudentObservations = {
@@ -42,7 +42,7 @@ const initialClassSummary: ClassSummary = {
   },
   generatedText: "",
   isEditing: false,
-  tone: 'neutre',
+  tone: 'standard',
   maxCharacters: 350,
 };
 

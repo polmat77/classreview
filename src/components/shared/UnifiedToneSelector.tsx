@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { AlertTriangle, Minus, Heart, Star, Wrench } from "lucide-react";
+import { AlertTriangle, BarChart3, ThumbsUp, Star } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -7,24 +7,30 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Unified tone type that works across both ClassCouncil and ReportCard
-export type UnifiedTone = 'ferme' | 'neutre' | 'bienveillant' | 'encourageant' | 'constructif';
+// New unified tone type with 4 tones
+export type UnifiedTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
 
-// Mapping from legacy ClassCouncil tones to unified tones
+// Mapping from legacy tones to new unified tones
 export const legacyToUnifiedToneMap: Record<string, UnifiedTone> = {
-  'severe': 'ferme',
-  'standard': 'neutre',
-  'caring': 'bienveillant',
-  'praising': 'encourageant',
+  // Old 5-tone system
+  'ferme': 'severe',
+  'neutre': 'standard',
+  'bienveillant': 'encourageant',
+  'encourageant': 'encourageant',
+  'constructif': 'standard',
+  // ClassCouncil legacy
+  'severe': 'severe',
+  'standard': 'standard',
+  'caring': 'encourageant',
+  'praising': 'elogieux',
 };
 
 // Mapping from unified to legacy for backwards compatibility
 export const unifiedToLegacyMap: Record<UnifiedTone, string> = {
-  'ferme': 'severe',
-  'neutre': 'standard',
-  'bienveillant': 'caring',
-  'encourageant': 'praising',
-  'constructif': 'constructif',
+  'severe': 'severe',
+  'standard': 'standard',
+  'encourageant': 'encourageant',
+  'elogieux': 'elogieux',
 };
 
 interface ToneConfig {
@@ -36,44 +42,37 @@ interface ToneConfig {
 }
 
 const toneConfig: Record<UnifiedTone, ToneConfig> = {
-  ferme: {
+  severe: {
     icon: AlertTriangle,
-    label: "Ferme",
-    shortLabel: "Ferme",
-    description: "Ton direct et strict pour souligner les difficultés",
+    label: "Sévère",
+    shortLabel: "Sévère",
+    description: "Ton direct et strict pour les situations problématiques",
     iconColor: "#ef4444", // Red
   },
-  neutre: {
-    icon: Minus,
-    label: "Neutre",
-    shortLabel: "Neutre",
-    description: "Ton objectif et factuel, sans jugement particulier",
-    iconColor: "#64748b", // Slate
-  },
-  bienveillant: {
-    icon: Heart,
-    label: "Bienveillant",
-    shortLabel: "Bienv.",
-    description: "Ton positif et chaleureux pour encourager",
-    iconColor: "#10b981", // Emerald
+  standard: {
+    icon: BarChart3,
+    label: "Standard",
+    shortLabel: "Standard",
+    description: "Ton factuel et objectif, basé sur l'analyse des données",
+    iconColor: "#3b82f6", // Blue
   },
   encourageant: {
-    icon: Star,
+    icon: ThumbsUp,
     label: "Encourageant",
     shortLabel: "Encour.",
-    description: "Ton motivant pour mettre en avant les progrès",
-    iconColor: "#f0a830", // Gold
+    description: "Valorise les efforts et motive l'élève à progresser",
+    iconColor: "#10b981", // Green
   },
-  constructif: {
-    icon: Wrench,
-    label: "Constructif",
-    shortLabel: "Constr.",
-    description: "Ton orienté solutions et pistes d'amélioration",
-    iconColor: "#3b82f6", // Blue
+  elogieux: {
+    icon: Star,
+    label: "Élogieux",
+    shortLabel: "Élogieux",
+    description: "Félicitations chaleureuses pour les excellents résultats",
+    iconColor: "#f0a830", // Gold
   },
 };
 
-const toneOrder: UnifiedTone[] = ['ferme', 'neutre', 'bienveillant', 'encourageant', 'constructif'];
+const toneOrder: UnifiedTone[] = ['severe', 'standard', 'encourageant', 'elogieux'];
 
 interface UnifiedToneSelectorProps {
   value: UnifiedTone | string;

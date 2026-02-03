@@ -337,9 +337,9 @@ export function suggestToneFromAttribution(attribution: Attribution | null): App
       return 'severe';
     case 'encouragement':
     case 'honor':
-      return 'caring';
+      return 'encourageant';
     case 'congratulations':
-      return 'praising';
+      return 'elogieux';
     default:
       return 'standard';
   }

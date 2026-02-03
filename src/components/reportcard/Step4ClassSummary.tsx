@@ -75,7 +75,18 @@ const Step4ClassSummary = ({
 
   // Default values
   const maxCharacters = classSummary.maxCharacters || 350;
-  const tone = classSummary.tone || 'neutre';
+  // Migrate legacy tones to new 4-tone system
+  const migrateTone = (t: string | undefined): AppreciationTone => {
+    const legacyMap: Record<string, AppreciationTone> = {
+      'ferme': 'severe',
+      'neutre': 'standard',
+      'bienveillant': 'encourageant',
+      'constructif': 'standard',
+    };
+    if (!t) return 'standard';
+    return legacyMap[t] || (t as AppreciationTone);
+  };
+  const tone: AppreciationTone = migrateTone(classSummary.tone);
   
   // Truncate function
   const truncateIntelligently = (text: string, maxLength: number): string => {
