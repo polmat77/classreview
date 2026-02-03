@@ -15,47 +15,41 @@ interface ReportCardToneSelectorProps {
   showDescription?: boolean;
 }
 
-// Unified tone configuration with design system colors
+// Subtle tone configuration with border-based design
 const toneConfig: Record<AppreciationTone, {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   shortLabel: string;
-  gradient: string;
   description: string;
 }> = {
   ferme: {
     icon: AlertTriangle,
     label: "Ferme",
     shortLabel: "Ferme",
-    gradient: "bg-gradient-to-b from-red-500 to-red-600",
     description: "Ton strict pour les élèves en difficulté de comportement ou de travail",
   },
   neutre: {
     icon: Minus,
     label: "Neutre",
     shortLabel: "Neutre",
-    gradient: "bg-gradient-to-b from-primary to-primary-dark",
     description: "Ton objectif et factuel, sans jugement particulier",
   },
   bienveillant: {
     icon: Heart,
     label: "Bienveillant",
     shortLabel: "Bienv.",
-    gradient: "bg-gradient-to-b from-emerald-500 to-emerald-600",
     description: "Ton doux et encourageant, mettant en avant le positif",
   },
   encourageant: {
     icon: TrendingUp,
     label: "Encourageant",
     shortLabel: "Encour.",
-    gradient: "bg-gradient-to-b from-secondary-vibrant to-cyan-600",
     description: "Ton motivant pour les élèves en progression",
   },
   constructif: {
     icon: Wrench,
     label: "Constructif",
     shortLabel: "Constr.",
-    gradient: "bg-gradient-to-b from-accent to-accent-hover",
     description: "Ton équilibré, axé sur les axes d'amélioration",
   },
 };
@@ -75,12 +69,11 @@ const ReportCardToneSelector = ({
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex w-full max-w-[250px] rounded-lg overflow-hidden border border-border shadow-sm">
-          {toneOrder.map((tone, index) => {
+        <div className="flex flex-wrap gap-1.5">
+          {toneOrder.map((tone) => {
             const config = toneConfig[tone];
             const Icon = config.icon;
             const isActive = value === tone;
-            const isLast = index === toneOrder.length - 1;
             
             return (
               <Tooltip key={tone}>
@@ -89,10 +82,10 @@ const ReportCardToneSelector = ({
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex-1 py-1.5 px-2 flex items-center justify-center text-white transition-all duration-200 hover:brightness-110",
-                      config.gradient,
-                      !isLast && "border-r border-white/20",
-                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
+                      "p-1.5 rounded-md border-2 transition-all duration-200",
+                      isActive 
+                        ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
+                        : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -111,36 +104,27 @@ const ReportCardToneSelector = ({
 
   return (
     <div className="space-y-3">
-      <div className="flex w-full rounded-lg overflow-hidden border border-border shadow-sm">
-        {toneOrder.map((tone, index) => {
+      <div className="flex flex-wrap gap-2 md:gap-3">
+        {toneOrder.map((tone) => {
           const config = toneConfig[tone];
           const Icon = config.icon;
           const isActive = value === tone;
-          const isLast = index === toneOrder.length - 1;
           
           return (
-            <Tooltip key={tone}>
-              <TooltipProvider delayDuration={200}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => onChange(tone)}
-                    className={cn(
-                      "flex-1 py-2.5 px-3 flex items-center justify-center gap-2 text-white font-medium text-sm transition-all duration-200 hover:brightness-110",
-                      config.gradient,
-                      !isLast && "border-r border-white/20",
-                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    <span className="hidden sm:inline">{config.shortLabel}</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  {config.label}
-                </TooltipContent>
-              </TooltipProvider>
-            </Tooltip>
+            <button
+              key={tone}
+              type="button"
+              onClick={() => onChange(tone)}
+              className={cn(
+                "px-3 py-2 rounded-lg border-2 transition-all duration-200 flex items-center gap-2",
+                isActive 
+                  ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
+                  : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
+              )}
+            >
+              <Icon className="w-4 h-4" />
+              <span className="font-medium text-sm hidden sm:inline">{config.shortLabel}</span>
+            </button>
           );
         })}
       </div>

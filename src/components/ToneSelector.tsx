@@ -21,23 +21,23 @@ const iconMap = {
   Award,
 };
 
-// Unified tone styles with design system gradients
-const toneStyles: Record<AppreciationTone, { gradient: string; label: string }> = {
+// Subtle tone styles with border-based design
+const toneStyles: Record<AppreciationTone, { label: string; description: string }> = {
   severe: {
-    gradient: "bg-gradient-to-b from-red-500 to-red-600",
     label: "Sévère",
+    description: "Ton strict pour les élèves en difficulté",
   },
   standard: {
-    gradient: "bg-gradient-to-b from-primary to-primary-dark",
     label: "Standard",
+    description: "Ton objectif et factuel",
   },
   caring: {
-    gradient: "bg-gradient-to-b from-emerald-500 to-emerald-600",
     label: "Bienveillant",
+    description: "Ton doux et encourageant",
   },
   praising: {
-    gradient: "bg-gradient-to-b from-accent to-accent-hover",
     label: "Élogieux",
+    description: "Ton très positif et valorisant",
   },
 };
 
@@ -47,13 +47,12 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   if (compact) {
     return (
       <TooltipProvider delayDuration={200}>
-        <div className="flex w-full max-w-[200px] rounded-lg overflow-hidden border border-border shadow-sm">
-          {tones.map((tone, index) => {
+        <div className="flex flex-wrap gap-1.5">
+          {tones.map((tone) => {
             const config = toneConfig[tone];
             const styles = toneStyles[tone];
             const Icon = iconMap[config.icon as keyof typeof iconMap];
             const isActive = value === tone;
-            const isLast = index === tones.length - 1;
             
             return (
               <Tooltip key={tone}>
@@ -62,10 +61,10 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
                     type="button"
                     onClick={() => onChange(tone)}
                     className={cn(
-                      "flex-1 py-1.5 px-2 flex items-center justify-center text-white transition-all duration-200 hover:brightness-110",
-                      styles.gradient,
-                      !isLast && "border-r border-white/20",
-                      isActive && "ring-2 ring-inset ring-white/50 brightness-110"
+                      "p-1.5 rounded-md border-2 transition-all duration-200",
+                      isActive 
+                        ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
+                        : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
                     )}
                   >
                     <Icon className="w-3.5 h-3.5" />
@@ -83,13 +82,12 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
   }
 
   return (
-    <div className="flex w-full rounded-lg overflow-hidden border border-border shadow-sm">
-      {tones.map((tone, index) => {
+    <div className="flex flex-wrap gap-2">
+      {tones.map((tone) => {
         const config = toneConfig[tone];
         const styles = toneStyles[tone];
         const Icon = iconMap[config.icon as keyof typeof iconMap];
         const isActive = value === tone;
-        const isLast = index === tones.length - 1;
         
         return (
           <button
@@ -97,14 +95,14 @@ const ToneSelector = ({ value, onChange, compact = false }: ToneSelectorProps) =
             type="button"
             onClick={() => onChange(tone)}
             className={cn(
-              "flex-1 py-2.5 px-3 flex items-center justify-center gap-2 text-white font-medium text-sm transition-all duration-200 hover:brightness-110",
-              styles.gradient,
-              !isLast && "border-r border-white/20",
-              isActive && "ring-2 ring-inset ring-white/50 brightness-110"
+              "px-4 py-2 rounded-lg border-2 transition-all duration-200 flex items-center gap-2",
+              isActive 
+                ? "border-secondary-vibrant bg-secondary-vibrant/10 text-secondary-vibrant" 
+                : "border-slate-300 bg-white text-slate-600 hover:border-secondary-vibrant/50"
             )}
           >
             <Icon className="w-4 h-4" />
-            <span className="hidden sm:inline">{styles.label}</span>
+            <span className="font-medium text-sm">{styles.label}</span>
           </button>
         );
       })}
