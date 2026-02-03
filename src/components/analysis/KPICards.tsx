@@ -1,9 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { TrendingUp, TrendingDown, Minus, BarChart3, Users, Activity, CheckCircle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, BarChart3, Activity, CheckCircle } from "lucide-react";
 import { EleveData } from "@/utils/csvParser";
 import {
   calculateClassAverage,
-  calculateMedian,
   calculateStdDev,
   calculateSuccessRate,
   getEvaluatedStudentsCount,
@@ -17,7 +16,6 @@ interface KPICardsProps {
 const KPICards = ({ eleves, previousAverage }: KPICardsProps) => {
   const classAverage = calculateClassAverage(eleves);
   const evaluatedCount = getEvaluatedStudentsCount(eleves);
-  const median = calculateMedian(eleves);
   const stdDev = calculateStdDev(eleves);
   const successRate = calculateSuccessRate(eleves);
   
@@ -26,7 +24,7 @@ const KPICards = ({ eleves, previousAverage }: KPICardsProps) => {
     : "stable";
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-3">
       {/* Moyenne générale */}
       <Card className="bg-gradient-primary text-primary-foreground">
         <CardHeader className="pb-2">
@@ -56,24 +54,6 @@ const KPICards = ({ eleves, previousAverage }: KPICardsProps) => {
         </CardContent>
       </Card>
 
-      {/* Médiane */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardDescription className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Médiane
-          </CardDescription>
-          <CardTitle className="text-4xl font-bold text-foreground">
-            {isNaN(median) ? "—" : median.toFixed(2)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            50% des élèves au-dessus
-          </p>
-        </CardContent>
-      </Card>
-
       {/* Écart-type */}
       <Card>
         <CardHeader className="pb-2">
@@ -86,8 +66,8 @@ const KPICards = ({ eleves, previousAverage }: KPICardsProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className={`text-sm ${stdDev < 2.5 ? 'text-success' : stdDev < 4 ? 'text-warning' : 'text-destructive'}`}>
-            {stdDev < 2.5 ? 'Classe homogène' : stdDev < 4 ? 'Hétérogénéité modérée' : 'Classe hétérogène'}
+          <p className={`text-sm ${stdDev < 1.5 ? 'text-success' : stdDev < 2.5 ? 'text-warning' : 'text-destructive'}`}>
+            {stdDev < 1.5 ? 'Classe homogène' : stdDev < 2.5 ? 'Hétérogénéité modérée' : 'Classe hétérogène'}
           </p>
         </CardContent>
       </Card>
