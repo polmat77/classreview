@@ -157,24 +157,6 @@ const ClassCouncilLanding = () => {
             </div>
           </div>
 
-          {/* Reality Check */}
-          <div className="max-w-4xl mx-auto bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-bold text-slate-900 dark:text-white mb-4 text-lg">📊 La réalité des chiffres</h3>
-            <div className="grid md:grid-cols-2 gap-6 text-slate-600 dark:text-slate-400 text-sm mb-6">
-              <div>
-                <p className="mb-2">• Prime de professeur principal : <strong className="text-slate-900 dark:text-white">~1 200€ brut/an</strong> (environ 100€/mois)</p>
-                <p className="mb-2">• Heures supplémentaires : <strong className="text-slate-900 dark:text-white">~30€ brut/heure</strong></p>
-              </div>
-              <div>
-                <p className="mb-2">• Temps moyen pour préparer un conseil de classe : <strong className="text-slate-900 dark:text-white">2-3h</strong></p>
-                <p className="mb-2">• Si vous consacrez 2h30 par conseil × 3 conseils = <strong className="text-slate-900 dark:text-white">7h30 par an</strong></p>
-              </div>
-            </div>
-            <div className="bg-amber-100 dark:bg-amber-500/20 rounded-xl p-4 text-amber-800 dark:text-amber-300 text-sm">
-              <strong>Valorisation horaire de votre prime PP :</strong> 1200€ ÷ 7h30 de préparation = environ <strong>160€/heure</strong>... si vous ne faites QUE cette tâche (sans compter toutes vos autres responsabilités de PP).
-            </div>
-          </div>
-
           {/* Empathetic Quote */}
           <div className="max-w-3xl mx-auto mt-12 text-center">
             <blockquote className="text-xl italic text-slate-600 dark:text-slate-400 border-l-4 border-cyan-500 pl-6">
@@ -278,108 +260,114 @@ const ClassCouncilLanding = () => {
         </div>
       </section>
 
-      {/* Time Saved Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+      {/* Before/After Comparison Section */}
+      <section className="py-20 bg-gradient-to-b from-slate-900 to-slate-800 text-white animate-fade-in">
         <div className="container mx-auto px-4">
+          {/* Section Title */}
           <div className="text-center mb-12">
-            <span className="inline-flex items-center px-4 py-2 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium mb-4">
-              ⏱️ Une Révolution Pour Votre Quotidien
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Temps gagné avec ClassCouncil AI
+            <h2 className="text-3xl md:text-4xl font-bold">
+              ⏱️ Préparer un conseil de classe : <span className="text-amber-400">avant / après</span>
             </h2>
           </div>
 
+          {/* Two Columns Comparison */}
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-12">
-            {/* Per Council */}
-            <div className="bg-white/10 backdrop-blur rounded-2xl p-8">
-              <h3 className="text-xl font-bold mb-6 text-cyan-400">Par conseil de classe</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-red-400 text-2xl">❌</span>
-                  <div>
-                    <p className="text-slate-300">Avant</p>
-                    <p className="text-2xl font-bold text-red-400">2-3 heures</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-emerald-400 text-2xl">✅</span>
-                  <div>
-                    <p className="text-slate-300">Après</p>
-                    <p className="text-2xl font-bold text-emerald-400">10-15 minutes</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-amber-400 text-2xl">🎉</span>
-                  <div>
-                    <p className="text-slate-300">Gain</p>
-                    <p className="text-2xl font-bold text-amber-400">2h à 2h45 par conseil</p>
-                  </div>
-                </div>
-              </div>
+            {/* BEFORE - Without ClassCouncil AI */}
+            <div className="bg-white/5 backdrop-blur rounded-2xl p-8 border border-slate-700">
+              <h3 className="text-xl font-bold mb-6 text-slate-300 flex items-center gap-2">
+                📋 Sans ClassCouncil AI : <span className="text-red-400">3h à 4h30</span> par conseil
+              </h3>
+              <ul className="space-y-4 text-slate-400">
+                <li className="flex items-start gap-3">
+                  <span className="text-slate-500">➖</span>
+                  <span>Exporter notes et bulletins depuis Pronote : <strong className="text-slate-300">15 min</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-slate-500">➖</span>
+                  <span>Analyser les résultats de chaque élève : <strong className="text-slate-300">1h30</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-slate-500">➖</span>
+                  <span>Rédiger les appréciations individuelles (25-30 élèves) : <strong className="text-slate-300">2h à 2h30</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-slate-500">➖</span>
+                  <span>Préparer le bilan de classe : <strong className="text-slate-300">30 min</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-slate-500">➖</span>
+                  <span>Relire et ajuster : <strong className="text-slate-300">30 min</strong></span>
+                </li>
+              </ul>
             </div>
 
-            {/* Per Year */}
-            <div className="bg-amber-500/20 backdrop-blur rounded-2xl p-8 border border-amber-500/30">
-              <h3 className="text-xl font-bold mb-6 text-amber-400">Sur l'année (3 conseils)</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <span className="text-red-400 text-2xl">❌</span>
-                  <div>
-                    <p className="text-slate-300">Avant</p>
-                    <p className="text-2xl font-bold text-red-400">6-9 heures au total</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-emerald-400 text-2xl">✅</span>
-                  <div>
-                    <p className="text-slate-300">Après</p>
-                    <p className="text-2xl font-bold text-emerald-400">30-45 minutes au total</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-amber-400 text-2xl">🎉</span>
-                  <div>
-                    <p className="text-slate-300">Gain annuel</p>
-                    <p className="text-2xl font-bold text-amber-400">5h à 8h30</p>
-                  </div>
-                </div>
-              </div>
+            {/* AFTER - With ClassCouncil AI */}
+            <div className="bg-emerald-500/10 backdrop-blur rounded-2xl p-8 border border-emerald-500/30">
+              <h3 className="text-xl font-bold mb-6 text-emerald-400 flex items-center gap-2">
+                ⚡ Avec ClassCouncil AI : <span className="text-emerald-300">10 à 20 min</span> par conseil
+              </h3>
+              <ul className="space-y-4 text-slate-300">
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400">✅</span>
+                  <span>Exporter les documents depuis Pronote : <strong className="text-white">5 min</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400">✅</span>
+                  <span>Importer dans l'outil : <strong className="text-white">2 min</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400">✅</span>
+                  <span>Relire et ajuster les appréciations générées : <strong className="text-white">10 min</strong></span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <span className="text-emerald-400">✅</span>
+                  <span>Valider et exporter : <strong className="text-white">3 min</strong></span>
+                </li>
+              </ul>
             </div>
           </div>
 
-          {/* What These Hours Represent */}
-          <div className="max-w-4xl mx-auto bg-white/10 backdrop-blur rounded-2xl p-8">
-            <h3 className="text-xl font-bold mb-6 text-center text-cyan-400">Ce que représentent ces heures</h3>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-              <div className="p-4">
-                <p className="text-3xl mb-2">💰</p>
-                <p className="text-amber-400 font-bold">10 à 17 HS</p>
-                <p className="text-slate-400 text-sm">en valorisation financière (~30€/h)</p>
-              </div>
-              <div className="p-4">
-                <p className="text-3xl mb-2">📚</p>
-                <p className="text-amber-400 font-bold">50 à 80 copies</p>
-                <p className="text-slate-400 text-sm">Le temps de corriger</p>
-              </div>
-              <div className="p-4">
-                <p className="text-3xl mb-2">🎯</p>
-                <p className="text-amber-400 font-bold">8 à 14 heures</p>
-                <p className="text-slate-400 text-sm">de préparation de cours</p>
-              </div>
-              <div className="p-4">
-                <p className="text-3xl mb-2">🌟</p>
-                <p className="text-amber-400 font-bold">Ou simplement</p>
-                <p className="text-slate-400 text-sm">du temps pour vous</p>
-              </div>
-            </div>
+          {/* Highlight Box - Gold Accent */}
+          <div className="max-w-3xl mx-auto bg-gradient-to-r from-amber-500 to-amber-400 rounded-2xl p-8 text-center shadow-lg shadow-amber-500/20 mb-12">
+            <p className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+              🎯 Vous gagnez 3h par conseil = 9h par an
+            </p>
+            <p className="text-xl font-semibold text-slate-800">
+              💰 Soit 270 à 315€ de temps valorisé <span className="text-slate-700">(base HSE à 30–35€/h)</span>
+            </p>
           </div>
 
-          {/* Motivating Quote */}
-          <div className="max-w-3xl mx-auto mt-12 text-center">
-            <blockquote className="text-xl italic text-slate-300 border-l-4 border-amber-500 pl-6">
-              "En tant que professeur principal, vous méritez de consacrer votre énergie à l'accompagnement de vos élèves, pas à votre souris. ClassCouncil AI vous libère pour ce qui compte vraiment."
-            </blockquote>
+          {/* Bonus Section - What ClassCouncil AI generates */}
+          <div className="max-w-5xl mx-auto">
+            <h3 className="text-xl font-bold mb-6 text-center text-cyan-400">
+              🚀 Ce que ClassCouncil AI génère automatiquement :
+            </h3>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Analyse des résultats de chaque élève</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Appréciations individuelles personnalisées</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Bilan de classe complet et cohérent</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Détection des élèves en difficulté</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Identification des élèves en progression</span>
+              </div>
+              <div className="flex items-center gap-3 bg-white/5 rounded-xl p-4">
+                <span className="text-emerald-400 text-lg">✅</span>
+                <span className="text-slate-300">Export prêt pour Pronote ou votre ENT</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
