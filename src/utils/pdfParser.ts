@@ -157,8 +157,9 @@ const IGNORE_NAME_PATTERNS = [
   /attention\s+de/i,
   /POLE\s+(LITTERAIRE|SCIENCES)/i,
   /EXPRESSION\s+ARTISTIQUE/i,
-  /DANS\s+L/i, // "DANS L'ETABLISSEMENT"
+  /DANS\s+L/i,
   /^DANS$/i,
+  /DEMI\s+PENSIONNAIRE/i,
 ];
 
 /**
@@ -167,12 +168,22 @@ const IGNORE_NAME_PATTERNS = [
 const IGNORE_WORDS = [
   'WAZIERS', 'ROLLAND', 'COLLEGE', 'ROMAIN', 'ALLEE', 'GEORGES', 'LARUE',
   'TRIMESTRE', 'BULLETIN', 'POLE', 'SCIENCES', 'LITTERAIRE', 'ARTISTIQUE',
-  'DEMI', 'PENSIONNAIRE', 'EXTERNE', 'DANS', 'ETABLISSEMENT',
+  'DEMI', 'PENSIONNAIRE', 'EXTERNE', 'DANS', 'ETABLISSEMENT', 'RUE', 'AVENUE',
   'MATHEMATIQUES', 'FRANCAIS', 'ANGLAIS', 'ESPAGNOL', 'ITALIEN',
   'HISTOIRE', 'GEOGRAPHIE', 'PHYSIQUE', 'CHIMIE', 'TECHNOLOGIE',
   'ARTS', 'PLASTIQUES', 'MUSIQUE', 'MUSICALE', 'EDUCATION', 'SPORT',
-  'ATELIER', 'SCIENTIFIQUE', 'MOYENNES', 'GENERALES', 'VIE', 'SCOLAIRE'
+  'ATELIER', 'SCIENTIFIQUE', 'MOYENNES', 'GENERALES', 'VIE', 'SCOLAIRE',
+  'EMAIL', 'TEL', 'ANNEE', 'SCOLAIRE', 'ATTENTION', 'ELEVES', 'PRINCIPAL'
 ];
+
+/**
+ * Vérifie si un mot doit être ignoré (n'est pas un nom d'élève)
+ */
+function shouldIgnoreWord(word: string): boolean {
+  if (!word || word.length < 2) return true;
+  const upper = word.toUpperCase();
+  return IGNORE_WORDS.includes(upper);
+}
 
 /**
  * Vérifie si un texte correspond à un pattern à ignorer
@@ -195,88 +206,100 @@ function isIgnoredName(text: string): boolean {
 }
 
 /**
- * Extrait le nom et prénom d'un élève depuis le texte du bulletin
- * Gère les noms composés (AIT MESSAOUD, TURLOTTE VERMAUT) et évite les faux positifs
+ * Extrait le nom et prénom d'un élève depuis le texte du bulletin PRONOTE
+ * 
+ * Structure PRONOTE attendue (tout sur une ligne car pdf.js concatène):
+ * "COLLEGE ROMAIN ROLLAND Bulletin du 1er Trimestre 6 ALLEE GEORGES LARUE 59119 WAZIERS AIT MESSAOUD Yasmina Née le 13/08/2011 - DEMI-PENSIONNAIRE..."
+ * 
+ * Le nom de l'élève est TOUJOURS entre le code postal+ville et "Né(e) le"
  */
 function extractStudentNameFromText(text: string): { nom: string; prenom: string } | null {
   const normalizedText = text.replace(/\s+/g, ' ');
   
-  // Pattern 1: Après code postal et ville - "59119 WAZIERS NOM Prénom" 
-  // Format: CODE_POSTAL VILLE NOM(S) Prénom
-  const postalPattern = normalizedText.match(/\d{5}\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]+\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ\s-]+?)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç][a-zéèêëàâäôöùûüïîç-]*)/);
-  if (postalPattern) {
-    const potentialNom = postalPattern[1].trim();
-    const potentialPrenom = postalPattern[2].trim();
-    
-    // Filtrer les noms en majuscules (nom) et nettoyer
-    const nomParts = potentialNom.split(/\s+/).filter(part => {
-      const upperPart = part.toUpperCase();
-      return part.length >= 2 && 
-             part === upperPart && 
-             !IGNORE_WORDS.includes(upperPart);
-    });
-    
-    if (nomParts.length > 0 && potentialPrenom.length >= 2 && !isIgnoredName(potentialPrenom)) {
-      return {
-        nom: nomParts.join(' '),
-        prenom: potentialPrenom
-      };
-    }
-  }
+  console.log('🔍 Extraction nom élève...');
   
-  // Pattern 2: "NOM Prénom Né(e) le" - plus robuste
-  // Gère les noms composés: "AIT MESSAOUD Yasmina Née le"
-  const neeLe = normalizedText.match(/([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ\s-]+?)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç][a-zéèêëàâäôöùûüïîç-]*)\s+Née?\s+le/i);
-  if (neeLe) {
-    const potentialNom = neeLe[1].trim();
-    const potentialPrenom = neeLe[2].trim();
-    
-    // Extraire seulement les parties en majuscules du nom
-    const nomParts = potentialNom.split(/\s+/).filter(part => {
-      const upperPart = part.toUpperCase();
-      return part.length >= 2 && 
-             part === part.toUpperCase() && 
-             !IGNORE_WORDS.includes(upperPart);
-    });
-    
-    if (nomParts.length > 0 && !isIgnoredName(nomParts.join(' '))) {
-      return {
-        nom: nomParts.join(' '),
-        prenom: potentialPrenom
-      };
-    }
-  }
+  // PATTERN PRINCIPAL: Code postal + Ville + NOM Prénom + "Né(e) le"
+  // Exemple: "59119 WAZIERS AIT MESSAOUD Yasmina Née le 13/08/2011"
+  // Le nom se trouve entre la ville (majuscules après code postal) et "Né(e) le"
+  const mainPattern = normalizedText.match(
+    /\d{5}\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]+)\s+(.+?)\s+Née?\s+le\s+\d{2}\/\d{2}\/\d{4}/i
+  );
   
-  // Pattern 3: Recherche générique - NOM(s majuscules) suivi de Prénom(Capitale+minuscules)
-  // Évite les faux positifs comme "DEMI-PENSIONNAIRE DANS"
-  const genericPattern = normalizedText.match(/\b([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+(?:-[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+)?)\b/g);
-  
-  if (genericPattern) {
-    for (const match of genericPattern) {
-      const parts = match.match(/([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+(?:-[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+)?)/);
-      if (parts) {
-        const potentialNom = parts[1].trim();
-        const potentialPrenom = parts[2].trim();
-        
-        // Filtrer les noms valides
-        const nomParts = potentialNom.split(/\s+/).filter(part => {
-          const upperPart = part.toUpperCase();
-          return part.length >= 2 && !IGNORE_WORDS.includes(upperPart);
-        });
-        
-        if (nomParts.length > 0 && 
-            !isIgnoredName(nomParts.join(' ')) && 
-            !isIgnoredName(potentialPrenom) &&
-            potentialPrenom.length >= 2) {
-          return {
-            nom: nomParts.join(' '),
-            prenom: potentialPrenom
-          };
-        }
+  if (mainPattern) {
+    const ville = mainPattern[1]; // WAZIERS
+    const nomPrenomBlock = mainPattern[2].trim(); // AIT MESSAOUD Yasmina
+    
+    console.log('  Ville:', ville, '| Bloc nom/prénom:', nomPrenomBlock);
+    
+    // Séparer les parties du nom
+    // Les parties en MAJUSCULES sont le NOM, la dernière partie avec Capitale est le Prénom
+    const parts = nomPrenomBlock.split(/\s+/);
+    const lastNameParts: string[] = [];
+    let firstName = '';
+    
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      
+      // Vérifier si c'est tout en majuscules (partie du nom de famille)
+      // ET que ce n'est pas un mot à ignorer
+      if (part === part.toUpperCase() && part.length >= 2 && !shouldIgnoreWord(part)) {
+        lastNameParts.push(part);
+      } else if (part.length >= 2 && part[0] === part[0].toUpperCase()) {
+        // Prénom: commence par majuscule, contient des minuscules
+        firstName = parts.slice(i).join(' ');
+        break;
       }
     }
+    
+    if (lastNameParts.length > 0 && firstName.length >= 2) {
+      const result = {
+        nom: lastNameParts.join(' '),
+        prenom: firstName.split(' ')[0] // Prendre seulement le premier prénom
+      };
+      console.log('  ✓ Nom extrait:', result.nom, '| Prénom:', result.prenom);
+      return result;
+    }
   }
   
+  // PATTERN FALLBACK 1: "NOM Prénom Né(e) le" sans code postal (pages de continuation)
+  const fallbackNeeLe = normalizedText.match(
+    /\b([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+(?:-[A-Za-zéèêëàâäôöùûüïîç]+)?)\s+Née?\s+le/i
+  );
+  
+  if (fallbackNeeLe) {
+    const potentialNom = fallbackNeeLe[1].trim();
+    const potentialPrenom = fallbackNeeLe[2].trim();
+    
+    // Filtrer les mots ignorés
+    const nomParts = potentialNom.split(/\s+/).filter(part => !shouldIgnoreWord(part));
+    
+    if (nomParts.length > 0 && !isIgnoredName(potentialPrenom)) {
+      const result = { nom: nomParts.join(' '), prenom: potentialPrenom };
+      console.log('  ✓ (fallback1) Nom:', result.nom, '| Prénom:', result.prenom);
+      return result;
+    }
+  }
+  
+  // PATTERN FALLBACK 2: Recherche après "WAZIERS" ou autre ville connue (sans le pattern complet)
+  // "WAZIERS BENDES Lukas" - le nom vient après la ville
+  const villePattern = normalizedText.match(
+    /(?:WAZIERS|DOUAI|LENS|ARRAS|LILLE|VALENCIENNES)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+)/i
+  );
+  
+  if (villePattern) {
+    const potentialNom = villePattern[1].trim();
+    const potentialPrenom = villePattern[2].trim();
+    
+    const nomParts = potentialNom.split(/\s+/).filter(part => !shouldIgnoreWord(part));
+    
+    if (nomParts.length > 0 && !isIgnoredName(potentialPrenom) && !isIgnoredName(nomParts.join(' '))) {
+      const result = { nom: nomParts.join(' '), prenom: potentialPrenom };
+      console.log('  ✓ (fallback2) Nom:', result.nom, '| Prénom:', result.prenom);
+      return result;
+    }
+  }
+  
+  console.log('  ❌ Aucun nom trouvé');
   return null;
 }
 
