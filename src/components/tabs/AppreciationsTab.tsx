@@ -13,6 +13,7 @@ import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import { AppreciationTone, AppreciationJustification } from "@/types/appreciation";
 import { Attribution, ConductAnalysis, StudentAttribution } from "@/types/attribution";
+import { StudentBulletinAnalysis } from "@/types/bulletinAnalysis";
 import { 
   suggestAttribution, 
   analyzeConductFromComments, 
@@ -25,6 +26,7 @@ import {
   buildAnalysisContext,
   Justification 
 } from "@/utils/studentBulletinAnalyzer";
+import { generateBulletinAnalysis } from "@/utils/bulletinAnalysisGenerator";
 import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
 import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelector";
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
@@ -260,6 +262,20 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       const totalMoyenne = bulletin.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
       const moyenneGenerale = bulletin.matieres.length > 0 ? totalMoyenne / bulletin.matieres.length : 0;
       analyses[index] = analyzeStudentBulletin(bulletin, moyenneGenerale);
+    });
+    return analyses;
+  }, [bulletinsEleves]);
+
+  // Compute bulletin analyses for oral presentation
+  const bulletinAnalyses = useMemo(() => {
+    if (bulletinsEleves.length === 0) return {};
+    
+    const analyses: Record<number, StudentBulletinAnalysis> = {};
+    bulletinsEleves.forEach((bulletin, index) => {
+      const totalMoyenne = bulletin.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
+      const moyenneGenerale = bulletin.matieres.length > 0 ? totalMoyenne / bulletin.matieres.length : 0;
+      // Note: moyennePrecedente and trimestre could be parsed from bulletin if available
+      analyses[index] = generateBulletinAnalysis(bulletin, moyenneGenerale);
     });
     return analyses;
   }, [bulletinsEleves]);
@@ -712,11 +728,12 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
             relevantExcerpts: [],
           };
           const justifications = studentJustifications[index] || [];
+          const bulletinAnalysis = bulletinAnalyses[index];
           
           // Handle maximal anonymization mode with ManualFirstNameReplacer
           if (anonymizationLevel === 'maximal' && studentTexts[index]?.includes(FIRST_NAME_PLACEHOLDER)) {
             return (
-              <Card key={index} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-blue-400">
+              <Card key={index} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-primary">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
                     <CardTitle className="text-base">{student.name}</CardTitle>
@@ -748,6 +765,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
               status={student.status}
               appreciation={studentTexts[index] || ""}
               justifications={justifications}
+              bulletinAnalysis={bulletinAnalysis}
               tone={studentTones[index] || 'standard'}
               attribution={attribution?.attribution || null}
               suggestedAttribution={attribution?.suggestedAttribution || null}
