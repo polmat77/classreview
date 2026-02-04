@@ -34,6 +34,8 @@ export interface BulletinEleveData {
   appreciationGenerale?: string;
   absences?: number;
   retards?: number;
+  moyenneGenerale?: number; // Moyenne générale de l'élève (ligne "Moyennes générales")
+  pageCount?: number; // Nombre de pages du bulletin (pour les bulletins multi-pages)
 }
 
 export async function extractTextFromPDF(file: File): Promise<string> {
@@ -326,17 +328,118 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
   }
 }
 
+/**
+ * Crée une clé unique pour identifier un élève
+ */
+function createStudentKey(nom: string, prenom: string): string {
+  return `${nom}_${prenom}`
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Retirer les accents
+    .trim();
+}
+
+/**
+ * Extrait la moyenne générale depuis le texte brut de la page
+ * Cherche spécifiquement la ligne "Moyennes générales" qui contient la vraie moyenne
+ */
+function extractMoyenneGenerale(pageText: string): number | null {
+  // Normaliser le texte
+  const normalizedText = pageText.replace(/\s+/g, ' ');
+  
+  // Pattern 1: "Moyennes générales 13,69 13,29" (élève puis classe)
+  const moyennesMatch = normalizedText.match(/Moyennes?\s+g[eé]n[eé]rales?\s+(\d{1,2}[,\.]\d{1,2})\s+(\d{1,2}[,\.]\d{1,2})?/i);
+  if (moyennesMatch) {
+    return parseFloat(moyennesMatch[1].replace(',', '.'));
+  }
+  
+  // Pattern 2: Juste après "Moyennes générales" sur une nouvelle ligne
+  const simpleMatch = normalizedText.match(/Moyennes?\s+g[eé]n[eé]rales?\s*:?\s*(\d{1,2}[,\.]\d{1,2})/i);
+  if (simpleMatch) {
+    return parseFloat(simpleMatch[1].replace(',', '.'));
+  }
+  
+  return null;
+}
+
+/**
+ * Fusionne les données d'un élève provenant de plusieurs pages
+ */
+function mergeStudentData(existing: BulletinEleveData, newPage: BulletinEleveData, newPageText: string): BulletinEleveData {
+  // Fusionner les matières - éviter les doublons
+  const existingMatiereNames = new Set(existing.matieres.map(m => m.nom));
+  const newMatieres = newPage.matieres.filter(m => !existingMatiereNames.has(m.nom));
+  
+  // Chercher la moyenne générale dans le texte de la nouvelle page
+  const moyenneFromNewPage = extractMoyenneGenerale(newPageText);
+  
+  return {
+    ...existing,
+    // Fusionner les matières
+    matieres: [...existing.matieres, ...newMatieres],
+    // Prendre l'appréciation générale si elle existe sur la nouvelle page
+    appreciationGenerale: newPage.appreciationGenerale || existing.appreciationGenerale,
+    // Prendre les absences/retards si présents sur la nouvelle page
+    absences: newPage.absences ?? existing.absences,
+    retards: newPage.retards ?? existing.retards,
+    // Stocker la moyenne générale correcte (de la ligne "Moyennes générales")
+    moyenneGenerale: moyenneFromNewPage ?? existing.moyenneGenerale,
+    // Incrémenter le compteur de pages
+    pageCount: (existing.pageCount || 1) + 1
+  };
+}
+
+/**
+ * Parse les bulletins élèves depuis un PDF multi-pages
+ * Fusionne automatiquement les élèves dont le bulletin s'étend sur plusieurs pages
+ */
 export async function parseBulletinsElevesFromPDF(file: File): Promise<BulletinEleveData[]> {
   try {
     const pages = await extractTextFromPDFByPage(file);
-    const bulletins: BulletinEleveData[] = [];
     
-    for (const pageText of pages) {
+    // Map pour stocker les élèves uniques par clé nom_prenom
+    const studentsMap = new Map<string, { data: BulletinEleveData; lastPageText: string }>();
+    
+    for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+      const pageText = pages[pageIndex];
       const bulletin = parseBulletinEleve(pageText);
+      
       if (bulletin && bulletin.nom && bulletin.prenom) {
-        bulletins.push(bulletin);
+        const studentKey = createStudentKey(bulletin.nom, bulletin.prenom);
+        
+        // Extraire la moyenne générale de cette page si présente
+        const moyenneGenerale = extractMoyenneGenerale(pageText);
+        if (moyenneGenerale !== null) {
+          bulletin.moyenneGenerale = moyenneGenerale;
+        }
+        
+        if (studentsMap.has(studentKey)) {
+          // Élève déjà existant - fusionner les données (bulletin multi-pages)
+          const existing = studentsMap.get(studentKey)!;
+          const mergedData = mergeStudentData(existing.data, bulletin, pageText);
+          studentsMap.set(studentKey, { data: mergedData, lastPageText: pageText });
+          console.log(`✓ Fusion bulletin multi-pages pour ${bulletin.prenom} ${bulletin.nom} (page ${pageIndex + 1})`);
+        } else {
+          // Nouvel élève
+          bulletin.pageCount = 1;
+          studentsMap.set(studentKey, { data: bulletin, lastPageText: pageText });
+          console.log(`✓ Nouvel élève détecté: ${bulletin.prenom} ${bulletin.nom} (page ${pageIndex + 1})`);
+        }
       }
     }
+    
+    // Convertir la Map en tableau et calculer les moyennes finales
+    const bulletins = Array.from(studentsMap.values()).map(({ data }) => {
+      // S'assurer que moyenneGenerale est définie
+      if (!data.moyenneGenerale && data.matieres.length > 0) {
+        // Calculer la moyenne si pas de "Moyennes générales" trouvée
+        const totalMoyenne = data.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0);
+        data.moyenneGenerale = totalMoyenne / data.matieres.length;
+      }
+      return data;
+    });
+    
+    console.log(`Total: ${bulletins.length} élèves uniques extraits du PDF`);
     
     return bulletins;
   } catch (error) {
