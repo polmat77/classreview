@@ -15,6 +15,77 @@ const toneInstructions: Record<AppreciationTone, string> = {
 };
 
 /**
+ * List of known teacher names to filter from output
+ */
+const TEACHER_NAMES = [
+  'KARBOWY', 'BONNINGUES', 'ROBINEAU', 'DUROCHER', 'LE MOIGNE',
+  'ZOCCANTE', 'KASSA BEGHDOUCHE', 'JAMET', 'POGODA', 'LESPLEQUE',
+  'GUILLIEY', 'ZENATI', 'GUISLAIN', 'DUPONT', 'MARTIN', 'BERNARD',
+  'PETIT', 'ROBERT', 'RICHARD', 'DURAND', 'LEROY', 'MOREAU'
+];
+
+/**
+ * Truncate text intelligently to respect character limit
+ */
+function truncateIntelligently(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+
+  console.log(`Troncature nécessaire : ${text.length} → ${maxLength}`);
+
+  // Strategy 1: Cut at last complete sentence
+  const truncated = text.substring(0, maxLength);
+  const lastPeriod = truncated.lastIndexOf('.');
+  const lastExclamation = truncated.lastIndexOf('!');
+  const bestCut = Math.max(lastPeriod, lastExclamation);
+
+  if (bestCut > maxLength * 0.85) {
+    return text.substring(0, bestCut + 1).trim();
+  }
+
+  // Strategy 2: Cut at last space + add period
+  const lastSpace = truncated.lastIndexOf(' ');
+  if (lastSpace > maxLength * 0.90) {
+    return text.substring(0, lastSpace).trim() + '.';
+  }
+
+  // Strategy 3: Brutal cut with ellipsis
+  return text.substring(0, maxLength - 3).trim() + '...';
+}
+
+/**
+ * Remove any teacher names that might appear in the text
+ */
+function removeTeacherNames(text: string): string {
+  let result = text;
+  
+  TEACHER_NAMES.forEach(name => {
+    // Match variations: "M. NAME", "Mme NAME", "NAME", "pour NAME"
+    const patterns = [
+      new RegExp(`\\bM\\.?\\s*${name}\\b`, 'gi'),
+      new RegExp(`\\bMme\\.?\\s*${name}\\b`, 'gi'),
+      new RegExp(`\\bpour\\s+${name}\\b`, 'gi'),
+      new RegExp(`\\bnotamment\\s+(?:pour\\s+)?${name}\\b`, 'gi'),
+      new RegExp(`\\b${name}\\b`, 'gi')
+    ];
+    
+    patterns.forEach(regex => {
+      if (regex.test(result)) {
+        console.warn(`Nom de professeur détecté et supprimé : ${name}`);
+        result = result.replace(regex, '');
+      }
+    });
+  });
+  
+  // Clean up double spaces and orphan commas
+  result = result.replace(/\s+/g, ' ');
+  result = result.replace(/,\s*,/g, ',');
+  result = result.replace(/\s+\./g, '.');
+  result = result.replace(/\s+,/g, ',');
+  
+  return result.trim();
+}
+
+/**
  * Build a rich context from theme analysis
  */
 function buildThemeContext(themes: Record<string, number>): string {
@@ -29,6 +100,8 @@ function buildThemeContext(themes: Record<string, number>): string {
     observations.push("Les résultats sont corrects mais inégaux selon les matières");
   } else if (themes.solide > 0) {
     observations.push("Les résultats sont corrects");
+  } else if (themes.fragile > 0) {
+    observations.push("Les résultats sont préoccupants dans plusieurs disciplines");
   }
   
   if (themes.heterogene >= 3) {
@@ -51,9 +124,9 @@ function buildThemeContext(themes: Record<string, number>): string {
   }
   
   if (themes.bavardages >= 4) {
-    observations.push("Bavardages perturbateurs mentionnés par plusieurs professeurs");
+    observations.push("Bavardages perturbateurs mentionnés par plusieurs professeurs - ambiance de travail TRÈS difficile");
   } else if (themes.bavardages >= 2) {
-    observations.push("Quelques bavardages signalés");
+    observations.push("Bavardages signalés perturbant les apprentissages");
   }
   
   if (themes.participation >= 3) {
@@ -63,14 +136,18 @@ function buildThemeContext(themes: Record<string, number>): string {
       observations.push("Participation active soulignée");
     }
   } else if (themes.passif >= 3) {
-    observations.push("Passivité observée chez certains élèves");
+    observations.push("Passivité IMPORTANTE observée - manque d'implication généralisé");
+  } else if (themes.passif >= 1) {
+    observations.push("Une partie des élèves est passive ou en retrait");
   }
   
   if (themes.concentration >= 3) {
     observations.push("Bonne concentration notée en classe");
   }
   
-  if (themes.travail >= 3) {
+  if (themes.travail >= 4) {
+    observations.push("Travail personnel TRÈS insuffisant signalé par de nombreux enseignants - manque flagrant d'investissement");
+  } else if (themes.travail >= 2) {
     observations.push("Travail personnel insuffisant signalé par plusieurs enseignants");
   } else if (themes.travail >= 1) {
     observations.push("Travail personnel à renforcer");
@@ -113,7 +190,7 @@ function buildThemeContext(themes: Record<string, number>): string {
   }
   
   if (themes.comportement >= 4) {
-    observations.push("Comportement nécessitant une vigilance particulière");
+    observations.push("Comportement nécessitant une vigilance particulière - difficultés à respecter les règles de base");
   } else if (themes.comportement >= 2) {
     observations.push("Comportement globalement correct mais à surveiller");
   }
@@ -134,7 +211,7 @@ serve(async (req) => {
       themes, 
       exceptionalSubjects, 
       tone: rawTone = 'standard',
-      maxWords = 200 
+      maxCharacters = 255 
     } = await req.json();
     
     // Migrate old tones
@@ -169,87 +246,84 @@ serve(async (req) => {
       exceptionalContext += `\n- Matière en difficulté marquée : ${exceptionalSubjects.struggling[0]}`;
     }
 
+    // Determine if short or long format
+    const isShortFormat = maxCharacters <= 280;
+
     const systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation générale de classe pour le bulletin du conseil de classe français.
 
-CONTEXTE : Cette appréciation sera lue par les parents et l'administration. Elle doit synthétiser les observations de TOUS les professeurs de la classe.
+CONTRAINTE ABSOLUE : L'appréciation doit faire MAXIMUM ${maxCharacters} caractères (espaces compris).
 
-OBJECTIF : Produire une appréciation de 150-${maxWords} mots (environ 8-12 phrases) structurée en 3 paragraphes distincts.
+CONTEXTE : Cette appréciation sera lue par les parents et l'administration. Elle doit synthétiser fidèlement les observations des professeurs.
 
-STRUCTURE OBLIGATOIRE :
-
-**Paragraphe 1 - RÉSULTATS SCOLAIRES (2-3 phrases)**
-- Tendance générale des résultats (satisfaisants / corrects / fragiles / en difficulté)
-- Hétérogénéité de la classe si pertinente (disparités entre élèves)
-- Progression observée si mentionnée par plusieurs enseignants
-- Matière exceptionnelle UNIQUEMENT si écart très significatif (≥ 4 points vs moyenne)
-
-**Paragraphe 2 - AMBIANCE DE TRAVAIL (3-4 phrases)**
-- Sérieux et application dans le travail
-- Concentration et attention en classe
-- Participation (active / timide / insuffisante)
-- Comportements perturbateurs (bavardages, agitation) SI mentionnés par plusieurs profs
-- Investissement et motivation
-- Travail personnel (devoirs, leçons)
-
-**Paragraphe 3 - CLIMAT DE CLASSE ET PERSPECTIVES (2-3 phrases)**
-- Relations entre élèves (cohésion / tensions / respect)
-- Ambiance générale de la classe
-- Points d'attention (assiduité, ponctualité, comportement) SI significatifs
-- Conclusion avec encouragements OU attentes selon le bilan global
+${isShortFormat ? `
+STRUCTURE COURTE (≤280 caractères) :
+- 2-3 phrases très concises
+- Phrase 1 : Résultats généraux (qualitatif)
+- Phrase 2 : Ambiance de travail / comportement
+- Phrase 3 optionnelle : Conclusion/perspective
+` : `
+STRUCTURE DÉVELOPPÉE (>280 caractères) :
+- 3-4 phrases
+- Paragraphe 1 : Résultats et tendances
+- Paragraphe 2 : Ambiance et comportement
+- Paragraphe 3 : Perspectives et attentes
+`}
 
 RÈGLES STRICTES - VIOLATIONS = ÉCHEC :
 
 ❌ INTERDICTIONS ABSOLUES :
 - JAMAIS de moyennes chiffrées (pas de "11.5", "12/20", "moyenne de X")
-- JAMAIS de noms de professeurs (pas de "M. Dupont", "Mme Martin", "l'enseignant de...")
-- JAMAIS de liste de matières (sauf UNE matière si vraiment exceptionnelle)
+- JAMAIS de noms de professeurs (pas de "M. Dupont", "Mme KARBOWY", "BONNINGUES", "ROBINEAU", etc.)
+- JAMAIS de noms d'élèves
 - JAMAIS mentionner le nom de la classe (pas de "La classe de 5e3", "Cette 4BAY", "Les élèves de 3ème")
 - JAMAIS mentionner le nombre exact d'élèves (pas de "les 25 élèves")
+- JAMAIS de liste exhaustive de matières
 
 ✅ OBLIGATIONS :
-- Commencer directement par l'analyse : "Les résultats...", "La classe présente..."
+- Commencer directement par l'analyse : "Les résultats...", "Résultats...", "Le niveau..."
 - Basé UNIQUEMENT sur les appréciations réelles des professeurs fournies
 - Vocabulaire professionnel et institutionnel français
 - Formulations qualitatives ("satisfaisants", "fragiles", "en progression")
-- Les 3 paragraphes DOIVENT être séparés par des doubles sauts de ligne
+- RESPECTER la limite de ${maxCharacters} caractères
+- REFLÉTER fidèlement la réalité du bulletin (ne pas édulcorer)
+
+ADAPTATION À LA RÉALITÉ :
+- Si les appréciations sont majoritairement NÉGATIVES → utiliser un ton ferme et réaliste
+- Si les appréciations mentionnent des BAVARDAGES fréquents → le signaler clairement
+- Si le TRAVAIL est insuffisant → le mentionner explicitement
+- Ne JAMAIS transformer une situation difficile en situation positive
 
 TONALITÉ :
 ${toneInstruction}
 
-FORMULATIONS À PRIVILÉGIER :
-✅ "Les résultats sont globalement satisfaisants"
-✅ "La classe présente de fortes disparités"
-✅ "L'ambiance de travail est perturbée par des bavardages fréquents"
-✅ "La participation reste timide et gagnerait à être encouragée"
-✅ "Le climat relationnel est positif avec une bonne cohésion"
-✅ "Des efforts soutenus sont attendus pour le prochain trimestre"
-✅ "Le conseil encourage à poursuivre dans cette voie"
+${isShortFormat ? `
+EXEMPLES DE FORMULATIONS COURTES :
+✅ "Résultats corrects mais fragiles par manque de travail. Bavardages fréquents et passivité perturbent les apprentissages. Des efforts soutenus sont attendus."
+✅ "Classe difficile à canaliser. Le manque de travail et les bavardages nuisent aux résultats. Le conseil exige un changement d'attitude immédiat."
+` : `
+EXEMPLES DE FORMULATIONS DÉVELOPPÉES :
+✅ "Les résultats sont corrects mais masquent des difficultés importantes liées au manque de travail généralisé. L'ambiance de travail est préoccupante : bavardages incessants, passivité d'une partie des élèves et difficultés à respecter les règles élémentaires. Le conseil attend une prise de conscience et des efforts immédiats."
+`}`;
 
-FORMULATIONS À ÉVITER :
-❌ "La classe de 5e3 présente..." (ne pas nommer la classe)
-❌ "La moyenne de 11.5 est correcte" (pas de chiffres)
-❌ "M. Dupont signale..." (pas de noms de profs)
-❌ "Les mathématiques, le français et l'histoire..." (pas de liste)
-❌ "Les 23 élèves..." (pas de nombre exact)`;
+    const userPrompt = `Rédige l'appréciation générale pour le bulletin du conseil de classe.
 
-    const userPrompt = `Rédige l'appréciation générale de classe pour le bulletin du conseil de classe.
-
-CONTEXTE :
+INFORMATIONS :
 - Période : ${classData?.period || "ce trimestre"}
+- Limite STRICTE : ${maxCharacters} caractères maximum
 
 ANALYSE DES APPRÉCIATIONS DES ENSEIGNANTS :
 ${themeContext}
 ${exceptionalContext ? `\nMATIÈRES PARTICULIÈRES :${exceptionalContext}\n` : ''}
 
-CONSIGNES DE RÉDACTION :
-1. Commence DIRECTEMENT par l'analyse (pas de "La classe de X...")
-2. Rédige en 3 paragraphes distincts séparés par des doubles sauts de ligne
-3. Base-toi EXCLUSIVEMENT sur les observations des enseignants ci-dessus
-4. N'invente AUCUNE information non présente dans l'analyse
-5. N'inclus AUCUN chiffre, moyenne, nom de professeur ou nom de classe
-6. Longueur : 150-${maxWords} mots maximum
+INSTRUCTIONS CRITIQUES :
+1. Maximum ${maxCharacters} caractères (espaces compris) - VÉRIFIE avant de répondre
+2. AUCUN nom de professeur (vérifie : pas de KARBOWY, BONNINGUES, ROBINEAU, DUPONT, etc.)
+3. AUCUN nom d'élève
+4. AUCUN nom de classe
+5. Commence directement par l'analyse (pas de "La classe de...")
+6. Reflète FIDÈLEMENT la réalité des appréciations (si difficile → difficile, si bavardages → bavardages)
 
-Génère maintenant l'appréciation (commence directement sans préambule) :`;
+Génère maintenant l'appréciation (${maxCharacters} caractères max, commence directement) :`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -292,8 +366,21 @@ Génère maintenant l'appréciation (commence directement sans préambule) :`;
     
     // Clean up the response
     appreciation = appreciation.trim();
+    
+    // Remove any teacher names that might have slipped through
+    appreciation = removeTeacherNames(appreciation);
+    
+    // Enforce character limit
+    if (appreciation.length > maxCharacters) {
+      console.warn(`Dépassement détecté : ${appreciation.length}/${maxCharacters} caractères`);
+      appreciation = truncateIntelligently(appreciation, maxCharacters);
+    }
 
-    return new Response(JSON.stringify({ appreciation }), {
+    return new Response(JSON.stringify({ 
+      appreciation,
+      characterCount: appreciation.length,
+      maxCharacters 
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
