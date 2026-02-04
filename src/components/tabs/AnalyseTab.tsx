@@ -54,6 +54,20 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
   const classeCSV = data?.classeCSV || localClasseCSV;
 
+  // Generate class metadata - MUST be before any early returns to respect React hooks rules
+  const metadata: ClassMetadata = useMemo(() => ({
+    className: classeCSV?.metadata?.className || '',
+    period: classeCSV?.metadata?.period || '',
+    studentCount: classeCSV?.statistiques?.totalEleves || 0,
+    mainTeacher: mainTeacher || classeCSV?.metadata?.mainTeacher || ''
+  }), [classeCSV, mainTeacher]);
+
+  // Generate automatic class summary - MUST be before any early returns
+  const classSummary = useMemo(() => {
+    if (!classeCSV) return '';
+    return generateClassSummary(classeCSV, metadata);
+  }, [classeCSV, metadata]);
+
   const handleTableauResultatsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -115,39 +129,6 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     setMainTeacher("");
     onDataLoaded?.({ classeCSV: null });
   };
-
-  // STATE A: No file loaded - Show upload placeholder
-  if (!classeCSV) {
-    return (
-      <TabUploadPlaceholder
-        title="Analyse des résultats de la classe"
-        icon={<BarChart3 className="h-6 w-6" />}
-        description="Obtenez une vue d'ensemble des performances de votre classe : moyenne générale, répartition des notes, élèves en difficulté ou en réussite."
-        accept=".csv,.pdf"
-        features={[
-          { text: "La moyenne générale et sa comparaison avec le trimestre précédent" },
-          { text: "La répartition des élèves par tranche de moyenne" },
-          { text: "L'identification des profils (excellents, satisfaisants, en difficulté)" },
-        ]}
-        isLoading={isProcessing}
-        onUpload={handleTableauResultatsUpload}
-        helpTooltip={<PronoteHelpTooltip type="resultats" />}
-      />
-    );
-  }
-
-  // Generate class metadata
-  const metadata: ClassMetadata = useMemo(() => ({
-    className: classeCSV.metadata?.className || '',
-    period: classeCSV.metadata?.period || '',
-    studentCount: classeCSV.statistiques.totalEleves,
-    mainTeacher: mainTeacher || classeCSV.metadata?.mainTeacher || ''
-  }), [classeCSV, mainTeacher]);
-
-  // Generate automatic class summary
-  const classSummary = useMemo(() => {
-    return generateClassSummary(classeCSV, metadata);
-  }, [classeCSV, metadata]);
 
   // STATE B: File loaded - Show analysis dashboard
   const gradeDistribution = [
