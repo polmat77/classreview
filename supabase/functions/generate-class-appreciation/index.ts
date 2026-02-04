@@ -248,10 +248,16 @@ serve(async (req) => {
 
     // Determine if short or long format
     const isShortFormat = maxCharacters <= 280;
+    
+    // Calculate minimum length (should be at least 85% of max, or previous tier)
+    const minCharacters = Math.floor(maxCharacters * 0.85);
 
     const systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation générale de classe pour le bulletin du conseil de classe français.
 
-CONTRAINTE ABSOLUE : L'appréciation doit faire MAXIMUM ${maxCharacters} caractères (espaces compris).
+CONTRAINTES DE LONGUEUR ABSOLUES :
+- MINIMUM : ${minCharacters} caractères (utilise l'espace disponible)
+- MAXIMUM : ${maxCharacters} caractères (espaces compris)
+- Tu DOIS produire un texte entre ${minCharacters} et ${maxCharacters} caractères.
 
 CONTEXTE : Cette appréciation sera lue par les parents et l'administration. Elle doit synthétiser fidèlement les observations des professeurs.
 
@@ -263,16 +269,18 @@ STRUCTURE COURTE (≤280 caractères) :
 - Phrase 3 optionnelle : Conclusion/perspective
 ` : `
 STRUCTURE DÉVELOPPÉE (>280 caractères) :
-- 3-4 phrases
-- Paragraphe 1 : Résultats et tendances
-- Paragraphe 2 : Ambiance et comportement
-- Paragraphe 3 : Perspectives et attentes
+- 4-6 phrases pour bien utiliser l'espace disponible
+- Paragraphe 1 : Résultats et tendances (détaillés)
+- Paragraphe 2 : Ambiance, comportement et participation (développés)
+- Paragraphe 3 : Perspectives, attentes et encouragements (complets)
 `}
 
 RÈGLES STRICTES - VIOLATIONS = ÉCHEC :
 
 ❌ INTERDICTIONS ABSOLUES :
-- JAMAIS de moyennes chiffrées (pas de "11.5", "12/20", "moyenne de X")
+- JAMAIS de moyennes chiffrées (pas de "11.5", "12/20", "moyenne de X", "X/20", "X points")
+- JAMAIS de pourcentages (pas de "60% des élèves")
+- JAMAIS de statistiques numériques
 - JAMAIS de noms de professeurs (pas de "M. Dupont", "Mme KARBOWY", "BONNINGUES", "ROBINEAU", etc.)
 - JAMAIS de noms d'élèves
 - JAMAIS mentionner le nom de la classe (pas de "La classe de 5e3", "Cette 4BAY", "Les élèves de 3ème")
@@ -280,11 +288,11 @@ RÈGLES STRICTES - VIOLATIONS = ÉCHEC :
 - JAMAIS de liste exhaustive de matières
 
 ✅ OBLIGATIONS :
+- Utiliser entre ${minCharacters} et ${maxCharacters} caractères (JAMAIS moins de ${minCharacters})
 - Commencer directement par l'analyse : "Les résultats...", "Résultats...", "Le niveau..."
 - Basé UNIQUEMENT sur les appréciations réelles des professeurs fournies
 - Vocabulaire professionnel et institutionnel français
-- Formulations qualitatives ("satisfaisants", "fragiles", "en progression")
-- RESPECTER la limite de ${maxCharacters} caractères
+- Formulations QUALITATIVES UNIQUEMENT ("satisfaisants", "fragiles", "en progression", "insuffisant")
 - REFLÉTER fidèlement la réalité du bulletin (ne pas édulcorer)
 
 ADAPTATION À LA RÉALITÉ :
@@ -297,33 +305,35 @@ TONALITÉ :
 ${toneInstruction}
 
 ${isShortFormat ? `
-EXEMPLES DE FORMULATIONS COURTES :
+EXEMPLES DE FORMULATIONS COURTES (${minCharacters}-${maxCharacters} car.) :
 ✅ "Résultats corrects mais fragiles par manque de travail. Bavardages fréquents et passivité perturbent les apprentissages. Des efforts soutenus sont attendus."
 ✅ "Classe difficile à canaliser. Le manque de travail et les bavardages nuisent aux résultats. Le conseil exige un changement d'attitude immédiat."
 ` : `
-EXEMPLES DE FORMULATIONS DÉVELOPPÉES :
-✅ "Les résultats sont corrects mais masquent des difficultés importantes liées au manque de travail généralisé. L'ambiance de travail est préoccupante : bavardages incessants, passivité d'une partie des élèves et difficultés à respecter les règles élémentaires. Le conseil attend une prise de conscience et des efforts immédiats."
+EXEMPLES DE FORMULATIONS DÉVELOPPÉES (${minCharacters}-${maxCharacters} car.) :
+✅ "Les résultats sont corrects mais masquent des difficultés importantes liées au manque de travail généralisé. L'ambiance de travail est préoccupante : bavardages incessants, passivité d'une partie des élèves et difficultés à respecter les règles élémentaires. La participation reste insuffisante et seule une minorité s'investit réellement. Le conseil attend une prise de conscience rapide et des efforts soutenus pour inverser cette tendance."
 `}`;
 
     const userPrompt = `Rédige l'appréciation générale pour le bulletin du conseil de classe.
 
 INFORMATIONS :
 - Période : ${classData?.period || "ce trimestre"}
-- Limite STRICTE : ${maxCharacters} caractères maximum
+- Longueur OBLIGATOIRE : entre ${minCharacters} et ${maxCharacters} caractères (utilise bien l'espace)
 
 ANALYSE DES APPRÉCIATIONS DES ENSEIGNANTS :
 ${themeContext}
 ${exceptionalContext ? `\nMATIÈRES PARTICULIÈRES :${exceptionalContext}\n` : ''}
 
 INSTRUCTIONS CRITIQUES :
-1. Maximum ${maxCharacters} caractères (espaces compris) - VÉRIFIE avant de répondre
-2. AUCUN nom de professeur (vérifie : pas de KARBOWY, BONNINGUES, ROBINEAU, DUPONT, etc.)
-3. AUCUN nom d'élève
-4. AUCUN nom de classe
-5. Commence directement par l'analyse (pas de "La classe de...")
-6. Reflète FIDÈLEMENT la réalité des appréciations (si difficile → difficile, si bavardages → bavardages)
+1. Entre ${minCharacters} et ${maxCharacters} caractères (espaces compris) - utilise l'espace disponible
+2. AUCUN chiffre, moyenne ou statistique (pas de "11.5", "12/20", "moyenne de X")
+3. AUCUN nom de professeur (vérifie : pas de KARBOWY, BONNINGUES, ROBINEAU, DUPONT, etc.)
+4. AUCUN nom d'élève
+5. AUCUN nom de classe
+6. Commence directement par l'analyse (pas de "La classe de...")
+7. Reflète FIDÈLEMENT la réalité des appréciations (si difficile → difficile, si bavardages → bavardages)
+8. Formulations QUALITATIVES uniquement ("satisfaisants", "fragiles", "insuffisant")
 
-Génère maintenant l'appréciation (${maxCharacters} caractères max, commence directement) :`;
+Génère maintenant l'appréciation (entre ${minCharacters} et ${maxCharacters} caractères, commence directement) :`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -369,6 +379,28 @@ Génère maintenant l'appréciation (${maxCharacters} caractères max, commence 
     
     // Remove any teacher names that might have slipped through
     appreciation = removeTeacherNames(appreciation);
+    
+    // CRITICAL: Remove any numerical grades/averages that might have slipped through
+    // Patterns: "11.5", "12/20", "moyenne de 11", "11,5/20", "X points", etc.
+    const gradePatterns = [
+      /\b\d{1,2}[,\.]\d{1,2}\s*(?:\/\s*20)?\b/g,  // 11.5 or 11,5 or 11.5/20
+      /\b\d{1,2}\s*\/\s*20\b/g,                     // 12/20
+      /\bmoyenne\s+(?:de\s+)?\d+[,\.]?\d*\b/gi,     // moyenne de 11.5
+      /\b\d{1,2}\s*points?\b/gi,                    // 11 points
+      /\b\d{2,3}\s*%/g,                             // 60%
+    ];
+    
+    gradePatterns.forEach(pattern => {
+      if (pattern.test(appreciation)) {
+        console.warn(`Moyenne/chiffre détecté et supprimé`);
+        appreciation = appreciation.replace(pattern, '');
+      }
+    });
+    
+    // Clean up orphan spaces after removals
+    appreciation = appreciation.replace(/\s+/g, ' ').trim();
+    appreciation = appreciation.replace(/\s+\./g, '.');
+    appreciation = appreciation.replace(/\s+,/g, ',');
     
     // Enforce character limit
     if (appreciation.length > maxCharacters) {
