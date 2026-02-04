@@ -130,6 +130,26 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
     onDataLoaded?.({ classeCSV: null });
   };
 
+  // STATE A: No file loaded - Show upload placeholder
+  if (!classeCSV) {
+    return (
+      <TabUploadPlaceholder
+        title="Analyse des résultats de la classe"
+        icon={<BarChart3 className="h-6 w-6" />}
+        description="Obtenez une vue d'ensemble des performances de votre classe : moyenne générale, répartition des notes, élèves en difficulté ou en réussite."
+        accept=".csv,.pdf"
+        features={[
+          { text: "La moyenne générale et sa comparaison avec le trimestre précédent" },
+          { text: "La répartition des élèves par tranche de moyenne" },
+          { text: "L'identification des profils (excellents, satisfaisants, en difficulté)" },
+        ]}
+        isLoading={isProcessing}
+        onUpload={handleTableauResultatsUpload}
+        helpTooltip={<PronoteHelpTooltip type="resultats" />}
+      />
+    );
+  }
+
   // STATE B: File loaded - Show analysis dashboard
   const gradeDistribution = [
     { 
