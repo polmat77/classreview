@@ -261,9 +261,33 @@ const StudentAppreciationCard = ({
             {/* Appreciation text - with header separator */}
             <div className={bulletinAnalysis ? "border-t pt-4 mt-4" : ""}>
               {bulletinAnalysis && (
-                <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                  💬 Appréciation générale
-                </h4>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    💬 Appréciation générale
+                  </h4>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={onCopy}
+                          disabled={!appreciation}
+                          className="h-7 w-7 p-0"
+                        >
+                          {isCopied ? (
+                            <Check className="h-3.5 w-3.5 text-success" />
+                          ) : (
+                            <Copy className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom">
+                        <p>Copier l'appréciation</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               )}
               <p className="text-sm leading-relaxed text-foreground min-h-[40px]">
                 {appreciation || (
