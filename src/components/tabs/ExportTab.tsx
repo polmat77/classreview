@@ -45,6 +45,8 @@ const ExportTab = ({ data }: ExportTabProps) => {
   const [schoolLogo, setSchoolLogo] = useState(false);
   const [includeAttributions, setIncludeAttributions] = useState(true);
   const [hideNonEvaluableStudents, setHideNonEvaluableStudents] = useState(false);
+  const [includeSubjectAnalysis, setIncludeSubjectAnalysis] = useState(true);
+  const [includeDetailedJustifications, setIncludeDetailedJustifications] = useState(false);
   
   // Advanced options
   const [sortOrder, setSortOrder] = useState<'rank' | 'alpha' | 'alpha-desc' | 'rank-desc'>('rank');
@@ -87,6 +89,8 @@ const ExportTab = ({ data }: ExportTabProps) => {
     schoolLogo,
     includeAttributions: includeAttributions && (hasAttributions ?? false),
     hideNonEvaluableStudents,
+    includeSubjectAnalysis,
+    includeDetailedJustifications,
   });
 
   const handleGeneratePDF = async () => {
@@ -354,6 +358,43 @@ const ExportTab = ({ data }: ExportTabProps) => {
                 disabled={!hasAnyData} 
               />
             </div>
+            
+            <Separator />
+            
+            {/* NEW: Subject Analysis and Detailed Justifications options */}
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="include-subject-analysis" className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Inclure l'analyse par matière
+                </Label>
+                <p className="text-xs text-muted-foreground">(Appréciations des professeurs - Pages 6-7)</p>
+              </div>
+              <Switch 
+                id="include-subject-analysis" 
+                checked={includeSubjectAnalysis}
+                onCheckedChange={setIncludeSubjectAnalysis}
+                disabled={!hasAnyData} 
+              />
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <Label htmlFor="include-justifications" className="text-sm flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Inclure les détails justificatifs
+                </Label>
+                <p className="text-xs text-muted-foreground">(Pour chaque élève : matières, comportements)</p>
+              </div>
+              <Switch 
+                id="include-justifications" 
+                checked={includeDetailedJustifications}
+                onCheckedChange={setIncludeDetailedJustifications}
+                disabled={!hasAnyData} 
+              />
+            </div>
+            
+            <Separator />
             
             <div className="space-y-2">
               <Label className="text-sm">Tri des élèves</Label>
