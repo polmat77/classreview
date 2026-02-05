@@ -78,7 +78,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [studentTexts, setStudentTexts] = useState<string[]>(data?.studentAppreciations || []);
   const [studentJustifications, setStudentJustifications] = useState<Record<number, Justification[]>>({});
   const [isLoadingAll, setIsLoadingAll] = useState(false);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  // Note: copiedIndex state removed - each StudentAppreciationCard now manages its own copy state
   const [currentFileName, setCurrentFileName] = useState<string>("");
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
   
@@ -116,17 +116,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     localStorage.setItem('attributionsEnabled', JSON.stringify(attributionsEnabled));
   }, [attributionsEnabled]);
 
-  const handleCopyToClipboard = async (text: string, index: number) => {
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedIndex(index);
-      toast({ title: "Copié !", description: "L'appréciation a été copiée dans le presse-papiers." });
-      setTimeout(() => setCopiedIndex(null), 2000);
-    } catch (err) {
-      toast({ title: "Erreur", description: "Impossible de copier le texte.", variant: "destructive" });
-    }
-  };
+  // Note: handleCopyToClipboard function removed - each StudentAppreciationCard now handles its own copy
 
   const bulletinsEleves = data?.bulletinsEleves?.length ? data.bulletinsEleves : localBulletinsEleves;
   const classeCSV = data?.classeCSV;
@@ -748,7 +738,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                       newTexts[index] = updatedText;
                       setStudentTexts(newTexts);
                     }}
-                    onCopy={() => setCopiedIndex(index)}
                   />
                 </CardContent>
               </Card>
@@ -773,7 +762,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
               charLimit={individualCharLimit}
               attributionsEnabled={attributionsEnabled}
               isLoading={loadingStudentIndex === index}
-              isCopied={copiedIndex === index}
               isEditing={editingStudent === index}
               onToneChange={(tone) => handleToneChange(index, tone)}
               onAttributionChange={(attr) => handleAttributionChange(index, attr)}
@@ -784,7 +772,6 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
                 onDataLoaded?.({ studentAppreciations: newTexts });
               }}
               onRegenerate={() => handleRegenerateStudent(index)}
-              onCopy={() => handleCopyToClipboard(studentTexts[index] || "", index)}
               onEditToggle={() => setEditingStudent(editingStudent === index ? null : index)}
               onTruncate={() => {
                 const truncated = truncateIntelligently(studentTexts[index] || "", individualCharLimit);
