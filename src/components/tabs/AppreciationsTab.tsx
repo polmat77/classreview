@@ -32,6 +32,7 @@ import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelec
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
 import { useStudentTones } from "@/hooks/useStudentTones";
+import { useStudentAppreciations } from "@/hooks/useStudentAppreciations";
 import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
 import { AIGenerationWarning } from "@/components/AIGenerationWarning";
 import StudentAppreciationCard from "@/components/analysis/StudentAppreciationCard";
@@ -79,9 +80,21 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   // Use the extracted hook for tone management
   const { tones: studentTones, setTone: setStudentTone, getTone, resetTones, setMultipleTones } = useStudentTones('standard');
   
-  const [studentTexts, setStudentTexts] = useState<string[]>(data?.studentAppreciations || []);
-  const [studentJustifications, setStudentJustifications] = useState<Record<number, Justification[]>>({});
-  const [isLoadingAll, setIsLoadingAll] = useState(false);
+  // Use the extracted hook for appreciation management
+  const {
+    texts: studentTexts,
+    justifications: studentJustifications,
+    loadingIndex: loadingStudentIndex,
+    isLoadingAll,
+    setTexts: setStudentTexts,
+    setJustifications: setStudentJustifications,
+    setLoadingIndex: setLoadingStudentIndex,
+    setIsLoadingAll,
+    updateText,
+    updateJustifications,
+    resetAll: resetAppreciations,
+  } = useStudentAppreciations(data?.studentAppreciations || []);
+  
   // Note: copiedIndex state removed - each StudentAppreciationCard now manages its own copy state
   const [currentFileName, setCurrentFileName] = useState<string>("");
   const [editingStudent, setEditingStudent] = useState<number | null>(null);
@@ -107,8 +120,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   // Manual attribution removal tracking
   const [manuallyRemovedAttributions, setManuallyRemovedAttributions] = useState<Set<number>>(new Set());
   
-  // Loading state for individual students
-  const [loadingStudentIndex, setLoadingStudentIndex] = useState<number | null>(null);
+  // Note: loadingStudentIndex state now managed by useStudentAppreciations hook
 
   // Save character limit preference to localStorage
   useEffect(() => {
@@ -153,8 +165,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         });
         // Reset related state for new file
         resetTones();
-        setStudentTexts([]);
-        setStudentJustifications({});
+        resetAppreciations();
         setStudentAttributions({});
         setManuallyRemovedAttributions(new Set());
       } else {
@@ -177,8 +188,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     setLocalBulletinsEleves([]);
     setCurrentFileName("");
     resetTones();
-    setStudentTexts([]);
-    setStudentJustifications({});
+    resetAppreciations();
     setStudentAttributions({});
     setManuallyRemovedAttributions(new Set());
     onDataLoaded?.({ bulletinsEleves: null });
