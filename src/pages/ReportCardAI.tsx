@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata, AppreciationSettings, AppreciationTone } from "@/types/reportcard";
+import { ReportCardState, Student, StudentObservations, GeneratedAppreciation, ClassSummary, ClassMetadata, AppreciationSettings, AppreciationTone, ObservationParMatiere } from "@/types/reportcard";
 import ReportCardLayout from "@/components/reportcard/ReportCardLayout";
 import Step1DataImport from "@/components/reportcard/Step1DataImport";
 import Step2Observations from "@/components/reportcard/Step2Observations";
+import Step2bisSubjectObservations from "@/components/reportcard/Step2bisSubjectObservations";
 import Step3Appreciations from "@/components/reportcard/Step3Appreciations";
 import Step4ClassSummary from "@/components/reportcard/Step4ClassSummary";
 import { useToast } from "@/hooks/use-toast";
@@ -31,6 +32,7 @@ const initialObservations: StudentObservations = {
   behavior: null,
   talkative: null,
   specific: [],
+  observationsParMatiere: {},
 };
 
 const initialClassSummary: ClassSummary = {
@@ -176,6 +178,18 @@ const ReportCardAI = () => {
     toast({ title: "Étape 2 réinitialisée", description: "Observations effacées" });
   }, [toast]);
 
+  // Reset Step 2bis: Subject observations only
+  const resetStep2bis = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      observations: {
+        ...prev.observations,
+        observationsParMatiere: {},
+      },
+    }));
+    toast({ title: "Étape 2bis réinitialisée", description: "Observations par matière effacées" });
+  }, [toast]);
+
   // Reset Step 3: Appreciations
   const resetStep3 = useCallback(() => {
     const prefs = getDefaultPreferences();
@@ -205,6 +219,17 @@ const ReportCardAI = () => {
     toast({ title: "Étape 4 réinitialisée", description: "Bilan de classe effacé" });
   }, [toast]);
 
+  // Handle observations par matiere change
+  const handleObservationsParMatiereChange = useCallback((obsParMatiere: Record<number, ObservationParMatiere[]>) => {
+    setState((prev) => ({
+      ...prev,
+      observations: {
+        ...prev.observations,
+        observationsParMatiere: obsParMatiere,
+      },
+    }));
+  }, []);
+
   const renderStep = () => {
     switch (state.currentStep) {
       case 1:
@@ -224,9 +249,21 @@ const ReportCardAI = () => {
             students={state.students}
             observations={state.observations}
             onObservationsChange={setObservations}
-            onNext={() => setCurrentStep(3)}
+            onNext={() => setCurrentStep(2.5)}
             onBack={() => setCurrentStep(1)}
             onReset={resetStep2}
+          />
+        );
+      case 2.5:
+        return (
+          <Step2bisSubjectObservations
+            students={state.students}
+            observationsParMatiere={state.observations.observationsParMatiere || {}}
+            onObservationsChange={handleObservationsParMatiereChange}
+            onNext={() => setCurrentStep(3)}
+            onBack={() => setCurrentStep(2)}
+            onSkip={() => setCurrentStep(3)}
+            onReset={resetStep2bis}
           />
         );
       case 3:
@@ -239,7 +276,7 @@ const ReportCardAI = () => {
             onAppreciationsChange={setAppreciations}
             onAppreciationSettingsChange={setAppreciationSettings}
             onNext={() => setCurrentStep(4)}
-            onBack={() => setCurrentStep(2)}
+            onBack={() => setCurrentStep(2.5)}
             onReset={resetStep3}
           />
         );
@@ -260,6 +297,7 @@ const ReportCardAI = () => {
   };
 
   const hasObservations = state.observations.behavior !== null || state.observations.talkative !== null || state.observations.specific.length > 0;
+  const hasSubjectObservations = Object.keys(state.observations.observationsParMatiere || {}).length > 0;
 
   return (
     <>

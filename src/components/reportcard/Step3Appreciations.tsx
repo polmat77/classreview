@@ -144,6 +144,9 @@ const Step3Appreciations = ({
   const generateAppreciation = async (student: Student, tone: AppreciationTone): Promise<string> => {
     const studentObs = getStudentObservations(student.id);
     
+    // Get subject-specific observations for this student
+    const studentObservationsParMatiere = observations.observationsParMatiere?.[student.id] || [];
+    
     const studentData = {
       firstName: student.firstName,
       lastName: student.lastName,
@@ -159,6 +162,8 @@ const Step3Appreciations = ({
       specificObservations: observations.specific
         .filter(o => o.studentId === student.id)
         .map(o => o.observation),
+      // NEW: Pass subject-specific observations
+      observationsParMatiere: studentObservationsParMatiere,
     };
 
     try {
