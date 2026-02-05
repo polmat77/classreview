@@ -57,17 +57,60 @@ const BulletinAnalysisSection = ({
     }
   };
   
-  // Highlight keywords in text
-  const highlightText = (text: string, keywords: BulletinJustification['motsCles']) => {
-    if (keywords.length === 0) return text;
+  // Escape regex special characters to prevent ReDoS attacks
+  const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  
+  // Highlight keywords in text using React elements (safe from XSS)
+  const highlightText = (text: string, keywords: BulletinJustification['motsCles']): React.ReactNode => {
+    if (keywords.length === 0) return <span>{text}</span>;
     
-    let highlighted = text;
-    keywords.forEach(({ word, type }) => {
-      const regex = new RegExp(`(${word})`, 'gi');
-      highlighted = highlighted.replace(regex, `<mark class="${getKeywordClass(type)} px-0.5 rounded">\$1</mark>`);
-    });
+    // Build a regex that matches all keywords (escaped for safety)
+    const pattern = keywords.map(k => `(${escapeRegex(k.word)})`).join('|');
+    if (!pattern) return <span>{text}</span>;
     
-    return <span dangerouslySetInnerHTML={{ __html: highlighted }} />;
+    const regex = new RegExp(pattern, 'gi');
+    
+    // Split text by keywords and build React elements
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+    let keyIndex = 0;
+    
+    while ((match = regex.exec(text)) !== null) {
+      // Add text before match (React automatically escapes)
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index));
+      }
+      
+      // Find which keyword matched
+      const matchedText = match[0];
+      const keyword = keywords.find(k => 
+        k.word.toLowerCase() === matchedText.toLowerCase()
+      );
+      
+      // Add highlighted keyword (React escapes the content - safe from XSS)
+      if (keyword) {
+        parts.push(
+          <mark 
+            key={`${match.index}-${keyIndex++}`}
+            className={`${getKeywordClass(keyword.type)} px-0.5 rounded`}
+          >
+            {matchedText}
+          </mark>
+        );
+      } else {
+        parts.push(matchedText);
+      }
+      
+      lastIndex = regex.lastIndex;
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+    
+    return <span>{parts}</span>;
   };
   
   const categoryOrder: (keyof typeof ANALYSIS_CATEGORIES)[] = [
