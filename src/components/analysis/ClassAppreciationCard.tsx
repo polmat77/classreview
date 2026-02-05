@@ -6,10 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { ClasseDataCSV, ClassMetadata } from "@/utils/csvParser";
 import { supabase } from "@/integrations/supabase/client";
 import { deriveThemesFromStats, identifyExceptionalSubjects } from "@/utils/appreciationThemeAnalyzer";
-import ToneSelector from "@/components/ToneSelector";
-import { AppreciationTone } from "@/types/appreciation";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -53,7 +49,6 @@ const ClassAppreciationCard = ({ classeData, metadata }: ClassAppreciationCardPr
   const [appreciation, setAppreciation] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [tone, setTone] = useState<AppreciationTone>('standard');
   const [hasGenerated, setHasGenerated] = useState(false);
   const [characterLimit, setCharacterLimit] = useState<number>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -81,7 +76,7 @@ const ClassAppreciationCard = ({ classeData, metadata }: ClassAppreciationCardPr
           },
           themes,
           exceptionalSubjects,
-          tone,
+          tone: 'standard',
           maxCharacters: characterLimit,
         },
       });
@@ -178,39 +173,6 @@ const ClassAppreciationCard = ({ classeData, metadata }: ClassAppreciationCardPr
             <CardDescription className="mt-1">
               Synthèse pour le bulletin du conseil de classe
             </CardDescription>
-          </div>
-        </div>
-        
-        {/* Settings row */}
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Tone selector */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Tonalité
-            </Label>
-            <ToneSelector value={tone} onChange={setTone} />
-          </div>
-          
-          {/* Character limit selector */}
-          <div className="space-y-2">
-            <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Limite de caractères
-            </Label>
-            <Select 
-              value={characterLimit.toString()} 
-              onValueChange={(val) => setCharacterLimit(parseInt(val, 10))}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHARACTER_LIMITS.map(limit => (
-                  <SelectItem key={limit} value={limit.toString()}>
-                    {limit} caractères {limit === 255 ? '(standard PRONOTE)' : ''}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </CardHeader>
