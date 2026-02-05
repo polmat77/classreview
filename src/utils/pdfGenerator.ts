@@ -1645,3 +1645,328 @@ export function downloadPDF(data: ExportData, options: ExportOptions, filename?:
   const defaultFilename = `Rapport_${className}_${trimester}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename || defaultFilename);
 }
+
+// ============================================================
+// INDIVIDUAL STUDENT SHEETS - One page per student for families
+// ============================================================
+function addIndividualStudentSheet(
+  doc: jsPDF,
+  student: {
+    name: string;
+    prenom: string;
+    nom: string;
+    average: number;
+    rank: number;
+    totalStudents: number;
+    absences: number;
+    retards: number;
+    appreciation: string;
+    attribution: Attribution | null;
+    matieres: { nom: string; noteEleve: number; moyenneClasse: number }[];
+  },
+  classeData: {
+    classe: string;
+    trimestre: string;
+    annee: string;
+    moyenne: number;
+    etablissement?: string;
+  },
+  colors: typeof COLORS,
+  options: ExportOptions
+) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  let currentY = 20;
+  
+  // === HEADER ===
+  // Title on right
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor(...colors.primary);
+  doc.text('BULLETIN DU CONSEIL DE CLASSE', pageWidth - margin, currentY, { align: 'right' });
+  
+  doc.setDrawColor(...colors.gold);
+  doc.setLineWidth(0.5);
+  doc.line(pageWidth - margin - 80, currentY + 3, pageWidth - margin, currentY + 3);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.muted);
+  doc.text(`${classeData.classe} - ${classeData.trimestre} ${classeData.annee}`, pageWidth - margin, currentY + 12, { align: 'right' });
+  
+  currentY += 30;
+  
+  // Gold separator line
+  doc.setDrawColor(...colors.gold);
+  doc.setLineWidth(1);
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+  
+  currentY += 15;
+  
+  // Student name centered
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.setTextColor(...colors.primary);
+  const fullName = `${student.prenom} ${student.nom.toUpperCase()}`;
+  doc.text(fullName, pageWidth / 2, currentY, { align: 'center' });
+  
+  // Line under name
+  currentY += 5;
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.3);
+  const nameWidth = doc.getTextWidth(fullName);
+  doc.line(pageWidth / 2 - nameWidth / 2 - 10, currentY, pageWidth / 2 + nameWidth / 2 + 10, currentY);
+  
+  currentY += 15;
+  
+  // === GENERAL RESULTS SECTION ===
+  doc.setFillColor(...colors.background);
+  doc.roundedRect(margin, currentY, pageWidth - 2 * margin, 55, 3, 3, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text('RESULTATS GENERAUX', margin + 5, currentY + 10);
+  
+  doc.setDrawColor(...colors.separator);
+  doc.line(margin + 5, currentY + 14, pageWidth - margin - 5, currentY + 14);
+  
+  // 4 KPI cards
+  const kpiY = currentY + 22;
+  const kpiWidth = 35;
+  const kpiSpacing = 12;
+  const kpiStartX = margin + 15;
+  
+  const getMoyenneColor = (moyenne: number): [number, number, number] => {
+    if (moyenne >= 14) return colors.success;
+    if (moyenne >= 12) return [59, 130, 246] as [number, number, number];
+    if (moyenne >= 10) return colors.warning;
+    return colors.danger;
+  };
+  
+  const kpis = [
+    { value: student.average.toFixed(2), label: 'Moyenne eleve', color: getMoyenneColor(student.average) },
+    { value: classeData.moyenne.toFixed(2), label: 'Classe moyenne', color: colors.muted },
+    { value: `${student.rank}/${student.totalStudents}`, label: 'Rang', color: [59, 130, 246] as [number, number, number] },
+    { value: String(student.absences), label: 'Absences', color: student.absences > 10 ? colors.danger : colors.muted }
+  ];
+  
+  kpis.forEach((kpi, i) => {
+    const x = kpiStartX + i * (kpiWidth + kpiSpacing);
+    
+    doc.setFillColor(...colors.white);
+    doc.roundedRect(x, kpiY, kpiWidth, 25, 2, 2, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(...kpi.color);
+    doc.text(kpi.value, x + kpiWidth / 2, kpiY + 10, { align: 'center' });
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(...colors.muted);
+    doc.text(kpi.label, x + kpiWidth / 2, kpiY + 18, { align: 'center' });
+  });
+  
+  // Gap from class average
+  const ecart = student.average - classeData.moyenne;
+  const ecartText = ecart >= 0 ? `+ ${ecart.toFixed(2)}` : `${ecart.toFixed(2)}`;
+  const ecartColor = ecart >= 0 ? colors.success : colors.danger;
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.text);
+  doc.text('Position par rapport a la classe : ', margin + 10, currentY + 50);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...ecartColor);
+  doc.text(`${ecartText} points`, margin + 75, currentY + 50);
+  
+  currentY += 65;
+  
+  // === SUBJECT RESULTS TABLE ===
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text('RESULTATS PAR MATIERE', margin, currentY);
+  
+  currentY += 5;
+  
+  // Subject table data
+  const matiereData = student.matieres.map(m => {
+    const ecartMatiere = m.noteEleve - m.moyenneClasse;
+    const ecartStr = ecartMatiere >= 0 ? `+${ecartMatiere.toFixed(2)} ` : `${ecartMatiere.toFixed(2)} `;
+    return [
+      m.nom.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
+      m.noteEleve.toFixed(1),
+      m.moyenneClasse.toFixed(2),
+      ecartStr
+    ];
+  });
+  
+  autoTable(doc, {
+    startY: currentY,
+    head: [['Matiere', 'Eleve', 'Classe', 'Ecart']],
+    body: matiereData,
+    theme: 'grid',
+    headStyles: {
+      fillColor: colors.primary,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 8
+    },
+    bodyStyles: {
+      fontSize: 8
+    },
+    columnStyles: {
+      0: { cellWidth: 60 },
+      1: { cellWidth: 25, halign: 'center' },
+      2: { cellWidth: 25, halign: 'center' },
+      3: { cellWidth: 30, halign: 'center' }
+    },
+    alternateRowStyles: {
+      fillColor: colors.background
+    },
+    didParseCell: function(hookData: any) {
+      // Color the gap column
+      if (hookData.column.index === 3 && hookData.section === 'body') {
+        const raw = String(hookData.cell.raw);
+        if (raw.startsWith('+')) {
+          hookData.cell.styles.textColor = colors.success;
+        } else {
+          hookData.cell.styles.textColor = colors.danger;
+        }
+      }
+    },
+    margin: { left: margin, right: margin }
+  });
+  
+  currentY = (doc as any).lastAutoTable.finalY + 10;
+  
+  // === APPRECIATION SECTION ===
+  doc.setFillColor(...colors.bien);
+  const appreciationHeight = 40;
+  doc.roundedRect(margin, currentY, pageWidth - 2 * margin, appreciationHeight, 3, 3, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.bienText);
+  doc.text('APPRECIATION DU CONSEIL', margin + 5, currentY + 10);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.text);
+  const appreciationText = student.appreciation || 'Appreciation non renseignee';
+  const appreciationLines = doc.splitTextToSize(appreciationText, pageWidth - 2 * margin - 15);
+  doc.text(appreciationLines.slice(0, 3), margin + 5, currentY + 20);
+  
+  currentY += appreciationHeight + 10;
+  
+  // === COUNCIL DECISION (if attribution) ===
+  if (options.includeAttributions && student.attribution) {
+    doc.setFillColor(...colors.background);
+    doc.roundedRect(margin, currentY, pageWidth - 2 * margin, 30, 3, 3, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.primary);
+    doc.text('DECISION DU CONSEIL', margin + 5, currentY + 10);
+    
+    // Centered badge
+    const badge = getAttributionBadgeConfig(student.attribution);
+    const badgeWidth = 60;
+    const badgeX = pageWidth / 2 - badgeWidth / 2;
+    doc.setFillColor(...badge.bg);
+    doc.roundedRect(badgeX, currentY + 15, badgeWidth, 10, 3, 3, 'F');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...badge.text);
+    doc.text(badge.label, pageWidth / 2, currentY + 22, { align: 'center' });
+  }
+  
+  // === FOOTER ===
+  doc.setDrawColor(...colors.separator);
+  doc.line(margin, pageHeight - 20, pageWidth - margin, pageHeight - 20);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...colors.muted);
+  const footerText = `${classeData.etablissement || 'Etablissement'} - Genere le ${new Date().toLocaleDateString('fr-FR')} via ClassCouncil AI`;
+  doc.text(footerText, pageWidth / 2, pageHeight - 12, { align: 'center' });
+}
+
+export function generateIndividualSheets(data: ExportData, options: ExportOptions): jsPDF {
+  const doc = new jsPDF('p', 'mm', 'a4');
+  const colors = getColors(options.colorMode);
+  
+  const className = data.bulletinClasse?.classe || data.classeCSV?.eleves?.[0]?.nom?.match(/\\d+[eè]m?e?/i)?.[0] || '3eme';
+  const trimester = data.bulletinClasse?.trimestre || '1er Trimestre';
+  const year = data.bulletinClasse?.anneeScolaire || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`;
+  
+  const eleves = data.classeCSV?.eleves || [];
+  const appreciations = data.studentAppreciations || [];
+  const attributions = data.studentAttributions || [];
+  
+  // Calculate class average
+  const classAverage = calculateClassAverage(eleves);
+  
+  // Build student list with all data
+  let studentList = eleves.map((e, i) => {
+    // Get subject grades for this student
+    const matieres = data.classeCSV?.matieres.map(matiere => {
+      const noteEleve = e.moyennesParMatiere[matiere] || 0;
+      const allNotes = eleves.map(el => el.moyennesParMatiere[matiere] || 0).filter(n => n > 0);
+      const moyenneClasse = allNotes.length > 0 ? allNotes.reduce((a, b) => a + b, 0) / allNotes.length : 0;
+      return { nom: matiere, noteEleve, moyenneClasse };
+    }) || [];
+    
+    return {
+      name: e.nom,
+      prenom: e.nom.split(' ')[0] || '',
+      nom: e.nom.split(' ').slice(1).join(' ') || e.nom,
+      average: e.moyenneGenerale,
+      rank: 0,
+      totalStudents: eleves.length,
+      absences: e.absences || 0,
+      retards: e.retards || 0,
+      appreciation: appreciations[i] || '',
+      attribution: attributions[i] || null,
+      matieres
+    };
+  });
+  
+  // Sort by average and assign ranks
+  studentList = studentList.sort((a, b) => b.average - a.average);
+  studentList.forEach((s, i) => {
+    s.rank = i + 1;
+  });
+  
+  // Filter non-evaluable if option enabled
+  if (options.hideNonEvaluableStudents) {
+    studentList = studentList.filter(s => s.average > 0 && !isNaN(s.average) && s.absences <= 50);
+  }
+  
+  const classeData = {
+    classe: className,
+    trimestre: trimester,
+    annee: year,
+    moyenne: classAverage,
+    etablissement: data.bulletinClasse?.etablissement
+  };
+  
+  // Generate one page per student
+  studentList.forEach((student, index) => {
+    if (index > 0) doc.addPage();
+    addIndividualStudentSheet(doc, student, classeData, colors, options);
+  });
+  
+  return doc;
+}
+
+export function downloadIndividualSheets(data: ExportData, options: ExportOptions, filename?: string) {
+  const doc = generateIndividualSheets(data, options);
+  const className = data.bulletinClasse?.classe || '3eme';
+  const trimester = data.bulletinClasse?.trimestre?.replace(/\\s+/g, '_') || 'T1';
+  const defaultFilename = `Fiches_Individuelles_${className}_${trimester}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(filename || defaultFilename);
+}
