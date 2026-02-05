@@ -4,6 +4,12 @@ import { BulletinClasseData, BulletinEleveData } from '@/utils/pdfParser';
 import { ClasseDataCSV, EleveData } from '@/utils/csvParser';
 import { Attribution, attributionConfig } from '@/types/attribution';
 import { 
+  nettoyerTexteAvantPDF, 
+  nettoyerProfesseurPrincipal, 
+  TITRES_PROPRES, 
+  STATS_LABELS 
+} from '@/utils/pdfTextCleaner';
+import { 
   calculateClassAverage, 
   calculateMedian, 
   calculateStdDev, 
@@ -101,6 +107,8 @@ export interface ExportOptions {
   schoolLogo: boolean;
   includeAttributions?: boolean;
   hideNonEvaluableStudents?: boolean;
+  includeSubjectAnalysis?: boolean;
+  includeDetailedJustifications?: boolean;
 }
 
 export interface ExportData {
@@ -117,32 +125,35 @@ function getEvaluatedStudentsCount(eleves: EleveData[]): number {
   return eleves.filter(e => !isNaN(e.moyenneGenerale) && e.moyenneGenerale > 0).length;
 }
 
-// PDF Icons as text (jsPDF doesn't support emojis natively)
+// PDF Icons - Clean text versions without brackets
 const PDF_ICONS = {
-  average: '[Moy]',
-  median: '[Med]',
-  stdDev: '[ET]',
-  success: '[OK]',
-  students: '[Elv]',
-  subjects: '[Mat]',
+  average: 'Moy.',
+  median: 'Med.',
+  stdDev: 'E.T.',
+  success: '',
+  students: '',
+  subjects: '',
   excellent: '***',
   tresBien: '**+',
   bien: '**',
   moyen: '*',
   insuffisant: '-',
   inquietant: '--',
-  pointsForts: '[+]',
-  aRenforcer: '[-]',
-  top: '[#]',
-  surveiller: '[!]',
-  recommandations: '[i]',
-  valoriser: '[+]',
-  attention: '[!]',
-  actions: '[>]',
-  medal1: '[1er]',
-  medal2: '[2e]',
-  medal3: '[3e]',
+  pointsForts: '',
+  aRenforcer: '',
+  top: '',
+  surveiller: '',
+  recommandations: '',
+  valoriser: '',
+  attention: '',
+  actions: '',
+  medal1: '1er',
+  medal2: '2e',
+  medal3: '3e',
 };
+
+// Medal emojis for podium display
+const PODIUM_DISPLAY = ['🥇', '🥈', '🥉'];
 
 // ============================================================
 // Subject Classification by Pole
@@ -330,8 +341,8 @@ function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
   doc.setTextColor(...colors.muted);
   doc.text('Moyenne', card3X + cardWidth / 2, cardY + 30, { align: 'center' });
   
-  // === Professeur Principal ===
-  const profPrincipal = data.professeurPrincipal || data.bulletinClasse?.professeurPrincipal || '';
+  // === Professeur Principal (only if valid) ===
+  const profPrincipal = nettoyerProfesseurPrincipal(data.professeurPrincipal || data.bulletinClasse?.professeurPrincipal);
   if (profPrincipal) {
     doc.setFontSize(12);
     doc.setFont('helvetica', 'italic');
@@ -397,11 +408,11 @@ function addExecutiveSummaryPage(
   doc.setFillColor(...colors.background);
   doc.roundedRect(margin, currentY, pageWidth - 2 * margin, overviewHeight, 3, 3, 'F');
   
-  // Section title
+  // Section title (clean, no brackets)
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text('[VUE] VUE D\'ENSEMBLE', margin + 5, currentY + 8);
+  doc.text(TITRES_PROPRES.vueEnsemble, margin + 5, currentY + 8);
   
   // Separator line
   doc.setDrawColor(...colors.separator);
@@ -442,11 +453,12 @@ function addExecutiveSummaryPage(
   const totalCardsWidth = 4 * miniCardWidth + 3 * miniCardSpacing;
   const cardsStartX = (pageWidth - totalCardsWidth) / 2;
   
+  // Explicit stats display with proper labels
   const kpiData = [
-    { value: elevesAuDessus10, label: 'eleves >10', color: colors.success, icon: '+' },
-    { value: elevesEnDifficulte, label: 'eleves <10', color: colors.warning, icon: '!' },
-    { value: top3.length, label: 'Top 3', color: [59, 130, 246] as [number, number, number], icon: '#' },
-    { value: elevesAbsencesExcessives, label: 'Abs. excess.', color: colors.danger, icon: 'X' }
+    { value: elevesAuDessus10, label: 'Moy. ≥ 10', color: colors.success, icon: '✓' },
+    { value: elevesEnDifficulte, label: 'Moy. < 10', color: colors.warning, icon: '!' },
+    { value: top3.length, label: 'Top 3', color: [59, 130, 246] as [number, number, number], icon: '' },
+    { value: elevesAbsencesExcessives, label: 'Abs. excess.', color: colors.danger, icon: '' }
   ];
   
   kpiData.forEach((kpi, index) => {
@@ -503,7 +515,7 @@ function addExecutiveSummaryPage(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(...colors.excellentText);
-  doc.text('[+] POINTS POSITIFS', margin + 5, currentY + 10);
+  doc.text(TITRES_PROPRES.pointsPositifs, margin + 5, currentY + 10);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -527,7 +539,7 @@ function addExecutiveSummaryPage(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(...colors.moyenText);
-  doc.text('[!] POINTS DE VIGILANCE', col2Start + 5, currentY + 10);
+  doc.text(TITRES_PROPRES.pointsVigilance, col2Start + 5, currentY + 10);
   
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
@@ -563,7 +575,7 @@ function addExecutiveSummaryPage(
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(...colors.primary);
-    doc.text('[*] DECISIONS DU CONSEIL', margin + 5, currentY + 10);
+    doc.text(TITRES_PROPRES.decisionConseil, margin + 5, currentY + 10);
     
     // Attribution counters in a row
     doc.setFont('helvetica', 'normal');
@@ -603,14 +615,15 @@ function addExecutiveSummaryPage(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(...colors.bienText);
-  doc.text('[>] APPRECIATION GENERALE DU CONSEIL', margin + 5, currentY + 10);
+  doc.text(TITRES_PROPRES.appreciationGenerale, margin + 5, currentY + 10);
   
   doc.setFont('helvetica', 'italic');
   doc.setFontSize(9);
   doc.setTextColor(...colors.text);
   
   if (data.generalAppreciation) {
-    const appreciationLines = doc.splitTextToSize(`"${data.generalAppreciation}"`, pageWidth - 2 * margin - 15);
+    const cleanedAppreciation = nettoyerTexteAvantPDF(data.generalAppreciation);
+    const appreciationLines = doc.splitTextToSize(`"${cleanedAppreciation}"`, pageWidth - 2 * margin - 15);
     doc.text(appreciationLines.slice(0, 3), margin + 8, currentY + 20);
   } else {
     doc.setTextColor(...colors.muted);
@@ -648,11 +661,11 @@ function addResultsAnalysisPage(
   
   const eleves = data.classeCSV.eleves;
   
-  // Section title
+  // Section title (clean, without brackets)
   doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Statistiques generales', 14, yPos);
+  doc.text(TITRES_PROPRES.statistiquesGenerales, 14, yPos);
   yPos += 12;
   
   // KPI Grid (4 stats in 1 row)
@@ -664,11 +677,12 @@ function addResultsAnalysisPage(
   const tauxReussite = calculateSuccessRate(eleves);
   const nbEvalues = getEvaluatedStudentsCount(eleves);
   
+  // Clean labels without bracket prefixes
   const kpis = [
-    { label: 'Moyenne generale', value: isNaN(moyenne) ? '-' : moyenne.toFixed(2), icon: PDF_ICONS.average },
-    { label: 'Ecart-type', value: isNaN(ecartType) ? '-' : ecartType.toFixed(2), icon: PDF_ICONS.stdDev },
-    { label: 'Taux de reussite', value: isNaN(tauxReussite) ? '-' : `${tauxReussite}%`, icon: PDF_ICONS.success },
-    { label: 'Eleves evalues', value: String(nbEvalues), icon: PDF_ICONS.students },
+    { label: TITRES_PROPRES.moyenneGenerale, value: isNaN(moyenne) ? '-' : moyenne.toFixed(2), icon: '' },
+    { label: TITRES_PROPRES.ecartType, value: isNaN(ecartType) ? '-' : ecartType.toFixed(2), icon: '' },
+    { label: TITRES_PROPRES.tauxReussite, value: isNaN(tauxReussite) ? '-' : `${tauxReussite}%`, icon: '' },
+    { label: TITRES_PROPRES.elevesEvalues, value: String(nbEvalues), icon: '' },
   ];
   
   for (let i = 0; i < kpis.length; i++) {
@@ -680,7 +694,7 @@ function addResultsAnalysisPage(
     doc.setFontSize(8);
     doc.setTextColor(...colors.muted);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${kpis[i].icon} ${kpis[i].label}`, x + kpiWidth / 2, yPos + 10, { align: 'center' });
+    doc.text(kpis[i].label, x + kpiWidth / 2, yPos + 10, { align: 'center' });
     
     doc.setFontSize(14);
     doc.setTextColor(...colors.primary);
@@ -690,11 +704,11 @@ function addResultsAnalysisPage(
   
   yPos += kpiHeight + 15;
   
-  // Grade Distribution Table with colored badges
+  // Grade Distribution Table with colored badges (clean title)
   doc.setTextColor(...colors.primary);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('Repartition par tranche de moyenne', 14, yPos);
+  doc.text(TITRES_PROPRES.repartitionMoyenne, 14, yPos);
   yPos += 8;
   
   const distribution = getGradeDistribution(eleves);
@@ -764,7 +778,7 @@ function addResultsAnalysisPage(
   doc.setTextColor(...colors.success);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('[+] Points forts (moyenne >= 14)', 18, yPos + 10);
+  doc.text(TITRES_PROPRES.pointsForts, 18, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(8);
@@ -785,7 +799,7 @@ function addResultsAnalysisPage(
   doc.setTextColor(...colors.warning);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('[-] A renforcer (moyenne < 12)', 18 + colWidth + 7, yPos + 10);
+  doc.text(TITRES_PROPRES.aRenforcer, 18 + colWidth + 7, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(8);
@@ -801,15 +815,16 @@ function addResultsAnalysisPage(
   
   yPos += 60;
   
-  // Top 3 Students
+  // Top 3 Students with medal emojis
   doc.setTextColor(...colors.primary);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('[#] Podium des 3 meilleurs eleves', 14, yPos);
+  doc.text(TITRES_PROPRES.podium, 14, yPos);
   yPos += 8;
   
   const top3 = getTopStudents(eleves, 3);
-  const medals = [PDF_ICONS.medal1, PDF_ICONS.medal2, PDF_ICONS.medal3];
+  const medals = PODIUM_DISPLAY; // ['🥇', '🥈', '🥉']
+  const rangs = ['1er', '2e', '3e'];
   const medalColors: [number, number, number][] = [
     [255, 215, 0],   // Gold
     [192, 192, 192], // Silver
@@ -823,25 +838,28 @@ function addResultsAnalysisPage(
     doc.setFillColor(...colors.background);
     doc.roundedRect(x, yPos, podiumWidth, 32, 3, 3, 'F');
     
-    // Medal indicator
+    // Medal indicator circle
     doc.setFillColor(...medalColors[i]);
     doc.circle(x + 12, yPos + 16, 6, 'F');
     
-    doc.setFontSize(10);
+    // Rank text (since jsPDF may not render emoji correctly, we use rank text)
+    doc.setFontSize(9);
     doc.setTextColor(...colors.primary);
     doc.setFont('helvetica', 'bold');
-    doc.text(medals[i], x + 12, yPos + 19, { align: 'center' });
+    doc.text(rangs[i], x + 12, yPos + 19, { align: 'center' });
     
+    // Student name and average with proper formatting
     doc.setTextColor(...colors.text);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
     const displayName = student.nom.length > 18 ? student.nom.substring(0, 16) + '...' : student.nom;
     doc.text(displayName, x + 25, yPos + 14);
     
+    // Average with color and /20 suffix
     doc.setFontSize(11);
     const avgColor = getAverageColor(student.moyenneGenerale, colors);
     doc.setTextColor(...avgColor);
-    doc.text(student.moyenneGenerale.toFixed(2), x + 25, yPos + 25);
+    doc.text(`${student.moyenneGenerale.toFixed(2).replace('.', ',')}/20`, x + 25, yPos + 25);
   });
   
   addPageFooter(doc, colors);
@@ -879,7 +897,7 @@ function addStudentsMonitoringPage(
   doc.setTextColor(...colors.primary);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('[!] Eleves a surveiller (moyenne < 10)', 14, yPos);
+  doc.text(TITRES_PROPRES.elevesSurveiller, 14, yPos);
   yPos += 10;
   
   const struggling = getStrugglingStudents(eleves).slice(0, 8);
@@ -935,11 +953,11 @@ function addStudentsMonitoringPage(
     yPos += 20;
   }
   
-  // AI Recommendations
+  // AI Recommendations (clean title)
   doc.setTextColor(...colors.primary);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text('[i] Recommandations pour le conseil de classe', 14, yPos);
+  doc.text(TITRES_PROPRES.recommandations, 14, yPos);
   yPos += 10;
   
   const subjectStats = getSubjectAverages(data.classeCSV);
@@ -964,11 +982,11 @@ function addStudentsMonitoringPage(
   const colW = (pageWidth - 40) / 3;
   let xPos = 18;
   
-  // Points à valoriser
+  // Points à valoriser (clean title)
   doc.setTextColor(...colors.success);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('[+] Points a valoriser', xPos, yPos + 10);
+  doc.text(TITRES_PROPRES.valoriser, xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
@@ -978,12 +996,12 @@ function addStudentsMonitoringPage(
     doc.text(lines.slice(0, 2), xPos, yPos + 18 + i * 12);
   });
   
-  // Points d'attention
+  // Points d'attention (clean title)
   xPos += colW + 5;
   doc.setTextColor(...colors.warning);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('[!] Points d\'attention', xPos, yPos + 10);
+  doc.text(TITRES_PROPRES.attention, xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
@@ -993,12 +1011,12 @@ function addStudentsMonitoringPage(
     doc.text(lines.slice(0, 2), xPos, yPos + 18 + i * 12);
   });
   
-  // Actions suggérées
+  // Actions suggérées (clean title)
   xPos += colW + 5;
   doc.setTextColor(...colors.cyan);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('[>] Actions suggerees', xPos, yPos + 10);
+  doc.text(TITRES_PROPRES.actions, xPos, yPos + 10);
   
   doc.setTextColor(...colors.text);
   doc.setFontSize(7);
@@ -1032,23 +1050,22 @@ function addGlobalAnalysisPage(
   doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Classement des eleves', 14, yPos);
+  doc.text(TITRES_PROPRES.classementEleves, 14, yPos);
   yPos += 12;
   
   if (data.classeCSV) {
+    // Simplified table: only Rang | Élève | Moyenne (no absences/retards)
     const tableData = data.classeCSV.eleves
       .sort((a, b) => b.moyenneGenerale - a.moyenneGenerale)
       .map((eleve, i) => [
         i + 1,
         eleve.nom,
-        isNaN(eleve.moyenneGenerale) ? '-' : eleve.moyenneGenerale.toFixed(2),
-        eleve.absences || 0,
-        eleve.retards || 0,
+        isNaN(eleve.moyenneGenerale) ? '-' : `${eleve.moyenneGenerale.toFixed(2).replace('.', ',')}/20`,
       ]);
     
     autoTable(doc, {
       startY: yPos,
-      head: [['Rang', 'Eleve', 'Moyenne', 'Abs.', 'Ret.']],
+      head: [['Rang', 'Élève', 'Moyenne']],
       body: tableData,
       theme: 'grid',
       headStyles: {
@@ -1063,11 +1080,9 @@ function addGlobalAnalysisPage(
         textColor: colors.text,
       },
       columnStyles: {
-        0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 55, halign: 'left' },
-        2: { cellWidth: 25, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
+        0: { cellWidth: 20, halign: 'center' },
+        1: { cellWidth: 80, halign: 'left' },
+        2: { cellWidth: 40, halign: 'center' },
       },
       alternateRowStyles: {
         fillColor: colors.background,
@@ -1077,7 +1092,8 @@ function addGlobalAnalysisPage(
         if (hookData.section === 'body') {
           // Color-code average column
           if (hookData.column.index === 2) {
-            const moyenne = parseFloat(hookData.cell.raw);
+            const rawValue = String(hookData.cell.raw).replace(',', '.').replace('/20', '');
+            const moyenne = parseFloat(rawValue);
             if (!isNaN(moyenne)) {
               if (moyenne >= 14) {
                 hookData.cell.styles.textColor = colors.success;
@@ -1090,14 +1106,6 @@ function addGlobalAnalysisPage(
                 hookData.cell.styles.textColor = colors.danger;
                 hookData.cell.styles.fontStyle = 'bold';
               }
-            }
-          }
-          // Alert for excessive absences (>20)
-          if (hookData.column.index === 3) {
-            const absences = parseInt(hookData.cell.raw);
-            if (absences > 20) {
-              hookData.cell.styles.textColor = colors.danger;
-              hookData.cell.styles.fontStyle = 'bold';
             }
           }
         }
@@ -1131,7 +1139,7 @@ function addSubjectAnalysisPage(
   doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Analyse par matiere', 14, yPos);
+  doc.text(TITRES_PROPRES.analyseMatiere, 14, yPos);
   yPos += 12;
   
   // Get subjects data
@@ -1233,14 +1241,15 @@ function addSubjectAnalysisPage(
       doc.setDrawColor(...colors.separator);
       doc.line(18, yPos + 11, pageWidth - 22, yPos + 11);
       
-      // Appreciation (if included)
+      // Appreciation (if included) - cleaned text
       if (options.includeComments && subject.appreciation) {
         doc.setTextColor(...colors.text);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'italic');
-        const truncatedApp = subject.appreciation.length > 200 
-          ? subject.appreciation.substring(0, 197) + '...'
-          : subject.appreciation;
+        const cleanedApp = nettoyerTexteAvantPDF(subject.appreciation);
+        const truncatedApp = cleanedApp.length > 200 
+          ? cleanedApp.substring(0, 197) + '...'
+          : cleanedApp;
         const lines = doc.splitTextToSize(`"${truncatedApp}"`, pageWidth - 48);
         doc.text(lines.slice(0, 2), 18, yPos + 18);
       }
@@ -1292,7 +1301,7 @@ function addGeneralAppreciationPage(
   doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Appreciation du conseil de classe', 14, yPos);
+  doc.text(TITRES_PROPRES.appreciationConseil, 14, yPos);
   yPos += 15;
   
   if (data.generalAppreciation) {
@@ -1307,7 +1316,9 @@ function addGeneralAppreciationPage(
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     
-    const lines = doc.splitTextToSize(data.generalAppreciation, pageWidth - 48);
+    // Clean the appreciation text before display
+    const cleanedAppreciation = nettoyerTexteAvantPDF(data.generalAppreciation);
+    const lines = doc.splitTextToSize(cleanedAppreciation, pageWidth - 48);
     doc.text(lines, 24, yPos + 15);
   } else {
     doc.setTextColor(...colors.muted);
@@ -1459,14 +1470,15 @@ function drawStudentCard(
     doc.text(badge.label, badgeX + 22.5, dataY, { align: 'center' });
   }
   
-  // Appreciation text
+  // Appreciation text (cleaned)
   const appreciationY = startY + 30;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(8);
   
   if (student.appreciation) {
     doc.setTextColor(...colors.text);
-    const appreciationLines = doc.splitTextToSize(student.appreciation, cardWidth - 20);
+    const cleanedAppreciation = nettoyerTexteAvantPDF(student.appreciation);
+    const appreciationLines = doc.splitTextToSize(cleanedAppreciation, cardWidth - 20);
     doc.text(appreciationLines.slice(0, 5), margin + 10, appreciationY);
   } else {
     doc.setTextColor(...colors.muted);
@@ -1592,9 +1604,11 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   const nbStudents = data.classeCSV?.eleves.length || data.bulletinsEleves?.length || 0;
   const individualPages = Math.ceil(nbStudents / 3); // 2-3 students per page with new card design
   const hasAnalysisData = !!data.classeCSV;
+  const includeSubjectAnalysis = options.includeSubjectAnalysis !== false; // Default to true for backwards compat
   
-  // Pages: Cover + Executive Summary + Results + Monitoring + Ranking + Subjects + General + Individual
-  const basePagesWithAnalysis = hasAnalysisData ? 7 : 5; // +1 for executive summary
+  // Pages: Cover + Executive Summary + Results + Monitoring + Ranking + (Subjects optional) + General + Individual
+  let basePagesWithAnalysis = hasAnalysisData ? 6 : 4;
+  if (includeSubjectAnalysis) basePagesWithAnalysis += 1;
   const totalPages = basePagesWithAnalysis + individualPages;
   
   let currentPage = 1;
@@ -1622,9 +1636,11 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   addGlobalAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
-  // Page 6: Subject Analysis
-  addSubjectAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
-  currentPage++;
+  // Page 6: Subject Analysis (OPTIONAL based on option)
+  if (includeSubjectAnalysis) {
+    addSubjectAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
+    currentPage++;
+  }
   
   // Page 7: General Appreciation
   addGeneralAppreciationPage(doc, data, colors, className, trimester, currentPage, totalPages);
