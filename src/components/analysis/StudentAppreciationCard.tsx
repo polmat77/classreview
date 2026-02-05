@@ -22,6 +22,8 @@ import AttributionSelector from "@/components/AttributionSelector";
 import ConductIssuesIndicator from "@/components/ConductIssuesIndicator";
 import BulletinAnalysisSection from "@/components/analysis/BulletinAnalysisSection";
 import { truncateIntelligently } from "@/utils/attributionAnalysis";
+import { useCopyToClipboard } from "@/hooks/useCopyToClipboard";
+import { useToast } from "@/hooks/use-toast";
 
 interface StudentAppreciationCardProps {
   index: number;
@@ -39,13 +41,11 @@ interface StudentAppreciationCardProps {
   charLimit: number;
   attributionsEnabled: boolean;
   isLoading: boolean;
-  isCopied: boolean;
   isEditing: boolean;
   onToneChange: (tone: AppreciationTone) => void;
   onAttributionChange: (attribution: Attribution | null) => void;
   onAppreciationChange: (text: string) => void;
   onRegenerate: () => void;
-  onCopy: () => void;
   onEditToggle: () => void;
   onTruncate: () => void;
 }
@@ -66,20 +66,36 @@ const StudentAppreciationCard = ({
   charLimit,
   attributionsEnabled,
   isLoading,
-  isCopied,
   isEditing,
   onToneChange,
   onAttributionChange,
   onAppreciationChange,
   onRegenerate,
-  onCopy,
   onEditToggle,
   onTruncate
 }: StudentAppreciationCardProps) => {
+  const { toast } = useToast();
   const [justificationsOpen, setJustificationsOpen] = useState(false);
+  
+  // Separate copy states for header button and inline button
+  const { isCopied: isHeaderCopied, copyToClipboard: copyHeader } = useCopyToClipboard();
+  const { isCopied: isInlineCopied, copyToClipboard: copyInline } = useCopyToClipboard();
   
   const charCount = appreciation.length;
   const isOverLimit = charCount > charLimit;
+  
+  // Handle copy with toast feedback
+  const handleCopyFromHeader = async () => {
+    if (!appreciation) return;
+    await copyHeader(appreciation);
+    toast({ title: "Copié !", description: "L'appréciation a été copiée dans le presse-papiers." });
+  };
+  
+  const handleCopyFromInline = async () => {
+    if (!appreciation) return;
+    await copyInline(appreciation);
+    toast({ title: "Copié !", description: "L'appréciation a été copiée dans le presse-papiers." });
+  };
   
   // Character count color helper
   const getCharCountColor = (current: number, limit: number) => {
@@ -123,10 +139,10 @@ const StudentAppreciationCard = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={onCopy}
+                      onClick={handleCopyFromHeader}
                       disabled={!appreciation}
                     >
-                      {isCopied ? (
+                      {isHeaderCopied ? (
                         <Check className="h-4 w-4 text-success" />
                       ) : (
                         <Copy className="h-4 w-4" />
@@ -271,11 +287,11 @@ const StudentAppreciationCard = ({
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={onCopy}
+                          onClick={handleCopyFromInline}
                           disabled={!appreciation}
                           className="h-7 w-7 p-0"
                         >
-                          {isCopied ? (
+                          {isInlineCopied ? (
                             <Check className="h-3.5 w-3.5 text-success" />
                           ) : (
                             <Copy className="h-3.5 w-3.5" />
