@@ -20,39 +20,74 @@ import {
   getSuggestedActions,
 } from '@/utils/statisticsCalculations';
 
-// Color palette
+// ============================================================
+// DESIGN SYSTEM - Professional Color Palette
+// ============================================================
 const COLORS = {
-  primary: [30, 58, 138] as [number, number, number], // Navy blue
-  secondary: [6, 182, 212] as [number, number, number], // Cyan
-  text: [31, 41, 55] as [number, number, number],
-  muted: [107, 114, 128] as [number, number, number],
-  background: [249, 250, 251] as [number, number, number],
-  success: [22, 163, 74] as [number, number, number],
-  warning: [234, 88, 12] as [number, number, number],
-  danger: [220, 38, 38] as [number, number, number],
-  excellent: [220, 252, 231] as [number, number, number],
-  tresBien: [219, 234, 254] as [number, number, number],
-  bien: [254, 249, 195] as [number, number, number],
-  moyen: [254, 243, 199] as [number, number, number],
-  insuffisant: [254, 215, 170] as [number, number, number],
-  inquietant: [254, 226, 226] as [number, number, number],
+  // Brand colors
+  primary: [44, 62, 80] as [number, number, number],      // Slate #2c3e50
+  gold: [240, 168, 48] as [number, number, number],       // Gold #f0a830
+  cyan: [125, 211, 232] as [number, number, number],      // Cyan #7dd3e8
+  
+  // Text colors
+  text: [44, 62, 80] as [number, number, number],         // #2c3e50
+  textSecondary: [74, 95, 127] as [number, number, number], // #4a5f7f
+  muted: [107, 114, 128] as [number, number, number],     // #6b7280
+  
+  // Background colors
+  background: [248, 250, 252] as [number, number, number], // #f8fafc
+  white: [255, 255, 255] as [number, number, number],
+  
+  // Semantic colors
+  success: [16, 185, 129] as [number, number, number],    // #10b981
+  successLight: [34, 197, 94] as [number, number, number], // #22c55e
+  warning: [245, 158, 11] as [number, number, number],    // #f59e0b
+  danger: [239, 68, 68] as [number, number, number],      // #ef4444
+  
+  // Grade distribution badges
+  excellent: [220, 252, 231] as [number, number, number],      // #dcfce7
+  excellentText: [22, 101, 52] as [number, number, number],    // #166534
+  tresBien: [209, 250, 229] as [number, number, number],       // #d1fae5
+  tresBienText: [4, 120, 87] as [number, number, number],      // #047857
+  bien: [219, 234, 254] as [number, number, number],           // #dbeafe
+  bienText: [30, 64, 175] as [number, number, number],         // #1e40af
+  moyen: [254, 243, 199] as [number, number, number],          // #fef3c7
+  moyenText: [146, 64, 14] as [number, number, number],        // #92400e
+  insuffisant: [255, 237, 213] as [number, number, number],    // #ffedd5
+  insuffisantText: [194, 65, 12] as [number, number, number],  // #c2410c
+  inquietant: [254, 226, 226] as [number, number, number],     // #fee2e2
+  inquietantText: [185, 28, 28] as [number, number, number],   // #b91c1c
+  
+  // Separator
+  separator: [229, 231, 235] as [number, number, number], // #e5e7eb
 };
 
 const COLORS_BW = {
   primary: [50, 50, 50] as [number, number, number],
-  secondary: [80, 80, 80] as [number, number, number],
+  gold: [80, 80, 80] as [number, number, number],
+  cyan: [120, 120, 120] as [number, number, number],
   text: [0, 0, 0] as [number, number, number],
+  textSecondary: [60, 60, 60] as [number, number, number],
   muted: [100, 100, 100] as [number, number, number],
   background: [245, 245, 245] as [number, number, number],
+  white: [255, 255, 255] as [number, number, number],
   success: [60, 60, 60] as [number, number, number],
+  successLight: [70, 70, 70] as [number, number, number],
   warning: [80, 80, 80] as [number, number, number],
   danger: [40, 40, 40] as [number, number, number],
   excellent: [230, 230, 230] as [number, number, number],
+  excellentText: [30, 30, 30] as [number, number, number],
   tresBien: [235, 235, 235] as [number, number, number],
+  tresBienText: [40, 40, 40] as [number, number, number],
   bien: [240, 240, 240] as [number, number, number],
+  bienText: [50, 50, 50] as [number, number, number],
   moyen: [240, 240, 240] as [number, number, number],
+  moyenText: [50, 50, 50] as [number, number, number],
   insuffisant: [235, 235, 235] as [number, number, number],
+  insuffisantText: [40, 40, 40] as [number, number, number],
   inquietant: [225, 225, 225] as [number, number, number],
+  inquietantText: [30, 30, 30] as [number, number, number],
+  separator: [200, 200, 200] as [number, number, number],
 };
 
 function getColors(colorMode: boolean) {
@@ -82,25 +117,19 @@ function getEvaluatedStudentsCount(eleves: EleveData[]): number {
 }
 
 // PDF Icons as text (jsPDF doesn't support emojis natively)
-// Using simple ASCII/Unicode symbols that render correctly
 const PDF_ICONS = {
-  // Stats icons
   average: '[Moy]',
   median: '[Med]',
   stdDev: '[ET]',
   success: '[OK]',
   students: '[Elv]',
   subjects: '[Mat]',
-  
-  // Grade level icons
   excellent: '***',
   tresBien: '**+',
   bien: '**',
   moyen: '*',
   insuffisant: '-',
   inquietant: '--',
-  
-  // Section icons
   pointsForts: '[+]',
   aRenforcer: '[-]',
   top: '[#]',
@@ -109,213 +138,325 @@ const PDF_ICONS = {
   valoriser: '[+]',
   attention: '[!]',
   actions: '[>]',
-  
-  // Medals
   medal1: '[1er]',
   medal2: '[2e]',
   medal3: '[3e]',
 };
 
-function addPageHeader(doc: jsPDF, title: string, colors: typeof COLORS, pageNum: number, totalPages: number) {
-  const pageWidth = doc.internal.pageSize.getWidth();
-  
-  doc.setFillColor(...colors.primary);
-  doc.rect(0, 0, pageWidth, 18, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'bold');
-  doc.text(title, 14, 12);
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Page ${pageNum}/${totalPages}`, pageWidth - 14, 12, { align: 'right' });
+// ============================================================
+// Subject Classification by Pole
+// ============================================================
+const SUBJECT_POLES = {
+  litteraire: {
+    name: 'POLE LITTERAIRE',
+    subjects: ['francais', 'français', 'histoire', 'geographie', 'histoire-geographie', 'hist-geo', 'anglais', 'espagnol', 'allemand', 'lv1', 'lv2', 'latin', 'grec'],
+    color: [219, 234, 254] as [number, number, number], // Blue light
+    textColor: [30, 64, 175] as [number, number, number],
+  },
+  scientifique: {
+    name: 'POLE SCIENTIFIQUE',
+    subjects: ['mathematiques', 'mathématiques', 'maths', 'physique', 'chimie', 'physique-chimie', 'svt', 'sciences', 'technologie', 'techno', 'nsi', 'snt'],
+    color: [220, 252, 231] as [number, number, number], // Green light
+    textColor: [22, 101, 52] as [number, number, number],
+  },
+  artistique: {
+    name: 'POLE ARTISTIQUE & SPORTIF',
+    subjects: ['eps', 'education physique', 'arts', 'arts plastiques', 'musique', 'education musicale'],
+    color: [254, 243, 199] as [number, number, number], // Yellow light
+    textColor: [146, 64, 14] as [number, number, number],
+  },
+};
+
+function getSubjectPole(subjectName: string): keyof typeof SUBJECT_POLES | null {
+  const normalized = subjectName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  for (const [key, pole] of Object.entries(SUBJECT_POLES)) {
+    if (pole.subjects.some(s => normalized.includes(s))) {
+      return key as keyof typeof SUBJECT_POLES;
+    }
+  }
+  return null;
 }
 
-function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
+// ============================================================
+// Helper: Get color for average value
+// ============================================================
+function getAverageColor(moyenne: number, colors: typeof COLORS): [number, number, number] {
+  if (moyenne >= 14) return colors.success;
+  if (moyenne >= 12) return colors.successLight;
+  if (moyenne >= 10) return colors.warning;
+  return colors.danger;
+}
+
+// ============================================================
+// PAGE HEADER (from page 2 onwards)
+// ============================================================
+function addPageHeader(
+  doc: jsPDF, 
+  className: string, 
+  trimester: string, 
+  colors: typeof COLORS, 
+  pageNum: number, 
+  totalPages: number
+) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  
+  // Header text
+  doc.setTextColor(...colors.muted);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`ClassCouncil AI | Rapport ${className} - ${trimester}`, 14, 10);
+  doc.text(`Page ${pageNum}/${totalPages}`, pageWidth - 14, 10, { align: 'right' });
+  
+  // Separator line
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.3);
+  doc.line(14, 14, pageWidth - 14, 14);
+}
+
+// ============================================================
+// PAGE FOOTER
+// ============================================================
+function addPageFooter(doc: jsPDF, colors: typeof COLORS) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  doc.setFillColor(...colors.background);
+  // Separator line
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.3);
+  doc.line(14, pageHeight - 15, pageWidth - 14, pageHeight - 15);
+  
+  // Footer text
+  doc.setTextColor(...colors.muted);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Genere le ${new Date().toLocaleDateString('fr-FR')} via ClassCouncil AI`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+}
+
+// ============================================================
+// COVER PAGE - Professional Design
+// ============================================================
+function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const centerX = pageWidth / 2;
+  
+  // White background
+  doc.setFillColor(...colors.white);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
   
-  doc.setFillColor(...colors.primary);
-  doc.rect(0, 0, pageWidth, 80, 'F');
-  
-  doc.setTextColor(255, 255, 255);
+  // === LOGO AREA (placeholder - text logo) ===
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text('ClassCouncil AI', pageWidth / 2, 35, { align: 'center' });
+  doc.text('ClassCouncil', centerX - 10, 45, { align: 'center' });
+  doc.setTextColor(...colors.gold);
+  doc.text('AI', centerX + 38, 45);
   
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Rapport du Conseil de Classe', pageWidth / 2, 50, { align: 'center' });
+  // === Decorative gold line ===
+  doc.setDrawColor(...colors.gold);
+  doc.setLineWidth(1);
+  doc.line(40, 60, pageWidth - 40, 60);
   
-  const className = data.bulletinClasse?.classe || data.classeCSV?.eleves?.[0]?.nom?.match(/\d+[eè]m?e?/i)?.[0] || '3ème';
-  const trimester = data.bulletinClasse?.trimestre || '1er Trimestre';
-  const school = data.bulletinClasse?.etablissement || '';
-  const year = data.bulletinClasse?.anneeScolaire || new Date().getFullYear() + '-' + (new Date().getFullYear() + 1);
-  
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(pageWidth / 2 - 60, 100, 120, 80, 5, 5, 'F');
-  
-  doc.setTextColor(...colors.text);
-  doc.setFontSize(22);
+  // === Main Title ===
   doc.setFont('helvetica', 'bold');
-  doc.text(className, pageWidth / 2, 125, { align: 'center' });
+  doc.setFontSize(24);
+  doc.setTextColor(...colors.primary);
+  doc.text('RAPPORT DU CONSEIL DE CLASSE', centerX, 85, { align: 'center' });
   
-  doc.setFontSize(14);
+  // === Second decorative line ===
+  doc.setDrawColor(...colors.gold);
+  doc.line(40, 95, pageWidth - 40, 95);
+  
+  // === Class and trimester info ===
+  const className = data.bulletinClasse?.classe || data.classeCSV?.eleves?.[0]?.nom?.match(/\d+[eè]m?e?/i)?.[0] || '3eme';
+  const trimester = data.bulletinClasse?.trimestre || '1er Trimestre';
+  const year = data.bulletinClasse?.anneeScolaire || `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`;
+  
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...colors.muted);
-  doc.text(trimester, pageWidth / 2, 145, { align: 'center' });
-  doc.text(year, pageWidth / 2, 160, { align: 'center' });
+  doc.setFontSize(16);
+  doc.setTextColor(...colors.textSecondary);
+  doc.text(`Classe : ${className}`, centerX, 115, { align: 'center' });
+  doc.text(`${trimester} ${year}`, centerX, 130, { align: 'center' });
   
-  if (school) {
-    doc.setFontSize(11);
-    doc.text(school, pageWidth / 2, 175, { align: 'center' });
-  }
-  
-  // Stats summary
+  // === KPI Cards (3 cards) ===
   const nbEleves = data.classeCSV?.eleves.length || data.bulletinsEleves?.length || 0;
   const nbMatieres = data.classeCSV?.matieres.length || data.bulletinClasse?.matieres.length || 0;
   const moyenneClasse = data.classeCSV?.statistiques.moyenneClasse || 
     (data.bulletinClasse?.matieres.reduce((s, m) => s + m.moyenne, 0) || 0) / (data.bulletinClasse?.matieres.length || 1);
   
-  const statsY = 210;
-  doc.setFillColor(...colors.primary);
-  doc.roundedRect(30, statsY, 45, 50, 3, 3, 'F');
-  doc.roundedRect(82.5, statsY, 45, 50, 3, 3, 'F');
-  doc.roundedRect(135, statsY, 45, 50, 3, 3, 'F');
+  const cardY = 150;
+  const cardWidth = 45;
+  const cardHeight = 35;
+  const cardSpacing = 12;
+  const startX = centerX - (cardWidth * 1.5 + cardSpacing);
   
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  // Card 1 - Élèves
+  doc.setFillColor(...colors.background);
+  doc.roundedRect(startX, cardY, cardWidth, cardHeight, 3, 3, 'F');
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text(String(nbEleves), 52.5, statsY + 25, { align: 'center' });
-  doc.text(String(nbMatieres), 105, statsY + 25, { align: 'center' });
-  doc.text(isNaN(moyenneClasse) ? '-' : moyenneClasse.toFixed(1), 157.5, statsY + 25, { align: 'center' });
-  
-  doc.setFontSize(9);
+  doc.setTextColor(...colors.primary);
+  doc.text(String(nbEleves), startX + cardWidth / 2, cardY + 18, { align: 'center' });
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Eleves', 52.5, statsY + 40, { align: 'center' });
-  doc.text('Matieres', 105, statsY + 40, { align: 'center' });
-  doc.text('Moyenne', 157.5, statsY + 40, { align: 'center' });
+  doc.setTextColor(...colors.muted);
+  doc.text('Eleves', startX + cardWidth / 2, cardY + 30, { align: 'center' });
   
-  // Professeur principal section
+  // Card 2 - Matières
+  const card2X = startX + cardWidth + cardSpacing;
+  doc.setFillColor(...colors.background);
+  doc.roundedRect(card2X, cardY, cardWidth, cardHeight, 3, 3, 'F');
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.primary);
+  doc.text(String(nbMatieres), card2X + cardWidth / 2, cardY + 18, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...colors.muted);
+  doc.text('Matieres', card2X + cardWidth / 2, cardY + 30, { align: 'center' });
+  
+  // Card 3 - Moyenne (with conditional color)
+  const card3X = card2X + cardWidth + cardSpacing;
+  doc.setFillColor(...colors.background);
+  doc.roundedRect(card3X, cardY, cardWidth, cardHeight, 3, 3, 'F');
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  const moyColor = getAverageColor(moyenneClasse, colors);
+  doc.setTextColor(...moyColor);
+  doc.text(isNaN(moyenneClasse) ? '-' : moyenneClasse.toFixed(2), card3X + cardWidth / 2, cardY + 18, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...colors.muted);
+  doc.text('Moyenne', card3X + cardWidth / 2, cardY + 30, { align: 'center' });
+  
+  // === Professeur Principal ===
   const profPrincipal = data.professeurPrincipal || data.bulletinClasse?.professeurPrincipal || '';
   if (profPrincipal) {
-    const profY = 280;
-    doc.setFillColor(...colors.background);
-    doc.setDrawColor(...colors.primary);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(pageWidth / 2 - 70, profY, 140, 35, 4, 4, 'FD');
-    
-    doc.setTextColor(...colors.muted);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Professeur principal :', pageWidth / 2, profY + 12, { align: 'center' });
-    
-    doc.setTextColor(...colors.text);
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.text(profPrincipal, pageWidth / 2, profY + 26, { align: 'center' });
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...colors.textSecondary);
+    doc.text(`Professeur principal : ${profPrincipal}`, centerX, 210, { align: 'center' });
   }
   
-  // Footer
-  doc.setTextColor(...colors.muted);
-  doc.setFontSize(9);
+  // === Separator line ===
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.5);
+  doc.line(60, 225, pageWidth - 60, 225);
+  
+  // === Footer ===
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Genere le ${new Date().toLocaleDateString('fr-FR')}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
+  doc.setTextColor(...colors.muted);
+  doc.text(`Genere le ${new Date().toLocaleDateString('fr-FR')}`, centerX, 245, { align: 'center' });
+  doc.text('via ClassCouncil AI', centerX, 255, { align: 'center' });
+  
+  // === School info (if available) ===
+  const school = data.bulletinClasse?.etablissement || '';
+  if (school) {
+    doc.setFontSize(11);
+    doc.text(school, centerX, pageHeight - 25, { align: 'center' });
+  }
 }
 
-function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
+// ============================================================
+// RESULTS ANALYSIS PAGE
+// ============================================================
+function addResultsAnalysisPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
   doc.addPage();
-  addPageHeader(doc, 'Analyse des resultats', colors, pageNum, totalPages);
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 25;
+  let yPos = 22;
   
   if (!data.classeCSV) {
     doc.setTextColor(...colors.muted);
     doc.setFontSize(12);
     doc.text('Donnees d\'analyse non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
+    addPageFooter(doc, colors);
     return;
   }
   
   const eleves = data.classeCSV.eleves;
   
-  // Title
-  doc.setTextColor(...colors.text);
+  // Section title
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Statistiques principales', 14, yPos);
-  yPos += 10;
+  doc.text('Statistiques generales', 14, yPos);
+  yPos += 12;
   
-  // KPI Grid (6 stats in 2 rows of 3)
-  const kpiWidth = (pageWidth - 42) / 3;
+  // KPI Grid (4 stats in 1 row)
+  const kpiWidth = (pageWidth - 42) / 4;
   const kpiHeight = 28;
   
   const moyenne = calculateClassAverage(eleves);
-  const mediane = calculateMedian(eleves);
   const ecartType = calculateStdDev(eleves);
   const tauxReussite = calculateSuccessRate(eleves);
   const nbEvalues = getEvaluatedStudentsCount(eleves);
-  const nbMatieres = data.classeCSV.matieres.length;
   
   const kpis = [
     { label: 'Moyenne generale', value: isNaN(moyenne) ? '-' : moyenne.toFixed(2), icon: PDF_ICONS.average },
-    { label: 'Mediane', value: isNaN(mediane) ? '-' : mediane.toFixed(2), icon: PDF_ICONS.median },
     { label: 'Ecart-type', value: isNaN(ecartType) ? '-' : ecartType.toFixed(2), icon: PDF_ICONS.stdDev },
     { label: 'Taux de reussite', value: isNaN(tauxReussite) ? '-' : `${tauxReussite}%`, icon: PDF_ICONS.success },
     { label: 'Eleves evalues', value: String(nbEvalues), icon: PDF_ICONS.students },
-    { label: 'Matieres', value: String(nbMatieres), icon: PDF_ICONS.subjects },
   ];
   
   for (let i = 0; i < kpis.length; i++) {
-    const row = Math.floor(i / 3);
-    const col = i % 3;
-    const x = 14 + col * (kpiWidth + 7);
-    const y = yPos + row * (kpiHeight + 5);
+    const x = 14 + i * (kpiWidth + 5);
     
     doc.setFillColor(...colors.background);
-    doc.roundedRect(x, y, kpiWidth, kpiHeight, 3, 3, 'F');
+    doc.roundedRect(x, yPos, kpiWidth, kpiHeight, 3, 3, 'F');
     
     doc.setFontSize(8);
     doc.setTextColor(...colors.muted);
     doc.setFont('helvetica', 'normal');
-    doc.text(`${kpis[i].icon} ${kpis[i].label}`, x + kpiWidth / 2, y + 10, { align: 'center' });
+    doc.text(`${kpis[i].icon} ${kpis[i].label}`, x + kpiWidth / 2, yPos + 10, { align: 'center' });
     
     doc.setFontSize(14);
     doc.setTextColor(...colors.primary);
     doc.setFont('helvetica', 'bold');
-    doc.text(kpis[i].value, x + kpiWidth / 2, y + 22, { align: 'center' });
+    doc.text(kpis[i].value, x + kpiWidth / 2, yPos + 22, { align: 'center' });
   }
   
-  yPos += (kpiHeight + 5) * 2 + 15;
+  yPos += kpiHeight + 15;
   
-  // Grade Distribution Table
-  doc.setTextColor(...colors.text);
+  // Grade Distribution Table with colored badges
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text('Repartition par tranche de moyenne', 14, yPos);
   yPos += 8;
   
   const distribution = getGradeDistribution(eleves);
-  
-  // Use text labels instead of emojis
-  const gradeLabels = ['Excellent', 'Tres bien', 'Bien', 'Moyen', 'Insuffisant', 'Inquietant'];
+  const gradeLabels = ['Excellent (>=16)', 'Tres bien (14-16)', 'Bien (12-14)', 'Moyen (10-12)', 'Insuffisant (8-10)', 'Grande difficulte (<8)'];
+  const gradeBgColors = [
+    colors.excellent, colors.tresBien, colors.bien, 
+    colors.moyen, colors.insuffisant, colors.inquietant
+  ];
+  const gradeTextColors = [
+    colors.excellentText, colors.tresBienText, colors.bienText,
+    colors.moyenText, colors.insuffisantText, colors.inquietantText
+  ];
   
   const tableData = distribution.map((d, i) => [
     gradeLabels[i] || d.label,
-    d.min === 16 ? '>= 16' : d.min === 0 ? '< 8' : `${d.min} - ${d.max}`,
     String(d.count),
     `${d.percentage}%`
   ]);
   
   autoTable(doc, {
     startY: yPos,
-    head: [['Tranche', 'Fourchette', 'Nb eleves', '%']],
+    head: [['Tranche', 'Nb eleves', 'Pourcentage']],
     body: tableData,
-    theme: 'striped',
+    theme: 'plain',
     headStyles: {
       fillColor: colors.primary,
       textColor: [255, 255, 255],
@@ -324,25 +465,22 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
     },
     bodyStyles: {
       fontSize: 9,
-      textColor: colors.text,
     },
     columnStyles: {
-      0: { cellWidth: 40 },
-      1: { cellWidth: 30, halign: 'center' },
+      0: { cellWidth: 70 },
+      1: { cellWidth: 35, halign: 'center' },
       2: { cellWidth: 35, halign: 'center' },
-      3: { cellWidth: 30, halign: 'center' },
-    },
-    alternateRowStyles: {
-      fillColor: colors.background,
     },
     margin: { left: 14, right: 14 },
     didParseCell: function(hookData: any) {
-      // Color rows based on grade range
       if (hookData.section === 'body') {
         const rowIndex = hookData.row.index;
-        const colorKey = distribution[rowIndex]?.colorKey;
-        if (colorKey) {
-          hookData.cell.styles.fillColor = colors[colorKey];
+        if (rowIndex < gradeBgColors.length) {
+          hookData.cell.styles.fillColor = gradeBgColors[rowIndex];
+          hookData.cell.styles.textColor = gradeTextColors[rowIndex];
+          if (hookData.column.index === 0) {
+            hookData.cell.styles.fontStyle = 'bold';
+          }
         }
       }
     }
@@ -358,10 +496,10 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   const colWidth = (pageWidth - 35) / 2;
   
   // Points forts
-  doc.setFillColor(220, 252, 231);
+  doc.setFillColor(...colors.excellent);
   doc.roundedRect(14, yPos, colWidth, 50, 3, 3, 'F');
   
-  doc.setTextColor(22, 163, 74);
+  doc.setTextColor(...colors.success);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('[+] Points forts (moyenne >= 14)', 18, yPos + 10);
@@ -379,10 +517,10 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   }
   
   // À renforcer
-  doc.setFillColor(254, 243, 199);
+  doc.setFillColor(...colors.moyen);
   doc.roundedRect(14 + colWidth + 7, yPos, colWidth, 50, 3, 3, 'F');
   
-  doc.setTextColor(234, 88, 12);
+  doc.setTextColor(...colors.warning);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('[-] A renforcer (moyenne < 12)', 18 + colWidth + 7, yPos + 10);
@@ -402,66 +540,85 @@ function addResultsAnalysisPage(doc: jsPDF, data: ExportData, colors: typeof COL
   yPos += 60;
   
   // Top 3 Students
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
-  doc.text('[#] Top 3 eleves', 14, yPos);
+  doc.text('[#] Podium des 3 meilleurs eleves', 14, yPos);
   yPos += 8;
   
   const top3 = getTopStudents(eleves, 3);
   const medals = [PDF_ICONS.medal1, PDF_ICONS.medal2, PDF_ICONS.medal3];
   const medalColors: [number, number, number][] = [
-    [254, 243, 199], // Gold
-    [243, 244, 246], // Silver
-    [254, 215, 170], // Bronze
+    [255, 215, 0],   // Gold
+    [192, 192, 192], // Silver
+    [205, 127, 50],  // Bronze
   ];
   
   const podiumWidth = (pageWidth - 42) / 3;
   
   top3.forEach((student, i) => {
     const x = 14 + i * (podiumWidth + 7);
+    doc.setFillColor(...colors.background);
+    doc.roundedRect(x, yPos, podiumWidth, 32, 3, 3, 'F');
+    
+    // Medal indicator
     doc.setFillColor(...medalColors[i]);
-    doc.roundedRect(x, yPos, podiumWidth, 30, 3, 3, 'F');
-    
-    doc.setFontSize(12);
-    doc.setTextColor(...colors.primary);
-    doc.setFont('helvetica', 'bold');
-    doc.text(medals[i], x + podiumWidth / 2, yPos + 10, { align: 'center' });
-    
-    doc.setTextColor(...colors.text);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    const displayName = student.nom.length > 18 ? student.nom.substring(0, 16) + '...' : student.nom;
-    doc.text(displayName, x + podiumWidth / 2, yPos + 20, { align: 'center' });
+    doc.circle(x + 12, yPos + 16, 6, 'F');
     
     doc.setFontSize(10);
     doc.setTextColor(...colors.primary);
-    doc.text(student.moyenneGenerale.toFixed(2), x + podiumWidth / 2, yPos + 27, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text(medals[i], x + 12, yPos + 19, { align: 'center' });
+    
+    doc.setTextColor(...colors.text);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    const displayName = student.nom.length > 18 ? student.nom.substring(0, 16) + '...' : student.nom;
+    doc.text(displayName, x + 25, yPos + 14);
+    
+    doc.setFontSize(11);
+    const avgColor = getAverageColor(student.moyenneGenerale, colors);
+    doc.setTextColor(...avgColor);
+    doc.text(student.moyenneGenerale.toFixed(2), x + 25, yPos + 25);
   });
+  
+  addPageFooter(doc, colors);
 }
 
-function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
+// ============================================================
+// STUDENTS MONITORING PAGE
+// ============================================================
+function addStudentsMonitoringPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
   doc.addPage();
-  addPageHeader(doc, 'Suivi des eleves', colors, pageNum, totalPages);
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 25;
+  let yPos = 22;
   
   if (!data.classeCSV) {
     doc.setTextColor(...colors.muted);
     doc.setFontSize(12);
     doc.text('Donnees de suivi non disponibles', pageWidth / 2, yPos + 20, { align: 'center' });
+    addPageFooter(doc, colors);
     return;
   }
   
   const eleves = data.classeCSV.eleves;
   
-  // Struggling students
-  doc.setTextColor(...colors.text);
-  doc.setFontSize(12);
+  // Section title
+  doc.setTextColor(...colors.primary);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('[!] Eleves a surveiller (moyenne < 10)', 14, yPos);
-  yPos += 8;
+  yPos += 10;
   
   const struggling = getStrugglingStudents(eleves).slice(0, 8);
   
@@ -476,10 +633,10 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
       startY: yPos,
       head: [['Eleve', 'Moyenne', 'Matieres en difficulte']],
       body: tableData,
-      theme: 'striped',
+      theme: 'grid',
       headStyles: {
-        fillColor: [254, 226, 226],
-        textColor: [220, 38, 38],
+        fillColor: colors.inquietant,
+        textColor: colors.danger,
         fontSize: 9,
         fontStyle: 'bold',
       },
@@ -496,6 +653,15 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
         fillColor: [254, 242, 242],
       },
       margin: { left: 14, right: 14 },
+      didParseCell: function(hookData: any) {
+        if (hookData.section === 'body' && hookData.column.index === 1) {
+          const moyenne = parseFloat(hookData.cell.raw);
+          if (moyenne < 8) {
+            hookData.cell.styles.textColor = colors.danger;
+            hookData.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
     });
     
     yPos = (doc as any).lastAutoTable.finalY + 15;
@@ -508,11 +674,11 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   }
   
   // AI Recommendations
-  doc.setTextColor(...colors.text);
-  doc.setFontSize(12);
+  doc.setTextColor(...colors.primary);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.text('[i] Recommandations pour le conseil de classe', 14, yPos);
-  yPos += 8;
+  yPos += 10;
   
   const subjectStats = getSubjectAverages(data.classeCSV);
   const analysisData = {
@@ -526,18 +692,18 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   const suggestedActions = getSuggestedActions(analysisData);
   
   // Recommendations box
-  doc.setFillColor(239, 246, 255);
-  doc.setDrawColor(37, 99, 235);
+  doc.setFillColor(...colors.background);
+  doc.setDrawColor(...colors.cyan);
   doc.setLineWidth(0.8);
   
-  const boxHeight = 80;
+  const boxHeight = 75;
   doc.roundedRect(14, yPos, pageWidth - 28, boxHeight, 4, 4, 'FD');
   
   const colW = (pageWidth - 40) / 3;
   let xPos = 18;
   
   // Points à valoriser
-  doc.setTextColor(22, 163, 74);
+  doc.setTextColor(...colors.success);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('[+] Points a valoriser', xPos, yPos + 10);
@@ -552,7 +718,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   
   // Points d'attention
   xPos += colW + 5;
-  doc.setTextColor(234, 88, 12);
+  doc.setTextColor(...colors.warning);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('[!] Points d\'attention', xPos, yPos + 10);
@@ -567,7 +733,7 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
   
   // Actions suggérées
   xPos += colW + 5;
-  doc.setTextColor(37, 99, 235);
+  doc.setTextColor(...colors.cyan);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text('[>] Actions suggerees', xPos, yPos + 10);
@@ -579,19 +745,32 @@ function addStudentsMonitoringPage(doc: jsPDF, data: ExportData, colors: typeof 
     const lines = doc.splitTextToSize(`> ${action}`, colW - 5);
     doc.text(lines.slice(0, 2), xPos, yPos + 18 + i * 12);
   });
+  
+  addPageFooter(doc, colors);
 }
 
-function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOptions, colors: typeof COLORS, pageNum: number, totalPages: number) {
+// ============================================================
+// STUDENT RANKING PAGE (with color-coded averages)
+// ============================================================
+function addGlobalAnalysisPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  options: ExportOptions, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
   doc.addPage();
-  addPageHeader(doc, 'Classement des eleves', colors, pageNum, totalPages);
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
   
-  const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 25;
+  let yPos = 22;
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Classement complet', 14, yPos);
+  doc.text('Classement des eleves', 14, yPos);
   yPos += 12;
   
   if (data.classeCSV) {
@@ -609,118 +788,246 @@ function addGlobalAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOpti
       startY: yPos,
       head: [['Rang', 'Eleve', 'Moyenne', 'Abs.', 'Ret.']],
       body: tableData,
-      theme: 'striped',
+      theme: 'grid',
       headStyles: {
         fillColor: colors.primary,
         textColor: [255, 255, 255],
         fontSize: 9,
         fontStyle: 'bold',
+        halign: 'center',
       },
       bodyStyles: {
-        fontSize: 8,
+        fontSize: 9,
         textColor: colors.text,
       },
       columnStyles: {
         0: { cellWidth: 15, halign: 'center' },
-        1: { cellWidth: 70 },
+        1: { cellWidth: 55, halign: 'left' },
         2: { cellWidth: 25, halign: 'center' },
-        3: { cellWidth: 25, halign: 'center' },
-        4: { cellWidth: 25, halign: 'center' },
+        3: { cellWidth: 15, halign: 'center' },
+        4: { cellWidth: 15, halign: 'center' },
       },
       alternateRowStyles: {
         fillColor: colors.background,
       },
       margin: { left: 14, right: 14 },
+      didParseCell: function(hookData: any) {
+        if (hookData.section === 'body') {
+          // Color-code average column
+          if (hookData.column.index === 2) {
+            const moyenne = parseFloat(hookData.cell.raw);
+            if (!isNaN(moyenne)) {
+              if (moyenne >= 14) {
+                hookData.cell.styles.textColor = colors.success;
+                hookData.cell.styles.fontStyle = 'bold';
+              } else if (moyenne >= 12) {
+                hookData.cell.styles.textColor = colors.successLight;
+              } else if (moyenne >= 10) {
+                hookData.cell.styles.textColor = colors.warning;
+              } else {
+                hookData.cell.styles.textColor = colors.danger;
+                hookData.cell.styles.fontStyle = 'bold';
+              }
+            }
+          }
+          // Alert for excessive absences (>20)
+          if (hookData.column.index === 3) {
+            const absences = parseInt(hookData.cell.raw);
+            if (absences > 20) {
+              hookData.cell.styles.textColor = colors.danger;
+              hookData.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
+      }
     });
   }
+  
+  addPageFooter(doc, colors);
 }
 
-function addSubjectAnalysisPage(doc: jsPDF, data: ExportData, options: ExportOptions, colors: typeof COLORS, pageNum: number, totalPages: number) {
+// ============================================================
+// SUBJECT ANALYSIS PAGE - Grouped by Poles
+// ============================================================
+function addSubjectAnalysisPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  options: ExportOptions, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
   doc.addPage();
-  addPageHeader(doc, 'Analyse par matiere', colors, pageNum, totalPages);
-  
-  let yPos = 25;
-  
-  doc.setTextColor(...colors.text);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Resultats par discipline', 14, yPos);
-  yPos += 10;
-  
-  const matieres = data.bulletinClasse?.matieres || [];
-  
-  if (matieres.length > 0) {
-    const tableData = matieres.map(m => [
-      m.nom,
-      m.moyenne.toFixed(2),
-      m.appreciation || '-',
-    ]);
-    
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Matiere', 'Moy.', 'Appreciation']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: {
-        fillColor: colors.primary,
-        textColor: [255, 255, 255],
-        fontSize: 9,
-        fontStyle: 'bold',
-      },
-      bodyStyles: {
-        fontSize: 8,
-        textColor: colors.text,
-        overflow: 'linebreak',
-        cellPadding: { top: 4, right: 4, bottom: 4, left: 4 },
-      },
-      columnStyles: {
-        0: { cellWidth: 40, fontStyle: 'bold' },
-        1: { cellWidth: 20, halign: 'center' },
-        2: { cellWidth: 'auto' },
-      },
-      alternateRowStyles: {
-        fillColor: colors.background,
-      },
-      margin: { left: 14, right: 14 },
-    });
-  } else if (data.classeCSV) {
-    const matieresList = data.classeCSV.matieres.map(m => {
-      const notes = data.classeCSV!.eleves.map(e => e.moyennesParMatiere[m] || 0).filter(n => n > 0);
-      const avg = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
-      return [m, avg.toFixed(2), '-'];
-    });
-    
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Matiere', 'Moy. classe', 'Observations']],
-      body: matieresList,
-      theme: 'striped',
-      headStyles: {
-        fillColor: colors.primary,
-        textColor: [255, 255, 255],
-        fontSize: 9,
-        fontStyle: 'bold',
-      },
-      bodyStyles: {
-        fontSize: 8,
-        textColor: colors.text,
-      },
-      alternateRowStyles: {
-        fillColor: colors.background,
-      },
-      margin: { left: 14, right: 14 },
-    });
-  }
-}
-
-function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof COLORS, pageNum: number, totalPages: number) {
-  doc.addPage();
-  addPageHeader(doc, 'Appreciation generale', colors, pageNum, totalPages);
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
   
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 30;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  let yPos = 22;
   
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(...colors.primary);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Analyse par matiere', 14, yPos);
+  yPos += 12;
+  
+  // Get subjects data
+  let subjects: { nom: string; moyenne: number; appreciation: string; professeur?: string }[] = [];
+  
+  if (data.bulletinClasse?.matieres) {
+    subjects = data.bulletinClasse.matieres.map(m => ({
+      nom: m.nom,
+      moyenne: m.moyenne,
+      appreciation: m.appreciation || '',
+      professeur: '',
+    }));
+  } else if (data.classeCSV) {
+    subjects = data.classeCSV.matieres.map(m => {
+      const notes = data.classeCSV!.eleves.map(e => e.moyennesParMatiere[m] || 0).filter(n => n > 0);
+      const avg = notes.length > 0 ? notes.reduce((a, b) => a + b, 0) / notes.length : 0;
+      return { nom: m, moyenne: avg, appreciation: '', professeur: '' };
+    });
+  }
+  
+  // Group subjects by pole
+  const groupedSubjects: Record<string, typeof subjects> = {
+    litteraire: [],
+    scientifique: [],
+    artistique: [],
+    autres: [],
+  };
+  
+  subjects.forEach(s => {
+    const pole = getSubjectPole(s.nom);
+    if (pole) {
+      groupedSubjects[pole].push(s);
+    } else {
+      groupedSubjects.autres.push(s);
+    }
+  });
+  
+  // Render each pole
+  const poles = [
+    { key: 'litteraire', config: SUBJECT_POLES.litteraire },
+    { key: 'scientifique', config: SUBJECT_POLES.scientifique },
+    { key: 'artistique', config: SUBJECT_POLES.artistique },
+    { key: 'autres', config: { name: 'AUTRES MATIERES', color: colors.background, textColor: colors.text } },
+  ];
+  
+  for (const pole of poles) {
+    const poleSubjects = groupedSubjects[pole.key];
+    if (poleSubjects.length === 0) continue;
+    
+    // Check if we need a new page
+    if (yPos > pageHeight - 60) {
+      addPageFooter(doc, colors);
+      doc.addPage();
+      addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
+      yPos = 22;
+    }
+    
+    // Pole header
+    doc.setFillColor(...pole.config.color);
+    doc.roundedRect(14, yPos, pageWidth - 28, 8, 2, 2, 'F');
+    doc.setTextColor(...pole.config.textColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text(pole.config.name, 18, yPos + 5.5);
+    yPos += 12;
+    
+    // Subject blocks
+    for (const subject of poleSubjects) {
+      if (yPos > pageHeight - 45) {
+        addPageFooter(doc, colors);
+        doc.addPage();
+        addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
+        yPos = 22;
+      }
+      
+      const blockHeight = options.includeComments && subject.appreciation ? 30 : 18;
+      
+      // Subject block
+      doc.setFillColor(...colors.white);
+      doc.setDrawColor(...colors.separator);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, yPos, pageWidth - 28, blockHeight, 3, 3, 'FD');
+      
+      // Subject name (uppercase, bold)
+      const subjectNameNorm = subject.nom.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      doc.setTextColor(...colors.primary);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(subjectNameNorm, 18, yPos + 8);
+      
+      // Average (right-aligned with color)
+      const avgColor = getAverageColor(subject.moyenne, colors);
+      doc.setTextColor(...avgColor);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Moy: ${subject.moyenne.toFixed(2)}`, pageWidth - 22, yPos + 8, { align: 'right' });
+      
+      // Separator line
+      doc.setDrawColor(...colors.separator);
+      doc.line(18, yPos + 11, pageWidth - 22, yPos + 11);
+      
+      // Appreciation (if included)
+      if (options.includeComments && subject.appreciation) {
+        doc.setTextColor(...colors.text);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        const truncatedApp = subject.appreciation.length > 200 
+          ? subject.appreciation.substring(0, 197) + '...'
+          : subject.appreciation;
+        const lines = doc.splitTextToSize(`"${truncatedApp}"`, pageWidth - 48);
+        doc.text(lines.slice(0, 2), 18, yPos + 18);
+      }
+      
+      // Progress bar (if graphs enabled)
+      if (options.includeGraphs) {
+        const barY = options.includeComments && subject.appreciation ? yPos + 25 : yPos + 13;
+        const barWidth = 50;
+        const barHeight = 3;
+        const barX = pageWidth - 22 - barWidth;
+        
+        // Background bar
+        doc.setFillColor(...colors.separator);
+        doc.roundedRect(barX, barY, barWidth, barHeight, 1, 1, 'F');
+        
+        // Progress bar
+        const progress = Math.min(subject.moyenne / 20, 1) * barWidth;
+        doc.setFillColor(...avgColor);
+        doc.roundedRect(barX, barY, progress, barHeight, 1, 1, 'F');
+      }
+      
+      yPos += blockHeight + 4;
+    }
+    
+    yPos += 4; // Space between poles
+  }
+  
+  addPageFooter(doc, colors);
+}
+
+// ============================================================
+// GENERAL APPRECIATION PAGE
+// ============================================================
+function addGeneralAppreciationPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
+  doc.addPage();
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
+  
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let yPos = 26;
+  
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('Appreciation du conseil de classe', 14, yPos);
@@ -730,8 +1037,8 @@ function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof
     doc.setFillColor(...colors.background);
     doc.roundedRect(14, yPos, pageWidth - 28, 80, 5, 5, 'F');
     
-    doc.setDrawColor(...colors.primary);
-    doc.setLineWidth(0.5);
+    doc.setDrawColor(...colors.gold);
+    doc.setLineWidth(0.8);
     doc.roundedRect(14, yPos, pageWidth - 28, 80, 5, 5, 'S');
     
     doc.setTextColor(...colors.text);
@@ -746,9 +1053,23 @@ function addGeneralAppreciationPage(doc: jsPDF, data: ExportData, colors: typeof
     doc.setFont('helvetica', 'italic');
     doc.text('Aucune appreciation generale n\'a ete generee.', 14, yPos);
   }
+  
+  addPageFooter(doc, colors);
 }
 
-function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: ExportOptions, colors: typeof COLORS, startPage: number, totalPages: number) {
+// ============================================================
+// INDIVIDUAL APPRECIATIONS PAGES
+// ============================================================
+function addIndividualAppreciationsPages(
+  doc: jsPDF, 
+  data: ExportData, 
+  options: ExportOptions, 
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  startPage: number, 
+  totalPages: number
+) {
   const students = data.bulletinsEleves || [];
   const appreciations = data.studentAppreciations || [];
   const attributions = data.studentAttributions || [];
@@ -773,30 +1094,28 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  // Card dimensions - adaptive based on content
   const cardMinHeight = 45;
   const cardMaxHeight = 70;
   const cardMargin = 8;
-  const headerHeight = 25;
-  const footerMargin = 20;
+  const headerHeight = 22;
+  const footerMargin = 25;
   
   doc.addPage();
-  addPageHeader(doc, 'Appreciations individuelles', colors, currentPage, totalPages);
+  addPageHeader(doc, className, trimester, colors, currentPage, totalPages);
   
   let yPos = headerHeight;
   
   // Title
-  doc.setTextColor(...colors.text);
+  doc.setTextColor(...colors.primary);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${studentList.length} eleves evalues`, 14, yPos + 5);
+  doc.text(`Appreciations individuelles (${studentList.length} eleves)`, 14, yPos + 5);
   yPos += 15;
   
   for (let i = 0; i < studentList.length; i++) {
     const student = studentList[i];
     const hasAttribution = options.includeAttributions && student.attribution;
     
-    // Calculate card height based on content
     let cardHeight = cardMinHeight;
     if (student.appreciation) {
       const appreciationLines = doc.splitTextToSize(student.appreciation, pageWidth - 60);
@@ -804,24 +1123,24 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
       cardHeight = Math.min(Math.max(cardMinHeight, 25 + textHeight + (hasAttribution ? 15 : 0)), cardMaxHeight);
     }
     
-    // Check if we need a new page
     if (yPos + cardHeight > pageHeight - footerMargin) {
+      addPageFooter(doc, colors);
       doc.addPage();
       currentPage++;
-      addPageHeader(doc, 'Appreciations individuelles', colors, currentPage, totalPages);
+      addPageHeader(doc, className, trimester, colors, currentPage, totalPages);
       yPos = headerHeight;
     }
     
     // Card background
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...colors.muted);
+    doc.setFillColor(...colors.white);
+    doc.setDrawColor(...colors.separator);
     doc.setLineWidth(0.3);
     doc.roundedRect(14, yPos, pageWidth - 28, cardHeight, 4, 4, 'FD');
     
     // Header with name and average
     doc.setFillColor(...colors.background);
     doc.roundedRect(14, yPos, pageWidth - 28, 14, 4, 4, 'F');
-    doc.rect(14, yPos + 10, pageWidth - 28, 4, 'F'); // Cover bottom corners
+    doc.rect(14, yPos + 10, pageWidth - 28, 4, 'F');
     
     // Student name
     doc.setTextColor(...colors.text);
@@ -830,8 +1149,8 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
     const displayName = student.name.length > 35 ? student.name.substring(0, 33) + '...' : student.name;
     doc.text(displayName, 18, yPos + 9);
     
-    // Average badge
-    const avgColor = student.average >= 14 ? colors.success : student.average >= 10 ? colors.warning : colors.danger;
+    // Average badge with color
+    const avgColor = getAverageColor(student.average, colors);
     doc.setFillColor(...avgColor);
     doc.roundedRect(pageWidth - 45, yPos + 2, 27, 10, 2, 2, 'F');
     doc.setTextColor(255, 255, 255);
@@ -859,10 +1178,10 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
       const attrConfig = attributionConfig[student.attribution];
       const attrY = yPos + cardHeight - 12;
       
-      doc.setFillColor(...colors.background);
+      doc.setFillColor(...colors.gold);
       doc.roundedRect(18, attrY, 80, 8, 2, 2, 'F');
       
-      doc.setTextColor(...colors.text);
+      doc.setTextColor(...colors.primary);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.text(`Attribution: ${attrConfig.shortLabel}`, 22, attrY + 5.5);
@@ -870,25 +1189,25 @@ function addIndividualAppreciationsPages(doc: jsPDF, data: ExportData, options: 
     
     yPos += cardHeight + cardMargin;
   }
+  
+  addPageFooter(doc, colors);
 }
 
+// ============================================================
+// MAIN EXPORT FUNCTIONS
+// ============================================================
 export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   const doc = new jsPDF('p', 'mm', 'a4');
   const colors = getColors(options.colorMode);
   
-  // Calculate total pages (approximate)
+  // Get class info for headers
+  const className = data.bulletinClasse?.classe || data.classeCSV?.eleves?.[0]?.nom?.match(/\d+[eè]m?e?/i)?.[0] || '3eme';
+  const trimester = data.bulletinClasse?.trimestre || '1er Trimestre';
+  
+  // Calculate total pages
   const nbStudents = data.classeCSV?.eleves.length || data.bulletinsEleves?.length || 0;
   const individualPages = Math.ceil(nbStudents / 4);
   const hasAnalysisData = !!data.classeCSV;
-  
-  // Page structure:
-  // 1: Cover
-  // 2: Results Analysis (if classeCSV)
-  // 3: Students Monitoring (if classeCSV)
-  // 4: Student Ranking
-  // 5: Subject Analysis
-  // 6: General Appreciation
-  // 7+: Individual Appreciations
   
   const basePagesWithAnalysis = hasAnalysisData ? 6 : 4;
   const totalPages = basePagesWithAnalysis + individualPages;
@@ -901,28 +1220,28 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   
   // Page 2-3: Results Analysis (only if we have CSV data)
   if (hasAnalysisData) {
-    addResultsAnalysisPage(doc, data, colors, currentPage, totalPages);
+    addResultsAnalysisPage(doc, data, colors, className, trimester, currentPage, totalPages);
     currentPage++;
     
-    addStudentsMonitoringPage(doc, data, colors, currentPage, totalPages);
+    addStudentsMonitoringPage(doc, data, colors, className, trimester, currentPage, totalPages);
     currentPage++;
   }
   
   // Page 4: Student Ranking
-  addGlobalAnalysisPage(doc, data, options, colors, currentPage, totalPages);
+  addGlobalAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
   // Page 5: Subject Analysis
-  addSubjectAnalysisPage(doc, data, options, colors, currentPage, totalPages);
+  addSubjectAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
   // Page 6: General Appreciation
-  addGeneralAppreciationPage(doc, data, colors, currentPage, totalPages);
+  addGeneralAppreciationPage(doc, data, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
   // Pages 7+: Individual Appreciations
   if (nbStudents > 0) {
-    addIndividualAppreciationsPages(doc, data, options, colors, currentPage, totalPages);
+    addIndividualAppreciationsPages(doc, data, options, colors, className, trimester, currentPage, totalPages);
   }
   
   return doc;
