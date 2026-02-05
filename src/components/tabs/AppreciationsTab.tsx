@@ -31,6 +31,7 @@ import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
 import { AnonymizationQuickSelector } from "@/components/AnonymizationQuickSelector";
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
+import { useStudentTones } from "@/hooks/useStudentTones";
 import { AnonymizationLevel, FIRST_NAME_PLACEHOLDER } from "@/types/privacy";
 import { AIGenerationWarning } from "@/components/AIGenerationWarning";
 import StudentAppreciationCard from "@/components/analysis/StudentAppreciationCard";
@@ -74,7 +75,10 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
-  const [studentTones, setStudentTones] = useState<Record<number, AppreciationTone>>({});
+  
+  // Use the extracted hook for tone management
+  const { tones: studentTones, setTone: setStudentTone, getTone, resetTones, setMultipleTones } = useStudentTones('standard');
+  
   const [studentTexts, setStudentTexts] = useState<string[]>(data?.studentAppreciations || []);
   const [studentJustifications, setStudentJustifications] = useState<Record<number, Justification[]>>({});
   const [isLoadingAll, setIsLoadingAll] = useState(false);
@@ -148,7 +152,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
           description: `${bulletins.length} élève${bulletins.length > 1 ? 's' : ''} extrait${bulletins.length > 1 ? 's' : ''}. Génération des appréciations en cours...`,
         });
         // Reset related state for new file
-        setStudentTones({});
+        resetTones();
         setStudentTexts([]);
         setStudentJustifications({});
         setStudentAttributions({});
@@ -172,7 +176,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const handleRemoveFile = () => {
     setLocalBulletinsEleves([]);
     setCurrentFileName("");
-    setStudentTones({});
+    resetTones();
     setStudentTexts([]);
     setStudentJustifications({});
     setStudentAttributions({});
@@ -302,7 +306,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         // Auto-set tone based on attribution if not manually set
         if (!studentTones[index]) {
           const suggestedTone = suggestToneFromAttribution(suggested);
-          setStudentTones(prev => ({ ...prev, [index]: suggestedTone }));
+          setStudentTone(index, suggestedTone);
         }
       });
       
@@ -318,7 +322,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   }, [attributionsEnabled]);
 
   const handleToneChange = (index: number, tone: AppreciationTone) => {
-    setStudentTones(prev => ({ ...prev, [index]: tone }));
+    setStudentTone(index, tone);
   };
 
   const handleAttributionChange = (index: number, attribution: Attribution | null) => {
@@ -344,7 +348,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
     
     // Auto-update tone based on new attribution
     const suggestedTone = suggestToneFromAttribution(attribution);
-    setStudentTones(prev => ({ ...prev, [index]: suggestedTone }));
+    setStudentTone(index, suggestedTone);
   };
 
   const handleAnalyzeAllAttributions = () => {
@@ -390,7 +394,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
       newTones[index] = suggestToneFromAttribution(attr.attribution);
     });
     
-    setStudentTones(prev => ({ ...prev, ...newTones }));
+    setMultipleTones(newTones);
     setShowSummaryDialog(false);
     
     toast({
