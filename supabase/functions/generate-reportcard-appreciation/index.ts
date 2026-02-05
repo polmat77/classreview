@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,40 +57,58 @@ function truncateIntelligently(text: string, maxChars: number): string {
   return truncated.substring(0, maxChars - 3) + '...';
 }
 
+interface ObservationParMatiere {
+  matiere: string;
+  comportement: string;
+}
+
+interface ComportementRecurrent {
+  comportement: string;
+  matieres: string[];
+}
+
+// Detect behaviors appearing in 2+ subjects
+function detecterComportementsRecurrents(observations: ObservationParMatiere[]): ComportementRecurrent[] {
+  if (!observations || observations.length === 0) return [];
+  
+  const groupes: Record<string, string[]> = {};
+  observations.forEach((obs) => {
+    if (!groupes[obs.comportement]) groupes[obs.comportement] = [];
+    if (!groupes[obs.comportement].includes(obs.matiere)) {
+      groupes[obs.comportement].push(obs.matiere);
+    }
+  });
+  
+  return Object.entries(groupes)
+    .filter(([_, matieres]) => matieres.length >= 2)
+    .map(([comportement, matieres]) => ({ comportement, matieres }));
+}
+
+// Categorize subjects by results
+function categoriserResultats(observations: ObservationParMatiere[]): { reussites: string[]; difficultes: string[] } {
+  if (!observations || observations.length === 0) return { reussites: [], difficultes: [] };
+  
+  const reussites = [...new Set(observations.filter(o => o.comportement === "Excellents résultats").map(o => o.matiere))];
+  const difficultes = [...new Set(observations.filter(o => o.comportement === "Difficultés importantes").map(o => o.matiere))];
+  
+  return { reussites, difficultes };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authentication: Validate JWT token
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Authentification requise' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Create Supabase client with auth header to validate token
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const { 
+      student, 
+      classAverage, 
+      subject, 
+      trimester, 
+      maxCharacters = 400, 
+      tone: rawTone = 'standard' 
+    } = await req.json();
     
-    // Validate JWT and get user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Token invalide ou expiré' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { student, classAverage, subject, trimester, maxCharacters = 400, tone: rawTone = 'standard' } = await req.json();
     const tone = migrateTone(rawTone);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
@@ -109,7 +126,8 @@ serve(async (req) => {
       nonRendus,
       behaviorIssue,
       isTalkative,
-      specificObservations 
+      specificObservations,
+      observationsParMatiere = []
     } = student;
 
     // Calculate target with safety margin
@@ -118,76 +136,109 @@ serve(async (req) => {
     
     // Get work level description instead of numerical average
     const workLevel = getWorkLevel(average);
-
     const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
 
-    const systemPrompt = `Tu es un professeur expérimenté rédigeant une appréciation pour un bulletin scolaire de collège/lycée.
+    // Process subject-specific observations
+    const comportementsRecurrents = detecterComportementsRecurrents(observationsParMatiere);
+    const { reussites, difficultes } = categoriserResultats(observationsParMatiere);
+    
+    const matieresReussitesStr = reussites.length > 0 ? reussites.join(", ") : "Non spécifié";
+    const matieresDifficultesStr = difficultes.length > 0 ? difficultes.join(", ") : "Non spécifié";
+    const comportementsRecurrentsStr = comportementsRecurrents.length > 0
+      ? comportementsRecurrents.map(c => `${c.comportement} en : ${c.matieres.join(", ")}`).join(" | ")
+      : "Aucun signalement";
+
+    // Build enhanced system prompt for bulletin analysis style
+    const systemPrompt = `Tu es un professeur principal présentant un élève devant le conseil de classe. Tu dois être PRÉCIS et FACTUEL en mentionnant les matières spécifiques quand tu as cette information.
 
 CONTRAINTE DE LONGUEUR ABSOLUE ET NON NÉGOCIABLE :
 - MINIMUM : ${minChars} caractères
 - MAXIMUM : ${maxCharacters} caractères  
 - CIBLE IDÉALE : ${targetChars} caractères
-⚠️ Si ton texte dépasse ${maxCharacters} caractères, il sera REJETÉ. Compte tes caractères.
+⚠️ Si ton texte dépasse ${maxCharacters} caractères, il sera REJETÉ.
 
-RÈGLES STRICTES À RESPECTER IMPÉRATIVEMENT :
-- NE JAMAIS mentionner la moyenne chiffrée de l'élève (pas de "12/20", "moyenne de 15", "17.9/20", etc.)
-- NE JAMAIS comparer avec la moyenne de classe en chiffres
-- NE JAMAIS écrire de notes numériques dans l'appréciation
-- Utiliser UNIQUEMENT des formulations qualitatives (excellent, satisfaisant, insuffisant, etc.)
-- Commencer directement par le prénom "${firstName}"
-- Ne pas commencer par "L'élève" ou "${firstName} est un/une élève"
-- Pas de formule de politesse finale
-- En français correct et professionnel
-
+───────────────────────────────────────────────────
 TON À ADOPTER : ${tone}
 ${toneInstruction}
+───────────────────────────────────────────────────
 
-FORMULATIONS QUALITATIVES À UTILISER selon le niveau "${workLevel}" :
-- Excellent (≥16) : "trimestre remarquable", "excellents résultats", "travail exemplaire", "très bonne maîtrise"
-- Très bon (14-16) : "trimestre très satisfaisant", "très bons résultats", "investissement sérieux"
-- Bon (12-14) : "trimestre satisfaisant", "bons résultats", "travail sérieux"
-- Correct (10-12) : "résultats corrects", "peut mieux faire", "des efforts à poursuivre"
-- Insuffisant (8-10) : "résultats insuffisants", "manque de travail", "doit fournir plus d'efforts"
-- Très insuffisant (<8) : "situation préoccupante", "résultats alarmants", "ressaisissement impératif"
+STRUCTURE OBLIGATOIRE DE TA PRÉSENTATION :
 
-STRUCTURE (adapter selon le profil) :
-1. Phrase d'accroche qualitative sur le bilan du trimestre (SANS chiffres)
-2. Mention de la participation orale si pertinent
-3. Commentaire sur l'attitude/sérieux
-4. Si absences ou non-rendus : le mentionner
-5. Encouragement ou avertissement adapté au profil
+1. OUVERTURE (1 phrase)
+   Commence TOUJOURS par : "${firstName} obtient [niveau qualitatif] ce trimestre."
+   Utilise le niveau "${workLevel}" pour formuler : excellent/très satisfaisant/satisfaisant/correct/insuffisant/préoccupant
 
-EXEMPLES CORRECTS :
-✅ "Lilou réalise un excellent trimestre. Sa participation orale est remarquable et son travail très rigoureux."
-✅ "Les résultats de Flavio sont satisfaisants ce trimestre. Il participe avec pertinence mais gagnerait à approfondir son travail personnel."
-✅ "Kyle présente des résultats insuffisants qui traduisent un manque d'investissement. Un ressaisissement s'impose."
+2. RÉSULTATS PAR DOMAINE (2-3 phrases)
+   - SI matières de réussite spécifiées (${matieresReussitesStr}) : NOMME-les explicitement
+     Exemple : "Il/Elle réussit particulièrement en mathématiques et SVT."
+   - SI matières en difficulté spécifiées (${matieresDifficultesStr}) : NOMME-les explicitement
+     Exemple : "En revanche, des difficultés persistent en français et histoire-géographie."
+   - SI aucune matière spécifiée : commente les résultats de manière globale basée sur le niveau de travail
 
-FORMULATIONS INTERDITES :
-❌ "avec une moyenne de 17.9/20"
-❌ "obtient 13/20"
-❌ "nettement au-dessus de la moyenne de classe (12.5)"
-❌ "sa moyenne de 9.16"
-❌ Toute mention chiffrée de notes ou moyennes
+3. ATTITUDE ET COMPORTEMENT (2-3 phrases)
+   - Commente le sérieux et la participation globale
+   - SI comportements récurrents détectés (2+ matières) : NOMME les matières concernées
+     Données disponibles : ${comportementsRecurrentsStr}
+     Exemple : "Des bavardages sont régulièrement signalés en anglais et histoire-géographie."
+   - SI aucun comportement récurrent : commente l'attitude de manière générale
 
-RAPPEL FINAL : Maximum ${maxCharacters} caractères. Sois concis et percutant.`;
+4. POINTS D'ALERTE (1 phrase si pertinent)
+   - Mentionne les absences si > 3
+   - Mentionne les devoirs non rendus si > 2
 
-    let context = `Génère une appréciation pour cet élève :\n`;
+5. CONCLUSION (1 phrase)
+   - Conseil concret ou perspective d'amélioration
+
+───────────────────────────────────────────────────
+
+RÈGLES ABSOLUES :
+✅ TOUJOURS commencer par le prénom "${firstName}"
+✅ TOUJOURS nommer les matières spécifiques QUAND elles sont fournies
+✅ TOUJOURS mentionner un comportement dès qu'il apparaît dans 2+ matières
+✅ Être factuel et précis, jamais vague
+✅ Ton professionnel mais bienveillant
+✅ Longueur : ${minChars}-${maxCharacters} caractères
+
+❌ INTERDICTIONS :
+❌ Ne JAMAIS mentionner de notes chiffrées (pas de "12/20", "moyenne de 15")
+❌ Ne JAMAIS répéter le niveau qualitatif dans le corps du texte
+❌ Ne JAMAIS dire "dans l'ensemble", "globalement" SI tu peux nommer des matières précises
+❌ Ne JAMAIS inventer de matières non mentionnées dans les données
+❌ Ne JAMAIS porter de jugement sur la personnalité de l'élève
+❌ Ne JAMAIS mentionner un comportement qui apparaît dans une seule matière sauf si observation spécifique le demande`;
+
+    // Build context with all available data
+    let context = `Génère une présentation orale pour le conseil de classe :\n\n`;
+    context += `═══════════════════════════════════════════════════\n`;
+    context += `DONNÉES DE L'ÉLÈVE :\n`;
     context += `- Prénom : ${firstName}\n`;
     context += `- Nom : ${lastName}\n`;
     context += `- Niveau de travail : ${workLevel}\n`;
-    if (seriousness !== null && seriousness !== undefined) context += `- Sérieux en classe : ${seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique"}\n`;
-    if (participation !== null && participation !== undefined) context += `- Participation orale : ${participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante"}\n`;
-    if (absences && absences > 0) context += `- Absences aux évaluations : ${absences}\n`;
-    if (nonRendus && nonRendus > 0) context += `- Devoirs non rendus : ${nonRendus}\n`;
-    if (behaviorIssue) context += `- Problème de comportement : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'signalé'}\n`;
-    if (isTalkative) context += `- Signalé comme bavard\n`;
-    if (specificObservations && specificObservations.length > 0) {
-      context += `- Observations spécifiques : ${specificObservations.join(", ")}\n`;
+    if (seriousness !== null && seriousness !== undefined) {
+      context += `- Sérieux global : ${seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique"}\n`;
     }
-    if (subject) context += `- Matière : ${subject}\n`;
-    if (trimester) context += `- Période : ${trimester}\n`;
+    if (participation !== null && participation !== undefined) {
+      context += `- Participation globale : ${participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante"}\n`;
+    }
+    if (absences && absences > 0) context += `- Absences : ${absences}\n`;
+    if (nonRendus && nonRendus > 0) context += `- Devoirs non rendus : ${nonRendus}\n`;
+    
+    context += `\n═══════════════════════════════════════════════════\n`;
+    context += `MATIÈRES DE RÉUSSITE :\n${matieresReussitesStr}\n\n`;
+    context += `MATIÈRES EN DIFFICULTÉ :\n${matieresDifficultesStr}\n\n`;
+    context += `COMPORTEMENTS RÉCURRENTS (2+ matières) :\n${comportementsRecurrentsStr}\n`;
+    context += `═══════════════════════════════════════════════════\n\n`;
+    
+    if (behaviorIssue) {
+      context += `⚠️ Problème de comportement signalé : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'oui'}\n`;
+    }
+    if (isTalkative) context += `⚠️ Signalé comme bavard\n`;
+    if (specificObservations && specificObservations.length > 0) {
+      context += `📝 Observations personnelles du PP : ${specificObservations.join(", ")}\n`;
+    }
+    
     context += `\nTon demandé : ${tone}\n`;
-    context += `\n⚠️ RAPPEL CRITIQUE : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées.`;
+    context += `\n⚠️ RAPPEL : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
