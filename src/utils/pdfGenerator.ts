@@ -100,6 +100,7 @@ export interface ExportOptions {
   colorMode: boolean;
   schoolLogo: boolean;
   includeAttributions?: boolean;
+  hideNonEvaluableStudents?: boolean;
 }
 
 export interface ExportData {
@@ -356,6 +357,267 @@ function addCoverPage(doc: jsPDF, data: ExportData, colors: typeof COLORS) {
     doc.setFontSize(11);
     doc.text(school, centerX, pageHeight - 25, { align: 'center' });
   }
+}
+
+// ============================================================
+// EXECUTIVE SUMMARY PAGE (Page 2)
+// ============================================================
+function addExecutiveSummaryPage(
+  doc: jsPDF, 
+  data: ExportData, 
+  options: ExportOptions,
+  colors: typeof COLORS, 
+  className: string, 
+  trimester: string, 
+  pageNum: number, 
+  totalPages: number
+) {
+  doc.addPage();
+  addPageHeader(doc, className, trimester, colors, pageNum, totalPages);
+  
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let currentY = 22;
+  
+  // === TITLE ===
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(...colors.primary);
+  doc.text('SYNTHESE DU CONSEIL DE CLASSE', margin, currentY);
+  
+  // Gold line under title
+  currentY += 5;
+  doc.setDrawColor(...colors.gold);
+  doc.setLineWidth(0.8);
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+  currentY += 12;
+  
+  // === VUE D'ENSEMBLE SECTION ===
+  const overviewHeight = 58;
+  doc.setFillColor(...colors.background);
+  doc.roundedRect(margin, currentY, pageWidth - 2 * margin, overviewHeight, 3, 3, 'F');
+  
+  // Section title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text('[VUE] VUE D\'ENSEMBLE', margin + 5, currentY + 8);
+  
+  // Separator line
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.3);
+  doc.line(margin + 5, currentY + 12, pageWidth - margin - 5, currentY + 12);
+  
+  // Calculate statistics
+  const eleves = data.classeCSV?.eleves || [];
+  const moyenne = calculateClassAverage(eleves);
+  const mediane = calculateMedian(eleves);
+  const ecartType = calculateStdDev(eleves);
+  const tauxReussite = calculateSuccessRate(eleves);
+  const elevesAuDessus10 = eleves.filter(e => e.moyenneGenerale >= 10 && !isNaN(e.moyenneGenerale)).length;
+  const elevesEnDifficulte = eleves.filter(e => e.moyenneGenerale < 10 && e.moyenneGenerale > 0).length;
+  const top3 = getTopStudents(eleves, 3);
+  const elevesAbsencesExcessives = eleves.filter(e => (e.absences || 0) > 50).length;
+  
+  // Statistics in 2 columns
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.text);
+  
+  const col1X = margin + 10;
+  const col2X = pageWidth / 2 + 10;
+  let statsY = currentY + 22;
+  
+  doc.text(`Moyenne de classe : ${isNaN(moyenne) ? '-' : moyenne.toFixed(2)}`, col1X, statsY);
+  doc.text(`Mediane : ${isNaN(mediane) ? '-' : mediane.toFixed(2)}`, col2X, statsY);
+  statsY += 8;
+  doc.text(`Ecart-type : ${isNaN(ecartType) ? '-' : ecartType.toFixed(2)}`, col1X, statsY);
+  doc.text(`Taux de reussite : ${isNaN(tauxReussite) ? '-' : tauxReussite}%`, col2X, statsY);
+  
+  // 4 mini-cards KPI
+  const cardStartY = currentY + 40;
+  const miniCardWidth = 38;
+  const miniCardHeight = 14;
+  const miniCardSpacing = 6;
+  const totalCardsWidth = 4 * miniCardWidth + 3 * miniCardSpacing;
+  const cardsStartX = (pageWidth - totalCardsWidth) / 2;
+  
+  const kpiData = [
+    { value: elevesAuDessus10, label: 'eleves >10', color: colors.success, icon: '+' },
+    { value: elevesEnDifficulte, label: 'eleves <10', color: colors.warning, icon: '!' },
+    { value: top3.length, label: 'Top 3', color: [59, 130, 246] as [number, number, number], icon: '#' },
+    { value: elevesAbsencesExcessives, label: 'Abs. excess.', color: colors.danger, icon: 'X' }
+  ];
+  
+  kpiData.forEach((kpi, index) => {
+    const cardX = cardsStartX + index * (miniCardWidth + miniCardSpacing);
+    
+    // Card background
+    doc.setFillColor(...colors.white);
+    doc.roundedRect(cardX, cardStartY, miniCardWidth, miniCardHeight, 2, 2, 'F');
+    doc.setDrawColor(...kpi.color);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(cardX, cardStartY, miniCardWidth, miniCardHeight, 2, 2, 'S');
+    
+    // Value with icon
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...kpi.color);
+    doc.text(`${kpi.value} ${kpi.icon}`, cardX + miniCardWidth / 2, cardStartY + 6, { align: 'center' });
+    
+    // Label
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6);
+    doc.setTextColor(...colors.muted);
+    doc.text(kpi.label, cardX + miniCardWidth / 2, cardStartY + 11, { align: 'center' });
+  });
+  
+  currentY += overviewHeight + 8;
+  
+  // === POINTS POSITIFS / VIGILANCE (2 columns) ===
+  const colWidth = (pageWidth - 2 * margin - 8) / 2;
+  const boxHeight = 52;
+  
+  // Get analysis data
+  const subjectStats = data.classeCSV ? getSubjectAverages(data.classeCSV) : [];
+  const strongSubjects = getStrongSubjects(subjectStats);
+  const weakSubjects = getWeakSubjectsClass(subjectStats);
+  
+  // Points positifs
+  const pointsPositifs = [
+    ...strongSubjects.slice(0, 2).map(s => `${s.name}: ${s.currentAvg.toFixed(2)}`),
+    ecartType < 2.5 ? 'Classe relativement homogene' : null,
+    tauxReussite >= 70 ? `Taux de reussite eleve (${tauxReussite}%)` : null,
+  ].filter(Boolean).slice(0, 4);
+  
+  // Points de vigilance
+  const pointsVigilance = [
+    ...weakSubjects.slice(0, 2).map(s => `${s.name}: ${s.currentAvg.toFixed(2)}`),
+    elevesEnDifficulte > 0 ? `${elevesEnDifficulte} eleves en difficulte (${Math.round(elevesEnDifficulte / eleves.length * 100)}%)` : null,
+    elevesAbsencesExcessives > 0 ? `${elevesAbsencesExcessives} absences prolongees` : null,
+  ].filter(Boolean).slice(0, 4);
+  
+  // Points positifs box
+  doc.setFillColor(...colors.excellent);
+  doc.roundedRect(margin, currentY, colWidth, boxHeight, 3, 3, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.excellentText);
+  doc.text('[+] POINTS POSITIFS', margin + 5, currentY + 10);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...colors.text);
+  let pointsY = currentY + 20;
+  if (pointsPositifs.length === 0) {
+    doc.setTextColor(...colors.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Aucun point positif identifie', margin + 5, pointsY);
+  } else {
+    pointsPositifs.forEach(point => {
+      doc.text(`- ${point}`, margin + 5, pointsY);
+      pointsY += 8;
+    });
+  }
+  
+  // Points de vigilance box
+  const col2Start = margin + colWidth + 8;
+  doc.setFillColor(...colors.moyen);
+  doc.roundedRect(col2Start, currentY, colWidth, boxHeight, 3, 3, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.moyenText);
+  doc.text('[!] POINTS DE VIGILANCE', col2Start + 5, currentY + 10);
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(...colors.text);
+  pointsY = currentY + 20;
+  if (pointsVigilance.length === 0) {
+    doc.setTextColor(...colors.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Aucun point de vigilance', col2Start + 5, pointsY);
+  } else {
+    pointsVigilance.forEach(point => {
+      doc.text(`- ${point}`, col2Start + 5, pointsY);
+      pointsY += 8;
+    });
+  }
+  
+  currentY += boxHeight + 8;
+  
+  // === DECISIONS DU CONSEIL ===
+  if (options.includeAttributions) {
+    const attributions = data.studentAttributions || [];
+    const nbFelicitations = attributions.filter(a => a === 'congratulations').length;
+    const nbHonneur = attributions.filter(a => a === 'honor').length;
+    const nbEncouragements = attributions.filter(a => a === 'encouragement').length;
+    const nbAvertTravail = attributions.filter(a => a === 'warning_work').length;
+    const nbAvertConduite = attributions.filter(a => a === 'warning_conduct').length;
+    const nbAvertBoth = attributions.filter(a => a === 'warning_both').length;
+    
+    const decisionsHeight = 32;
+    doc.setFillColor(...colors.background);
+    doc.roundedRect(margin, currentY, pageWidth - 2 * margin, decisionsHeight, 3, 3, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.primary);
+    doc.text('[*] DECISIONS DU CONSEIL', margin + 5, currentY + 10);
+    
+    // Attribution counters in a row
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    const attribY = currentY + 22;
+    const attribSpacing = (pageWidth - 2 * margin - 20) / 6;
+    
+    const attrData = [
+      { label: 'Felicitations', count: nbFelicitations, color: [139, 92, 246] as [number, number, number] },
+      { label: 'Tableau honneur', count: nbHonneur, color: colors.success },
+      { label: 'Encouragements', count: nbEncouragements, color: [59, 130, 246] as [number, number, number] },
+      { label: 'Avert. Travail', count: nbAvertTravail, color: colors.warning },
+      { label: 'Avert. Conduite', count: nbAvertConduite, color: colors.danger },
+      { label: 'Avert. Double', count: nbAvertBoth, color: [127, 29, 29] as [number, number, number] },
+    ];
+    
+    attrData.forEach((attr, index) => {
+      const x = margin + 10 + index * attribSpacing;
+      doc.setTextColor(...attr.color);
+      doc.setFont('helvetica', 'bold');
+      doc.text(String(attr.count), x, attribY);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...colors.muted);
+      doc.setFontSize(6);
+      doc.text(attr.label, x, attribY + 6);
+      doc.setFontSize(8);
+    });
+    
+    currentY += decisionsHeight + 8;
+  }
+  
+  // === APPRECIATION GENERALE ===
+  const appreciationHeight = 42;
+  doc.setFillColor(...colors.bien);
+  doc.roundedRect(margin, currentY, pageWidth - 2 * margin, appreciationHeight, 3, 3, 'F');
+  
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.bienText);
+  doc.text('[>] APPRECIATION GENERALE DU CONSEIL', margin + 5, currentY + 10);
+  
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.text);
+  
+  if (data.generalAppreciation) {
+    const appreciationLines = doc.splitTextToSize(`"${data.generalAppreciation}"`, pageWidth - 2 * margin - 15);
+    doc.text(appreciationLines.slice(0, 3), margin + 8, currentY + 20);
+  } else {
+    doc.setTextColor(...colors.muted);
+    doc.text('Aucune appreciation generale renseignee.', margin + 8, currentY + 22);
+  }
+  
+  addPageFooter(doc, colors);
 }
 
 // ============================================================
@@ -1058,8 +1320,163 @@ function addGeneralAppreciationPage(
 }
 
 // ============================================================
-// INDIVIDUAL APPRECIATIONS PAGES
+// INDIVIDUAL APPRECIATIONS PAGES - Student Cards Design
 // ============================================================
+
+// Helper: Check if student is non-evaluable (prolonged absences)
+function isStudentNonEvaluable(student: { average: number; absences?: number }): boolean {
+  return student.average === 0 || isNaN(student.average) || (student.absences || 0) > 50;
+}
+
+// Helper: Get attribution badge configuration
+function getAttributionBadgeConfig(attribution: Attribution): { bg: [number, number, number]; text: [number, number, number]; label: string } {
+  const badges: Record<Attribution, { bg: [number, number, number]; text: [number, number, number]; label: string }> = {
+    'congratulations': { bg: [220, 252, 231], text: [22, 101, 52], label: 'FELICITATIONS' },
+    'honor': { bg: [209, 250, 229], text: [4, 120, 87], label: 'TABLEAU D\'HONNEUR' },
+    'encouragement': { bg: [219, 234, 254], text: [30, 64, 175], label: 'ENCOURAGEMENTS' },
+    'warning_work': { bg: [254, 243, 199], text: [146, 64, 14], label: 'AVERT. TRAVAIL' },
+    'warning_conduct': { bg: [254, 226, 226], text: [185, 28, 28], label: 'AVERT. CONDUITE' },
+    'warning_both': { bg: [254, 202, 202], text: [127, 29, 29], label: 'AVERT. DOUBLE' },
+  };
+  return badges[attribution];
+}
+
+// Helper: Get border color based on average
+function getStudentCardBorderColor(moyenne: number, colors: typeof COLORS): [number, number, number] {
+  if (moyenne >= 14) return colors.success;
+  if (moyenne >= 12) return [59, 130, 246]; // Blue
+  if (moyenne >= 10) return colors.warning;
+  return colors.danger;
+}
+
+// Helper: Draw a student card
+function drawStudentCard(
+  doc: jsPDF,
+  student: {
+    name: string;
+    average: number;
+    appreciation: string;
+    attribution: Attribution | null;
+    rank: number;
+    totalStudents: number;
+    absences?: number;
+    retards?: number;
+  },
+  startY: number,
+  pageWidth: number,
+  margin: number,
+  options: ExportOptions,
+  colors: typeof COLORS
+): number {
+  const cardWidth = pageWidth - 2 * margin;
+  const isNonEvaluable = isStudentNonEvaluable(student);
+  
+  // Calculate card height based on content
+  let cardHeight = 42;
+  if (student.appreciation) {
+    const appreciationLines = doc.splitTextToSize(student.appreciation, cardWidth - 20);
+    const textHeight = Math.min(appreciationLines.length, 5) * 4;
+    cardHeight = Math.max(42, 30 + textHeight);
+  }
+  cardHeight = Math.min(cardHeight, 65); // Max height
+  
+  // Determine border color
+  const borderColor = isNonEvaluable 
+    ? [156, 163, 175] as [number, number, number] // Gray for non-evaluable
+    : getStudentCardBorderColor(student.average, colors);
+  
+  // Card background
+  doc.setFillColor(...colors.white);
+  doc.roundedRect(margin, startY, cardWidth, cardHeight, 4, 4, 'F');
+  
+  // Left color bar (accent)
+  doc.setFillColor(...borderColor);
+  doc.roundedRect(margin, startY, 4, cardHeight, 2, 2, 'F');
+  doc.rect(margin + 2, startY, 2, cardHeight, 'F'); // Square off right side of bar
+  
+  // Border
+  doc.setDrawColor(...colors.separator);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(margin, startY, cardWidth, cardHeight, 4, 4, 'S');
+  
+  // Student name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  const displayName = student.name.length > 30 ? student.name.substring(0, 28) + '...' : student.name;
+  doc.text(displayName.toUpperCase(), margin + 10, startY + 9);
+  
+  // Rank (right-aligned)
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.muted);
+  doc.text(`Rang: ${student.rank}/${student.totalStudents}`, pageWidth - margin - 5, startY + 9, { align: 'right' });
+  
+  // Gold separator line
+  doc.setDrawColor(...colors.gold);
+  doc.setLineWidth(0.5);
+  doc.line(margin + 10, startY + 13, pageWidth - margin - 10, startY + 13);
+  
+  // Data row: Average, Absences, Retards, Attribution
+  let dataY = startY + 22;
+  doc.setFontSize(9);
+  
+  if (isNonEvaluable) {
+    // Non-evaluable alert
+    doc.setFillColor(...colors.inquietant);
+    doc.roundedRect(margin + 10, dataY - 5, 90, 8, 2, 2, 'F');
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...colors.inquietantText);
+    doc.text('[!] NON EVALUABLE - Absences prolongees', margin + 12, dataY);
+  } else {
+    // Average with color and star for top 3
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...borderColor);
+    let moyenneText = `Moyenne: ${student.average.toFixed(2)}`;
+    if (student.rank <= 3) moyenneText += ' *';
+    doc.text(moyenneText, margin + 10, dataY);
+    
+    // Absences and retards
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...colors.muted);
+    const absColor = (student.absences || 0) > 20 ? colors.danger : colors.muted;
+    doc.setTextColor(...absColor);
+    doc.text(`|  Abs: ${student.absences || 0}`, margin + 58, dataY);
+    doc.setTextColor(...colors.muted);
+    doc.text(`|  Ret: ${student.retards || 0}`, margin + 85, dataY);
+  }
+  
+  // Attribution badge if present
+  if (options.includeAttributions && student.attribution) {
+    const badge = getAttributionBadgeConfig(student.attribution);
+    const badgeX = pageWidth - margin - 50;
+    doc.setFillColor(...badge.bg);
+    doc.roundedRect(badgeX, dataY - 5, 45, 8, 2, 2, 'F');
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...badge.text);
+    doc.text(badge.label, badgeX + 22.5, dataY, { align: 'center' });
+  }
+  
+  // Appreciation text
+  const appreciationY = startY + 30;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  
+  if (student.appreciation) {
+    doc.setTextColor(...colors.text);
+    const appreciationLines = doc.splitTextToSize(student.appreciation, cardWidth - 20);
+    doc.text(appreciationLines.slice(0, 5), margin + 10, appreciationY);
+  } else {
+    doc.setTextColor(...colors.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.text('Appreciation non renseignee', margin + 10, appreciationY);
+  }
+  
+  return cardHeight;
+}
+
 function addIndividualAppreciationsPages(
   doc: jsPDF, 
   data: ExportData, 
@@ -1076,54 +1493,75 @@ function addIndividualAppreciationsPages(
   
   if (students.length === 0 && !data.classeCSV?.eleves.length) return;
   
-  const studentList = students.length > 0 
+  // Build student list with all data
+  let studentList = students.length > 0 
     ? students.map((s, i) => ({
         name: `${s.prenom} ${s.nom}`,
         average: s.matieres.reduce((sum, m) => sum + m.moyenneEleve, 0) / (s.matieres.length || 1),
         appreciation: appreciations[i] || '',
         attribution: attributions[i] || null,
+        absences: 0,
+        retards: 0,
+        rank: 0,
+        totalStudents: 0,
       }))
     : data.classeCSV?.eleves.map((e, i) => ({
         name: e.nom,
         average: e.moyenneGenerale,
         appreciation: appreciations[i] || '',
         attribution: attributions[i] || null,
+        absences: e.absences || 0,
+        retards: e.retards || 0,
+        rank: 0,
+        totalStudents: 0,
       })) || [];
+  
+  // Sort by average descending and assign ranks
+  studentList = studentList.sort((a, b) => b.average - a.average);
+  studentList.forEach((s, i) => {
+    s.rank = i + 1;
+    s.totalStudents = studentList.length;
+  });
+  
+  // Filter out non-evaluable students if option is enabled
+  if (options.hideNonEvaluableStudents) {
+    studentList = studentList.filter(s => !isStudentNonEvaluable(s));
+  }
+  
+  if (studentList.length === 0) return;
   
   let currentPage = startPage;
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  
-  const cardMinHeight = 45;
-  const cardMaxHeight = 70;
-  const cardMargin = 8;
+  const margin = 14;
   const headerHeight = 22;
   const footerMargin = 25;
+  const cardSpacing = 6;
   
   doc.addPage();
   addPageHeader(doc, className, trimester, colors, currentPage, totalPages);
   
   let yPos = headerHeight;
   
-  // Title
+  // Page title
   doc.setTextColor(...colors.primary);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
-  doc.text(`Appreciations individuelles (${studentList.length} eleves)`, 14, yPos + 5);
+  doc.text(`Appreciations individuelles (${studentList.length} eleves)`, margin, yPos + 5);
   yPos += 15;
   
   for (let i = 0; i < studentList.length; i++) {
     const student = studentList[i];
-    const hasAttribution = options.includeAttributions && student.attribution;
     
-    let cardHeight = cardMinHeight;
+    // Estimate card height for page break check
+    let estimatedHeight = 42;
     if (student.appreciation) {
-      const appreciationLines = doc.splitTextToSize(student.appreciation, pageWidth - 60);
-      const textHeight = appreciationLines.length * 4;
-      cardHeight = Math.min(Math.max(cardMinHeight, 25 + textHeight + (hasAttribution ? 15 : 0)), cardMaxHeight);
+      const lines = doc.splitTextToSize(student.appreciation, pageWidth - 2 * margin - 20);
+      estimatedHeight = Math.min(Math.max(42, 30 + lines.length * 4), 65);
     }
     
-    if (yPos + cardHeight > pageHeight - footerMargin) {
+    // Check if we need a new page
+    if (yPos + estimatedHeight > pageHeight - footerMargin) {
       addPageFooter(doc, colors);
       doc.addPage();
       currentPage++;
@@ -1131,63 +1569,9 @@ function addIndividualAppreciationsPages(
       yPos = headerHeight;
     }
     
-    // Card background
-    doc.setFillColor(...colors.white);
-    doc.setDrawColor(...colors.separator);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(14, yPos, pageWidth - 28, cardHeight, 4, 4, 'FD');
-    
-    // Header with name and average
-    doc.setFillColor(...colors.background);
-    doc.roundedRect(14, yPos, pageWidth - 28, 14, 4, 4, 'F');
-    doc.rect(14, yPos + 10, pageWidth - 28, 4, 'F');
-    
-    // Student name
-    doc.setTextColor(...colors.text);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    const displayName = student.name.length > 35 ? student.name.substring(0, 33) + '...' : student.name;
-    doc.text(displayName, 18, yPos + 9);
-    
-    // Average badge with color
-    const avgColor = getAverageColor(student.average, colors);
-    doc.setFillColor(...avgColor);
-    doc.roundedRect(pageWidth - 45, yPos + 2, 27, 10, 2, 2, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text(isNaN(student.average) ? '-' : student.average.toFixed(2), pageWidth - 31.5, yPos + 9, { align: 'center' });
-    
-    // Appreciation text
-    doc.setTextColor(...colors.text);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    
-    if (student.appreciation) {
-      const appreciationLines = doc.splitTextToSize(student.appreciation, pageWidth - 40);
-      const maxLines = hasAttribution ? 4 : 6;
-      doc.text(appreciationLines.slice(0, maxLines), 18, yPos + 20);
-    } else {
-      doc.setTextColor(...colors.muted);
-      doc.setFont('helvetica', 'italic');
-      doc.text('Appreciation non generee', 18, yPos + 20);
-    }
-    
-    // Attribution badge if enabled
-    if (hasAttribution && student.attribution) {
-      const attrConfig = attributionConfig[student.attribution];
-      const attrY = yPos + cardHeight - 12;
-      
-      doc.setFillColor(...colors.gold);
-      doc.roundedRect(18, attrY, 80, 8, 2, 2, 'F');
-      
-      doc.setTextColor(...colors.primary);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Attribution: ${attrConfig.shortLabel}`, 22, attrY + 5.5);
-    }
-    
-    yPos += cardHeight + cardMargin;
+    // Draw student card
+    const cardHeight = drawStudentCard(doc, student, yPos, pageWidth, margin, options, colors);
+    yPos += cardHeight + cardSpacing;
   }
   
   addPageFooter(doc, colors);
@@ -1204,12 +1588,13 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   const className = data.bulletinClasse?.classe || data.classeCSV?.eleves?.[0]?.nom?.match(/\d+[eè]m?e?/i)?.[0] || '3eme';
   const trimester = data.bulletinClasse?.trimestre || '1er Trimestre';
   
-  // Calculate total pages
+  // Calculate total pages (updated for executive summary)
   const nbStudents = data.classeCSV?.eleves.length || data.bulletinsEleves?.length || 0;
-  const individualPages = Math.ceil(nbStudents / 4);
+  const individualPages = Math.ceil(nbStudents / 3); // 2-3 students per page with new card design
   const hasAnalysisData = !!data.classeCSV;
   
-  const basePagesWithAnalysis = hasAnalysisData ? 6 : 4;
+  // Pages: Cover + Executive Summary + Results + Monitoring + Ranking + Subjects + General + Individual
+  const basePagesWithAnalysis = hasAnalysisData ? 7 : 5; // +1 for executive summary
   const totalPages = basePagesWithAnalysis + individualPages;
   
   let currentPage = 1;
@@ -1218,7 +1603,13 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
   addCoverPage(doc, data, colors);
   currentPage++;
   
-  // Page 2-3: Results Analysis (only if we have CSV data)
+  // Page 2: Executive Summary (NEW)
+  if (hasAnalysisData) {
+    addExecutiveSummaryPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
+    currentPage++;
+  }
+  
+  // Page 3-4: Results Analysis (only if we have CSV data)
   if (hasAnalysisData) {
     addResultsAnalysisPage(doc, data, colors, className, trimester, currentPage, totalPages);
     currentPage++;
@@ -1227,19 +1618,19 @@ export function generatePDF(data: ExportData, options: ExportOptions): jsPDF {
     currentPage++;
   }
   
-  // Page 4: Student Ranking
+  // Page 5: Student Ranking
   addGlobalAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
-  // Page 5: Subject Analysis
+  // Page 6: Subject Analysis
   addSubjectAnalysisPage(doc, data, options, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
-  // Page 6: General Appreciation
+  // Page 7: General Appreciation
   addGeneralAppreciationPage(doc, data, colors, className, trimester, currentPage, totalPages);
   currentPage++;
   
-  // Pages 7+: Individual Appreciations
+  // Pages 8+: Individual Appreciations (with new card design)
   if (nbStudents > 0) {
     addIndividualAppreciationsPages(doc, data, options, colors, className, trimester, currentPage, totalPages);
   }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image, Loader2, Award } from "lucide-react";
+import { Download, FileText, Eye, Settings, AlertTriangle, CheckCircle2, Image, Loader2, Award, UserX } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
   const [colorMode, setColorMode] = useState(true);
   const [schoolLogo, setSchoolLogo] = useState(false);
   const [includeAttributions, setIncludeAttributions] = useState(true);
+  const [hideNonEvaluableStudents, setHideNonEvaluableStudents] = useState(false);
 
   const hasClasseCSV = !!data?.classeCSV;
   const hasBulletinClasse = !!data?.bulletinClasse;
@@ -50,6 +51,11 @@ const ExportTab = ({ data }: ExportTabProps) => {
   const nbMatieres = data?.classeCSV?.matieres.length || data?.bulletinClasse?.matieres.length || 0;
   const nbAppreciationsGenerated = data?.studentAppreciations?.filter(t => t && t.length > 0).length || 0;
   const nbAttributions = data?.studentAttributions?.filter(a => a !== null).length || 0;
+  
+  // Check if there are non-evaluable students (prolonged absences)
+  const nonEvaluableCount = data?.classeCSV?.eleves.filter(e => 
+    e.moyenneGenerale === 0 || isNaN(e.moyenneGenerale) || (e.absences || 0) > 50
+  ).length || 0;
 
   const getExportData = (): ExportData => ({
     bulletinClasse: data?.bulletinClasse,
@@ -67,6 +73,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
     colorMode,
     schoolLogo,
     includeAttributions: includeAttributions && hasAttributions,
+    hideNonEvaluableStudents,
   });
 
   const handleGeneratePDF = async () => {
@@ -242,6 +249,21 @@ const ExportTab = ({ data }: ExportTabProps) => {
                 checked={schoolLogo}
                 onCheckedChange={setSchoolLogo}
                 disabled={!hasAnyData} 
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="hide-non-evaluable" className="text-sm flex items-center gap-2">
+                <UserX className="h-4 w-4" />
+                Masquer les élèves non évaluables
+                {nonEvaluableCount > 0 && (
+                  <span className="text-xs text-muted-foreground">({nonEvaluableCount} élève{nonEvaluableCount > 1 ? 's' : ''})</span>
+                )}
+              </Label>
+              <Switch 
+                id="hide-non-evaluable" 
+                checked={hideNonEvaluableStudents}
+                onCheckedChange={setHideNonEvaluableStudents}
+                disabled={!hasAnyData || nonEvaluableCount === 0} 
               />
             </div>
           </CardContent>
