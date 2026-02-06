@@ -304,6 +304,15 @@ STRUCTURE DÉVELOPPÉE (>280 caractères) - OBLIGATOIRE :
 - UTILISE TOUT L'ESPACE : ne t'arrête pas avant ${minCharacters} caractères !
 `}
 
+FORMULATIONS DE DÉBUT OBLIGATOIRES (VARIER, NE JAMAIS RÉPÉTER LA MÊME) :
+- "Ce trimestre, la classe présente..."
+- "Ce trimestre révèle..."
+- "L'ambiance de classe ce trimestre..."
+- "Les résultats ce trimestre témoignent..."
+- "Ce trimestre se caractérise par..."
+- "Résultats encourageants pour..."
+- "Le niveau affiché ce trimestre..."
+
 INTERDICTIONS ABSOLUES - TOUTE VIOLATION = ÉCHEC TOTAL :
 
 🚫 ZÉRO CHIFFRE dans le texte :
@@ -317,19 +326,21 @@ INTERDICTIONS ABSOLUES - TOUTE VIOLATION = ÉCHEC TOTAL :
 - JAMAIS le nom ou niveau de la classe ("La classe de 3ème", "La 5e3", "Les élèves de 4ème")
 
 ✅ OBLIGATIONS STRICTES :
-- Commencer DIRECTEMENT par : "Les résultats...", "Résultats...", "Le niveau..." ou "L'ensemble..."
+- Commencer DIRECTEMENT par une des formulations autorisées ci-dessus
 - Vocabulaire 100% QUALITATIF : "satisfaisants", "corrects", "fragiles", "en progression", "insuffisants"
 - Longueur entre ${minCharacters} et ${maxCharacters} caractères - IMPÉRATIF
 - Base-toi UNIQUEMENT sur les thèmes fournis
+- Mentionner les matières fortes et faibles si disponibles (sans moyennes chiffrées)
+- Commenter l'ambiance générale (studieuse, dynamique, agréable, hétérogène...)
 
 TONALITÉ : ${toneInstruction}
 
 ${isShortFormat ? `
 EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
-"Résultats corrects mais fragiles par manque de travail régulier. Les bavardages fréquents et la passivité de nombreux élèves perturbent les apprentissages. Des efforts soutenus sont attendus."
+"Ce trimestre, résultats corrects mais fragiles par manque de travail régulier. Les bavardages fréquents et la passivité de nombreux élèves perturbent les apprentissages. Des efforts soutenus sont attendus."
 ` : `
 EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
-"Les résultats sont globalement corrects mais demeurent fragiles en raison d'un manque de travail personnel régulier et d'un investissement insuffisant dans les apprentissages. L'ambiance de travail est préoccupante : les bavardages incessants perturbent le bon déroulement des cours et une partie des élèves reste passive ou en retrait. La participation est trop timide et seule une minorité s'implique véritablement dans les échanges. Des progrès sont néanmoins possibles si chacun prend conscience de ses responsabilités. Le conseil attend une prise de conscience immédiate et des efforts soutenus pour inverser cette tendance négative."
+"Ce trimestre se caractérise par des résultats globalement corrects mais fragiles en raison d'un manque de travail personnel régulier et d'un investissement insuffisant. L'ambiance de travail est préoccupante : les bavardages perturbent le bon déroulement des cours et une partie des élèves reste passive. La participation est trop timide et seule une minorité s'implique véritablement dans les échanges. Les disciplines artistiques et sportives sont particulièrement réussies tandis que des efforts sont attendus en mathématiques. Le conseil attend une prise de conscience et des efforts soutenus."
 `}`;
 
     const userPrompt = `Rédige l'appréciation générale pour le bulletin du conseil de classe.
@@ -342,13 +353,14 @@ ${exceptionalContext ? `\nMATIÈRES PARTICULIÈRES :${exceptionalContext}\n` : '
 
 VÉRIFICATIONS À FAIRE AVANT DE RÉPONDRE :
 1. ✓ Le texte fait-il entre ${minCharacters} et ${maxCharacters} caractères ? (OBLIGATOIRE)
-2. ✓ Y a-t-il ZÉRO chiffre dans le texte ? (pas de 14, 12/20, moyenne de X)
-3. ✓ Le texte commence-t-il par "Les résultats", "Résultats" ou "Le niveau" ? (pas par "La classe")
+2. ✓ Y a-t-il ZÉRO chiffre dans le texte ? (pas de 14, 12/20, moyenne de X, pourcentages)
+3. ✓ Le texte commence-t-il par une formulation variée ? (PAS par "La classe de...")
 4. ✓ Aucun nom de professeur ni d'élève ?
+5. ✓ Les matières fortes et faibles sont-elles mentionnées qualitativement ?
 
 ${isShortFormat ? 'FORMAT COURT : 2-3 phrases denses.' : `FORMAT DÉVELOPPÉ : 5-7 phrases pour atteindre ${minCharacters} caractères minimum !`}
 
-Génère maintenant l'appréciation (${minCharacters}-${maxCharacters} caractères, commence par "Les résultats" ou "Résultats") :`;
+Génère maintenant l'appréciation (${minCharacters}-${maxCharacters} caractères) :`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
