@@ -1,6 +1,20 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ArrowRight, ArrowLeft, Clock, FileText, Brain, Shield, Users, Sparkles, Copy, RefreshCw, BarChart3 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ArrowRight,
+  ArrowLeft,
+  Clock,
+  FileText,
+  Brain,
+  Shield,
+  Users,
+  Sparkles,
+  Copy,
+  RefreshCw,
+  BarChart3,
+} from "lucide-react";
 import { useState } from "react";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
@@ -15,14 +29,14 @@ const ClassCouncilLanding = () => {
         <div className="absolute top-4 right-4 z-10">
           <DarkModeToggle />
         </div>
-        
+
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
             <div className="space-y-6">
               {/* Breadcrumb */}
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 text-sm transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -35,8 +49,7 @@ const ClassCouncilLanding = () => {
               </span>
 
               <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white leading-tight">
-                Conseil de Classe : Libérez-vous du Stress de la{" "}
-                <span className="text-amber-500">Synthèse</span>
+                Conseil de Classe : Libérez-vous du Stress de la <span className="text-amber-500">Synthèse</span>
               </h1>
 
               <p className="text-xl text-slate-600 dark:text-slate-400">
@@ -94,8 +107,8 @@ const ClassCouncilLanding = () => {
               <img
                 src={logo}
                 alt="ClassCouncil AI"
-                className="w-40 md:w-44 lg:w-48 h-auto object-contain"
-                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}
+                className="w-72 md:w-96 lg:w-[28rem]" // Augmentation de 35-40%
+                style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.08))" }}
               />
             </div>
           </div>
@@ -121,7 +134,9 @@ const ClassCouncilLanding = () => {
                 <Clock className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Le manque de temps</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Entre 2 et 3 heures pour rédiger l'appréciation de votre classe</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Entre 2 et 3 heures pour rédiger l'appréciation de votre classe
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -129,7 +144,9 @@ const ClassCouncilLanding = () => {
                 <FileText className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La page blanche</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Trouver les bons mots pour synthétiser 28 profils différents</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Trouver les bons mots pour synthétiser 28 profils différents
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -137,7 +154,9 @@ const ClassCouncilLanding = () => {
                 <span className="text-2xl">😰</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La pression</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Le conseil de classe est dans 48h et vous n'avez rien préparé</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Le conseil de classe est dans 48h et vous n'avez rien préparé
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -145,7 +164,9 @@ const ClassCouncilLanding = () => {
                 <span className="text-2xl">🎯</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">L'équilibre délicat</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Être constructif sans être décourageant, ferme sans être cassant</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Être constructif sans être décourageant, ferme sans être cassant
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -153,14 +174,17 @@ const ClassCouncilLanding = () => {
                 <span className="text-2xl">💼</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La charge mentale</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">En plus de vos heures de cours et de vos corrections</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                En plus de vos heures de cours et de vos corrections
+              </p>
             </div>
           </div>
 
           {/* Empathetic Quote */}
           <div className="max-w-3xl mx-auto mt-12 text-center">
             <blockquote className="text-xl italic text-slate-600 dark:text-slate-400 border-l-4 border-cyan-500 pl-6">
-              "Nous savons que votre expertise pédagogique n'a pas besoin d'être prouvée. C'est votre temps qui mérite d'être préservé. ClassCouncil AI vous rend ces heures précieuses."
+              "Nous savons que votre expertise pédagogique n'a pas besoin d'être prouvée. C'est votre temps qui mérite
+              d'être préservé. ClassCouncil AI vous rend ces heures précieuses."
             </blockquote>
           </div>
         </div>
@@ -280,23 +304,34 @@ const ClassCouncilLanding = () => {
               <ul className="space-y-4 text-slate-400">
                 <li className="flex items-start gap-3">
                   <span className="text-slate-500">➖</span>
-                  <span>Exporter notes et bulletins depuis Pronote : <strong className="text-slate-300">15 min</strong></span>
+                  <span>
+                    Exporter notes et bulletins depuis Pronote : <strong className="text-slate-300">15 min</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-slate-500">➖</span>
-                  <span>Analyser les résultats de chaque élève : <strong className="text-slate-300">1h30</strong></span>
+                  <span>
+                    Analyser les résultats de chaque élève : <strong className="text-slate-300">1h30</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-slate-500">➖</span>
-                  <span>Rédiger les appréciations individuelles (25-30 élèves) : <strong className="text-slate-300">2h à 2h30</strong></span>
+                  <span>
+                    Rédiger les appréciations individuelles (25-30 élèves) :{" "}
+                    <strong className="text-slate-300">2h à 2h30</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-slate-500">➖</span>
-                  <span>Préparer le bilan de classe : <strong className="text-slate-300">30 min</strong></span>
+                  <span>
+                    Préparer le bilan de classe : <strong className="text-slate-300">30 min</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-slate-500">➖</span>
-                  <span>Relire et ajuster : <strong className="text-slate-300">30 min</strong></span>
+                  <span>
+                    Relire et ajuster : <strong className="text-slate-300">30 min</strong>
+                  </span>
                 </li>
               </ul>
             </div>
@@ -309,19 +344,27 @@ const ClassCouncilLanding = () => {
               <ul className="space-y-4 text-slate-300">
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-400">✅</span>
-                  <span>Exporter les documents depuis Pronote : <strong className="text-white">5 min</strong></span>
+                  <span>
+                    Exporter les documents depuis Pronote : <strong className="text-white">5 min</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-400">✅</span>
-                  <span>Importer dans l'outil : <strong className="text-white">2 min</strong></span>
+                  <span>
+                    Importer dans l'outil : <strong className="text-white">2 min</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-400">✅</span>
-                  <span>Relire et ajuster les appréciations générées : <strong className="text-white">10 min</strong></span>
+                  <span>
+                    Relire et ajuster les appréciations générées : <strong className="text-white">10 min</strong>
+                  </span>
                 </li>
                 <li className="flex items-start gap-3">
                   <span className="text-emerald-400">✅</span>
-                  <span>Valider et exporter : <strong className="text-white">3 min</strong></span>
+                  <span>
+                    Valider et exporter : <strong className="text-white">3 min</strong>
+                  </span>
                 </li>
               </ul>
             </div>
@@ -387,7 +430,9 @@ const ClassCouncilLanding = () => {
                 <FileText className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Import PDF PRONOTE</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Glissez-déposez votre export PRONOTE, l'IA fait le reste.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Glissez-déposez votre export PRONOTE, l'IA fait le reste.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -395,7 +440,9 @@ const ClassCouncilLanding = () => {
                 <BarChart3 className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Analyse automatique</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Moyennes, tendances, élèves en difficulté... tout est analysé.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Moyennes, tendances, élèves en difficulté... tout est analysé.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -403,7 +450,9 @@ const ClassCouncilLanding = () => {
                 <Sparkles className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Appréciations variées</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Vocabulaire riche et professionnel, jamais de répétitions.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Vocabulaire riche et professionnel, jamais de répétitions.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -411,7 +460,9 @@ const ClassCouncilLanding = () => {
                 <BarChart3 className="w-6 h-6 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Statistiques visuelles</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Graphiques clairs pour visualiser les performances de la classe.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Graphiques clairs pour visualiser les performances de la classe.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -419,7 +470,9 @@ const ClassCouncilLanding = () => {
                 <Shield className="w-6 h-6 text-rose-600 dark:text-rose-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">100% RGPD</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Données traitées localement, jamais envoyées sur un serveur.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Données traitées localement, jamais envoyées sur un serveur.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -427,7 +480,9 @@ const ClassCouncilLanding = () => {
                 <Copy className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Copie en 1 clic</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Copiez chaque appréciation instantanément vers PRONOTE.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Copiez chaque appréciation instantanément vers PRONOTE.
+              </p>
             </div>
           </div>
         </div>
@@ -446,27 +501,27 @@ const ClassCouncilLanding = () => {
           </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
-            <FAQItem 
+            <FAQItem
               question="Les appréciations seront-elles toutes identiques d'un trimestre à l'autre ?"
               answer="Non. Chaque trimestre a son profil unique (évolution des moyennes, changements de comportement, progression ou régression). L'IA génère une synthèse adaptée aux données spécifiques de chaque période. De plus, vous pouvez régénérer ou modifier le texte librement."
             />
-            <FAQItem 
+            <FAQItem
               question="Que deviennent les données de mes élèves ?"
               answer="Elles ne quittent jamais votre navigateur. Le traitement est 100% local. Aucune information n'est envoyée à nos serveurs. À la fermeture de l'onglet, tout est effacé automatiquement."
             />
-            <FAQItem 
+            <FAQItem
               question="L'appréciation sera-t-elle adaptée au niveau de ma classe ?"
               answer="Oui. L'IA analyse les moyennes générales et adapte le ton : encourageant pour une classe en difficulté, exigeant pour une classe performante, constructif pour une classe hétérogène."
             />
-            <FAQItem 
+            <FAQItem
               question="Puis-je utiliser mes propres formulations ?"
               answer="Absolument. Le texte généré est un point de départ. Vous pouvez le modifier, le compléter, le régénérer ou le réécrire entièrement. Vous restez maître du contenu final."
             />
-            <FAQItem 
+            <FAQItem
               question="Est-ce compatible avec tous les formats PRONOTE ?"
               answer="ClassCouncil AI est conçu pour les exports PDF standards de PRONOTE. Si votre format est différent, une saisie manuelle reste possible."
             />
-            <FAQItem 
+            <FAQItem
               question="Mon chef d'établissement peut-il voir que j'utilise cet outil ?"
               answer="Non. Le texte final que vous copiez dans PRONOTE est indiscernable d'un texte écrit manuellement. ClassCouncil AI est votre assistant personnel discret."
             />
@@ -492,30 +547,40 @@ const ClassCouncilLanding = () => {
                 <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Users className="w-8 h-8 text-amber-600 dark:text-amber-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Créé par un professeur principal qui connaît la charge du conseil de classe</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Créé par un professeur principal qui connaît la charge du conseil de classe
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Plus de 20 ans d'expérience dans la rédaction d'appréciations</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Plus de 20 ans d'expérience dans la rédaction d'appréciations
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Testé en conditions réelles sur plusieurs trimestres</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Testé en conditions réelles sur plusieurs trimestres
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-violet-600 dark:text-violet-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Pensé pour PRONOTE : respect des contraintes de caractères et du format</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Pensé pour PRONOTE : respect des contraintes de caractères et du format
+                </p>
               </div>
             </div>
 
             <blockquote className="text-center text-xl italic text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
-              "J'ai créé ClassCouncil AI parce que j'en avais moi-même besoin. Maintenant, je gagne 2h30 par conseil que je peux consacrer à mes élèves plutôt qu'à ma souris. Sur l'année, c'est presque une journée complète que je récupère."
+              "J'ai créé ClassCouncil AI parce que j'en avais moi-même besoin. Maintenant, je gagne 2h30 par conseil que
+              je peux consacrer à mes élèves plutôt qu'à ma souris. Sur l'année, c'est presque une journée complète que
+              je récupère."
             </blockquote>
           </div>
         </div>
@@ -525,11 +590,10 @@ const ClassCouncilLanding = () => {
       <section className="py-20 bg-gradient-to-r from-cyan-600 to-cyan-700 dark:from-cyan-700 dark:to-cyan-800">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Prêt à Récupérer Votre Temps ?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Prêt à Récupérer Votre Temps ?</h2>
             <p className="text-xl text-cyan-100 mb-8">
-              Vous êtes professeur principal pour accompagner vos élèves, pas pour passer vos soirées à rédiger. ClassCouncil AI vous rend ce temps précieux.
+              Vous êtes professeur principal pour accompagner vos élèves, pas pour passer vos soirées à rédiger.
+              ClassCouncil AI vous rend ce temps précieux.
             </p>
 
             <Link to="/classcouncil-ai/app">
@@ -568,14 +632,22 @@ const ClassCouncilLanding = () => {
             <div className="flex items-center gap-3">
               <img src={logo} alt="ClassCouncil AI" className="w-10 h-10" />
               <div>
-                <p className="text-white font-semibold">ClassCouncil<span className="text-amber-500">AI</span></p>
+                <p className="text-white font-semibold">
+                  ClassCouncil<span className="text-amber-500">AI</span>
+                </p>
                 <p className="text-sm">Par AIProject4You</p>
               </div>
             </div>
             <div className="flex gap-6 text-sm">
-              <Link to="/" className="hover:text-white transition-colors">Accueil</Link>
-              <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
-              <Link to="/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+              <Link to="/" className="hover:text-white transition-colors">
+                Accueil
+              </Link>
+              <Link to="/mentions-legales" className="hover:text-white transition-colors">
+                Mentions légales
+              </Link>
+              <Link to="/confidentialite" className="hover:text-white transition-colors">
+                Confidentialité
+              </Link>
             </div>
             <p className="text-sm">© 2025 AIProject4You. Tous droits réservés.</p>
           </div>
@@ -596,17 +668,9 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="font-medium text-slate-900 dark:text-white">{question}</span>
-        <ChevronDown
-          className={`w-5 h-5 text-slate-400 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
+        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      {isOpen && (
-        <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-          {answer}
-        </div>
-      )}
+      {isOpen && <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{answer}</div>}
     </div>
   );
 };
