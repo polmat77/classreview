@@ -1,6 +1,21 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Check, ChevronDown, ArrowRight, ArrowLeft, Clock, FileText, Brain, Shield, Users, Sparkles, Copy, RefreshCw, Settings, Edit3 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ArrowRight,
+  ArrowLeft,
+  Clock,
+  FileText,
+  Brain,
+  Shield,
+  Users,
+  Sparkles,
+  Copy,
+  RefreshCw,
+  Settings,
+  Edit3,
+} from "lucide-react";
 import { useState } from "react";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
@@ -15,14 +30,14 @@ const ReportCardLanding = () => {
         <div className="absolute top-4 right-4 z-10">
           <DarkModeToggle />
         </div>
-        
+
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Text Content */}
             <div className="space-y-6">
               {/* Breadcrumb */}
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 text-sm transition-colors"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -94,8 +109,8 @@ const ReportCardLanding = () => {
               <img
                 src={logo}
                 alt="ReportCard AI"
-                className="max-h-[200px] w-auto object-contain"
-                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.08))' }}
+                className="w-72 md:w-96 lg:w-[28rem]" // Augmentation de 35-40%
+                style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.08))" }}
               />
             </div>
           </div>
@@ -129,7 +144,9 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">🎭</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Le ton juste</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Ferme sans être blessant, encourageant sans être naïf</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Ferme sans être blessant, encourageant sans être naïf
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -145,7 +162,9 @@ const ReportCardLanding = () => {
                 <Clock className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Le temps qui file</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">5-10 minutes par élève = une soirée entière pour une classe</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                5-10 minutes par élève = une soirée entière pour une classe
+              </p>
             </div>
 
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
@@ -153,14 +172,17 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">🤯</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La fatigue</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">Les dernières appréciations sont moins bonnes que les premières</p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">
+                Les dernières appréciations sont moins bonnes que les premières
+              </p>
             </div>
           </div>
 
           {/* Empathetic Quote */}
           <div className="max-w-3xl mx-auto text-center">
             <blockquote className="text-xl italic text-slate-600 dark:text-slate-400 border-l-4 border-amber-500 pl-6">
-              "Nous savons que vous voulez le meilleur pour chaque élève. ReportCardAI vous aide à maintenir cette qualité sans sacrifier votre vie personnelle."
+              "Nous savons que vous voulez le meilleur pour chaque élève. ReportCardAI vous aide à maintenir cette
+              qualité sans sacrifier votre vie personnelle."
             </blockquote>
           </div>
         </div>
@@ -283,16 +305,16 @@ const ReportCardLanding = () => {
             <span className="inline-flex items-center px-4 py-2 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium mb-4">
               🎭 Les 5 Tons Pédagogiques
             </span>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Adaptez le Message à Chaque Profil d'Élève
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Adaptez le Message à Chaque Profil d'Élève</h2>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {/* Tone 1: Ferme */}
             <div className="bg-red-500/20 backdrop-blur rounded-2xl p-6 border border-red-500/30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-red-500/30 rounded-full flex items-center justify-center text-xl">🔴</span>
+                <span className="w-10 h-10 bg-red-500/30 rounded-full flex items-center justify-center text-xl">
+                  🔴
+                </span>
                 <div>
                   <h3 className="font-bold text-white">Ferme</h3>
                   <p className="text-slate-400 text-xs">Élève en grande difficulté comportementale ou scolaire</p>
@@ -301,7 +323,8 @@ const ReportCardLanding = () => {
               <p className="text-sm text-slate-300 mb-4">Style : Direct, factuel, sans concession mais constructif</p>
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <p className="text-slate-300 italic text-sm">
-                  "Les résultats sont préoccupants. Un changement d'attitude immédiat est nécessaire pour éviter un décrochage."
+                  "Les résultats sont préoccupants. Un changement d'attitude immédiat est nécessaire pour éviter un
+                  décrochage."
                 </p>
               </div>
             </div>
@@ -309,7 +332,9 @@ const ReportCardLanding = () => {
             {/* Tone 2: Neutre */}
             <div className="bg-slate-500/20 backdrop-blur rounded-2xl p-6 border border-slate-500/30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-slate-500/30 rounded-full flex items-center justify-center text-xl">⚪</span>
+                <span className="w-10 h-10 bg-slate-500/30 rounded-full flex items-center justify-center text-xl">
+                  ⚪
+                </span>
                 <div>
                   <h3 className="font-bold text-white">Neutre</h3>
                   <p className="text-slate-400 text-xs">Élève sans particularité notable</p>
@@ -318,7 +343,8 @@ const ReportCardLanding = () => {
               <p className="text-sm text-slate-300 mb-4">Style : Objectif, équilibré, professionnel</p>
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <p className="text-slate-300 italic text-sm">
-                  "Trimestre correct avec des résultats dans la moyenne. Une participation plus soutenue permettrait de progresser."
+                  "Trimestre correct avec des résultats dans la moyenne. Une participation plus soutenue permettrait de
+                  progresser."
                 </p>
               </div>
             </div>
@@ -326,7 +352,9 @@ const ReportCardLanding = () => {
             {/* Tone 3: Bienveillant */}
             <div className="bg-blue-500/20 backdrop-blur rounded-2xl p-6 border border-blue-500/30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-blue-500/30 rounded-full flex items-center justify-center text-xl">💙</span>
+                <span className="w-10 h-10 bg-blue-500/30 rounded-full flex items-center justify-center text-xl">
+                  💙
+                </span>
                 <div>
                   <h3 className="font-bold text-white">Bienveillant</h3>
                   <p className="text-slate-400 text-xs">Élève qui fait des efforts malgré les difficultés</p>
@@ -335,7 +363,8 @@ const ReportCardLanding = () => {
               <p className="text-sm text-slate-300 mb-4">Style : Chaleureux, empathique, positif</p>
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <p className="text-slate-300 italic text-sm">
-                  "Malgré quelques difficultés, les efforts constants sont remarquables. Continuez sur cette voie encourageante."
+                  "Malgré quelques difficultés, les efforts constants sont remarquables. Continuez sur cette voie
+                  encourageante."
                 </p>
               </div>
             </div>
@@ -343,7 +372,9 @@ const ReportCardLanding = () => {
             {/* Tone 4: Encourageant */}
             <div className="bg-emerald-500/20 backdrop-blur rounded-2xl p-6 border border-emerald-500/30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-emerald-500/30 rounded-full flex items-center justify-center text-xl">💚</span>
+                <span className="w-10 h-10 bg-emerald-500/30 rounded-full flex items-center justify-center text-xl">
+                  💚
+                </span>
                 <div>
                   <h3 className="font-bold text-white">Encourageant</h3>
                   <p className="text-slate-400 text-xs">Élève en progrès ou avec du potentiel</p>
@@ -352,7 +383,8 @@ const ReportCardLanding = () => {
               <p className="text-sm text-slate-300 mb-4">Style : Positif, motivant, valorisant</p>
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <p className="text-slate-300 italic text-sm">
-                  "Trimestre en nette amélioration ! Ces progrès montrent de vraies capacités. Poursuivez dans cette dynamique."
+                  "Trimestre en nette amélioration ! Ces progrès montrent de vraies capacités. Poursuivez dans cette
+                  dynamique."
                 </p>
               </div>
             </div>
@@ -360,7 +392,9 @@ const ReportCardLanding = () => {
             {/* Tone 5: Constructif */}
             <div className="bg-cyan-500/20 backdrop-blur rounded-2xl p-6 border border-cyan-500/30">
               <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-cyan-500/30 rounded-full flex items-center justify-center text-xl">🔵</span>
+                <span className="w-10 h-10 bg-cyan-500/30 rounded-full flex items-center justify-center text-xl">
+                  🔵
+                </span>
                 <div>
                   <h3 className="font-bold text-white">Constructif</h3>
                   <p className="text-slate-400 text-xs">Bon élève qui peut aller plus loin</p>
@@ -369,7 +403,8 @@ const ReportCardLanding = () => {
               <p className="text-sm text-slate-300 mb-4">Style : Exigeant, orienté solutions, ambitieux</p>
               <div className="bg-slate-800/50 rounded-lg p-4">
                 <p className="text-slate-300 italic text-sm">
-                  "Résultats satisfaisants. Une implication plus active et une gestion du temps optimisée permettraient d'atteindre l'excellence."
+                  "Résultats satisfaisants. Une implication plus active et une gestion du temps optimisée permettraient
+                  d'atteindre l'excellence."
                 </p>
               </div>
             </div>
@@ -379,7 +414,9 @@ const ReportCardLanding = () => {
               <div className="text-center">
                 <span className="text-4xl mb-4 block">💡</span>
                 <p className="text-amber-300 font-medium">Astuce</p>
-                <p className="text-slate-300 text-sm">Vous pouvez mixer les tons selon les élèves dans une même classe !</p>
+                <p className="text-slate-300 text-sm">
+                  Vous pouvez mixer les tons selon les élèves dans une même classe !
+                </p>
               </div>
             </div>
           </div>
@@ -404,7 +441,10 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">🎯</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Ton global ou individuel</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Définissez un ton par défaut pour toute la classe ou personnalisez le ton élève par élève selon les profils.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Définissez un ton par défaut pour toute la classe ou personnalisez le ton élève par élève selon les
+                profils.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -412,7 +452,9 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">📏</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Limite de caractères configurable</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Adaptez la longueur aux contraintes de votre logiciel (PRONOTE, Educ'Horus...). De 200 à 500 caractères.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Adaptez la longueur aux contraintes de votre logiciel (PRONOTE, Educ'Horus...). De 200 à 500 caractères.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -420,7 +462,10 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">💾</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Session persistante</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Vos paramètres sont mémorisés (ton, longueur). Vos données restent disponibles. Reprenez où vous en étiez.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Vos paramètres sont mémorisés (ton, longueur). Vos données restent disponibles. Reprenez où vous en
+                étiez.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -428,7 +473,10 @@ const ReportCardLanding = () => {
                 <RefreshCw className="w-6 h-6 text-violet-600 dark:text-violet-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Régénération illimitée</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Pas satisfait ? Régénérez autant de fois que nécessaire. Testez différents tons pour trouver le plus adapté.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Pas satisfait ? Régénérez autant de fois que nécessaire. Testez différents tons pour trouver le plus
+                adapté.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -436,7 +484,10 @@ const ReportCardLanding = () => {
                 <span className="text-2xl">📊</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Bilan de classe (Étape 4)</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Génération automatique d'une synthèse globale basée sur 4 critères : Travail, Comportement, Participation, Progression.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Génération automatique d'une synthèse globale basée sur 4 critères : Travail, Comportement,
+                Participation, Progression.
+              </p>
             </div>
 
             <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
@@ -444,7 +495,9 @@ const ReportCardLanding = () => {
                 <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">100% RGPD</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">Données traitées localement dans votre navigateur. Aucune information envoyée sur un serveur externe.</p>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                Données traitées localement dans votre navigateur. Aucune information envoyée sur un serveur externe.
+              </p>
             </div>
           </div>
         </div>
@@ -457,33 +510,31 @@ const ReportCardLanding = () => {
             <span className="inline-flex items-center px-4 py-2 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 rounded-full text-sm font-medium mb-4">
               ❓ Vos Interrogations
             </span>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-              Vos Questions Sur ReportCardAI
-            </h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Vos Questions Sur ReportCardAI</h2>
           </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
-            <FAQItem 
+            <FAQItem
               question="L'IA va-t-elle écrire des appréciations génériques ?"
               answer="Non. Chaque appréciation est générée en fonction des données spécifiques de l'élève (moyenne, sérieux, participation, absences, devoirs non rendus, observations comportementales). Le résultat est unique et personnalisé."
             />
-            <FAQItem 
+            <FAQItem
               question="Comment éviter que deux élèves similaires aient la même appréciation ?"
               answer="L'IA varie le vocabulaire et la structure des phrases automatiquement. De plus, vous pouvez ajouter des notes individuelles dans l'étape 2 pour différencier davantage. Enfin, vous pouvez régénérer chaque texte autant que nécessaire."
             />
-            <FAQItem 
+            <FAQItem
               question="Mes données élèves sont-elles sauvegardées ?"
               answer="Oui, mais UNIQUEMENT dans votre navigateur (localStorage). Rien n'est envoyé sur Internet. À la fermeture, vous pouvez tout effacer en un clic via le bouton 'Réinitialiser'. Conformité RGPD garantie."
             />
-            <FAQItem 
+            <FAQItem
               question="Peut-on dépasser la limite de caractères PRONOTE ?"
               answer="Non. Vous configurez la limite exacte (ex : 255 caractères pour PRONOTE). Si le texte dépasse, une troncature intelligente s'applique automatiquement au niveau des phrases pour garantir un texte cohérent."
             />
-            <FAQItem 
+            <FAQItem
               question="Les moyennes chiffrées apparaissent-elles dans les appréciations ?"
               answer="Non, jamais. Nous avons délibérément exclu les moyennes chiffrées pour éviter la redondance avec PRONOTE où elles sont déjà affichées. Les appréciations restent qualitatives et pédagogiques."
             />
-            <FAQItem 
+            <FAQItem
               question="Puis-je modifier une appréciation après génération ?"
               answer="Oui, totalement. Vous pouvez éditer le texte manuellement, le régénérer, ou changer le ton et relancer. Vous gardez le contrôle à 100%."
             />
@@ -509,30 +560,39 @@ const ReportCardLanding = () => {
                 <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <FileText className="w-8 h-8 text-amber-600 dark:text-amber-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Plus de 20 ans d'expérience dans la rédaction de bulletins scolaires</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Plus de 20 ans d'expérience dans la rédaction de bulletins scolaires
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Brain className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Né d'un besoin réel : gagner du temps sans perdre en qualité</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Né d'un besoin réel : gagner du temps sans perdre en qualité
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Testé et affiné sur plusieurs trimestres avec des centaines d'élèves</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Testé et affiné sur plusieurs trimestres avec des centaines d'élèves
+                </p>
               </div>
               <div className="text-center p-6">
                 <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Sparkles className="w-8 h-8 text-violet-600 dark:text-violet-400" />
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">Pensé pour PRONOTE : respect des contraintes techniques du logiciel</p>
+                <p className="text-slate-600 dark:text-slate-400 text-sm">
+                  Pensé pour PRONOTE : respect des contraintes techniques du logiciel
+                </p>
               </div>
             </div>
 
             <blockquote className="text-center text-xl italic text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
-              "J'ai conçu ReportCardAI parce que je passais mes soirées à rédiger des appréciations. Maintenant, je les termine en 45 minutes au lieu de 3 heures, et la qualité est constante du premier au dernier élève."
+              "J'ai conçu ReportCardAI parce que je passais mes soirées à rédiger des appréciations. Maintenant, je les
+              termine en 45 minutes au lieu de 3 heures, et la qualité est constante du premier au dernier élève."
             </blockquote>
           </div>
         </div>
@@ -542,9 +602,7 @@ const ReportCardLanding = () => {
       <section className="py-20 bg-gradient-to-r from-amber-500 to-amber-600">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
-              Prêt à Récupérer Vos Soirées ?
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Prêt à Récupérer Vos Soirées ?</h2>
             <p className="text-xl text-amber-100 mb-8">
               Des appréciations personnalisées en quelques clics, pas en plusieurs heures.
             </p>
@@ -585,14 +643,22 @@ const ReportCardLanding = () => {
             <div className="flex items-center gap-3">
               <img src={logo} alt="ReportCard AI" className="w-10 h-10" />
               <div>
-                <p className="text-white font-semibold">ReportCard<span className="text-amber-500">AI</span></p>
+                <p className="text-white font-semibold">
+                  ReportCard<span className="text-amber-500">AI</span>
+                </p>
                 <p className="text-sm">Par AIProject4You</p>
               </div>
             </div>
             <div className="flex gap-6 text-sm">
-              <Link to="/" className="hover:text-white transition-colors">Accueil</Link>
-              <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
-              <Link to="/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+              <Link to="/" className="hover:text-white transition-colors">
+                Accueil
+              </Link>
+              <Link to="/mentions-legales" className="hover:text-white transition-colors">
+                Mentions légales
+              </Link>
+              <Link to="/confidentialite" className="hover:text-white transition-colors">
+                Confidentialité
+              </Link>
             </div>
             <p className="text-sm">© 2025 AIProject4You. Tous droits réservés.</p>
           </div>
@@ -613,17 +679,9 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="font-medium text-slate-900 dark:text-white">{question}</span>
-        <ChevronDown
-          className={`w-5 h-5 text-slate-400 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
+        <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      {isOpen && (
-        <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-          {answer}
-        </div>
-      )}
+      {isOpen && <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{answer}</div>}
     </div>
   );
 };
