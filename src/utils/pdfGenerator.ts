@@ -453,12 +453,12 @@ function addExecutiveSummaryPage(
   const totalCardsWidth = 4 * miniCardWidth + 3 * miniCardSpacing;
   const cardsStartX = (pageWidth - totalCardsWidth) / 2;
   
-  // Explicit stats display with proper labels
+  // Explicit stats display with proper labels (clear format, no cryptic icons)
   const kpiData = [
-    { value: elevesAuDessus10, label: 'Moy. ≥ 10', color: colors.success, icon: '✓' },
-    { value: elevesEnDifficulte, label: 'Moy. < 10', color: colors.warning, icon: '!' },
-    { value: top3.length, label: 'Top 3', color: [59, 130, 246] as [number, number, number], icon: '' },
-    { value: elevesAbsencesExcessives, label: 'Abs. excess.', color: colors.danger, icon: '' }
+    { value: elevesAuDessus10, label: 'Élèves ≥10', color: colors.success, symbol: '✓' },
+    { value: elevesEnDifficulte, label: 'Élèves <10', color: colors.warning, symbol: '!' },
+    { value: top3.length, label: 'Top 3', color: [59, 130, 246] as [number, number, number], symbol: '' },
+    { value: elevesAbsencesExcessives, label: 'Abs. exces.', color: colors.danger, symbol: '' }
   ];
   
   kpiData.forEach((kpi, index) => {
@@ -471,11 +471,11 @@ function addExecutiveSummaryPage(
     doc.setLineWidth(0.5);
     doc.roundedRect(cardX, cardStartY, miniCardWidth, miniCardHeight, 2, 2, 'S');
     
-    // Value with icon
+    // Value with symbol
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(...kpi.color);
-    doc.text(`${kpi.value} ${kpi.icon}`, cardX + miniCardWidth / 2, cardStartY + 6, { align: 'center' });
+    doc.text(`${kpi.symbol} ${kpi.value}`, cardX + miniCardWidth / 2, cardStartY + 6, { align: 'center' });
     
     // Label
     doc.setFont('helvetica', 'normal');
