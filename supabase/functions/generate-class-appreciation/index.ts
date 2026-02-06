@@ -6,37 +6,211 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
+type AppreciationTone = "severe" | "standard" | "encourageant" | "elogieux";
 
 const toneInstructions: Record<AppreciationTone, string> = {
-  severe: "Adopte un ton SÉVÈRE et DIRECT : constate les difficultés, les lacunes et les problèmes de comportement sans détour. Utilise un vocabulaire ferme : 'insuffisant', 'préoccupant', 'le conseil met en garde', 'des efforts impératifs sont attendus'.",
-  standard: "Adopte un ton FACTUEL et OBJECTIF : équilibre entre constats positifs et axes d'amélioration. Formulations institutionnelles : 'globalement satisfaisant', 'des efforts à poursuivre', 'le conseil encourage'.",
-  encourageant: "Adopte un ton BIENVEILLANT et MOTIVANT : valorise les efforts, formule les critiques comme des conseils constructifs. Utilise : 'en progression', 'des efforts remarqués', 'le conseil encourage à poursuivre'.",
-  elogieux: "Adopte un ton ÉLOGIEUX et ENTHOUSIASTE : célèbre les réussites, félicite la classe. Utilise : 'félicitations', 'excellent', 'remarquable dynamique', 'le conseil salue'."
+  severe:
+    "Adopte un ton SÉVÈRE et DIRECT : constate les difficultés, les lacunes et les problèmes de comportement sans détour. Utilise un vocabulaire ferme : 'insuffisant', 'préoccupant', 'le conseil met en garde', 'des efforts impératifs sont attendus'.",
+  standard:
+    "Adopte un ton FACTUEL et OBJECTIF : équilibre entre constats positifs et axes d'amélioration. Formulations institutionnelles : 'globalement satisfaisant', 'des efforts à poursuivre', 'le conseil encourage'.",
+  encourageant:
+    "Adopte un ton BIENVEILLANT et MOTIVANT : valorise les efforts, formule les critiques comme des conseils constructifs. Utilise : 'en progression', 'des efforts remarqués', 'le conseil encourage à poursuivre'.",
+  elogieux:
+    "Adopte un ton ÉLOGIEUX et ENTHOUSIASTE : célèbre les réussites, félicite la classe. Utilise : 'félicitations', 'excellent', 'remarquable dynamique', 'le conseil salue'.",
 };
 
 /**
  * List of known teacher names to filter from output
  */
 const TEACHER_NAMES = [
-  'KARBOWY', 'BONNINGUES', 'ROBINEAU', 'DUROCHER', 'LE MOIGNE',
-  'ZOCCANTE', 'KASSA BEGHDOUCHE', 'JAMET', 'POGODA', 'LESPLEQUE',
-  'GUILLIEY', 'ZENATI', 'GUISLAIN', 'DUPONT', 'MARTIN', 'BERNARD',
-  'PETIT', 'ROBERT', 'RICHARD', 'DURAND', 'LEROY', 'MOREAU'
+  "KARBOWY",
+  "BONNINGUES",
+  "ROBINEAU",
+  "DUROCHER",
+  "LE MOIGNE",
+  "ZOCCANTE",
+  "KASSA BEGHDOUCHE",
+  "JAMET",
+  "POGODA",
+  "LESPLEQUE",
+  "GUILLIEY",
+  "ZENATI",
+  "GUISLAIN",
+  "DUPONT",
+  "MARTIN",
+  "BERNARD",
+  "PETIT",
+  "ROBERT",
+  "RICHARD",
+  "DURAND",
+  "LEROY",
+  "MOREAU",
 ];
 
 /**
- * Truncate text intelligently to respect character limit
+ * ═══════════════════════════════════════════════════════════
+ * FORMULATION EXAMPLES - Enriched Library
+ * ═══════════════════════════════════════════════════════════
+ */
+const FORMULATION_EXAMPLES = {
+  ouverture: {
+    positive: [
+      "Classe agréable dans l'ensemble qui participe avec intérêt aux activités proposées.",
+      "Groupe classe dynamique et investi dans les apprentissages.",
+      "Classe plaisante à enseigner avec une bonne ambiance de travail.",
+      "Bon groupe classe, volontaire et à l'écoute des consignes.",
+    ],
+    nuancee: [
+      "Classe hétérogène avec des profils très différents.",
+      "Groupe au potentiel intéressant mais à l'investissement variable.",
+      "Ensemble sympathique mais manquant parfois de rigueur dans le travail.",
+      "Classe au comportement correct mais dont l'engagement reste inégal.",
+    ],
+    critique: [
+      "Classe difficile à mobiliser malgré les efforts des enseignants.",
+      "Groupe agité qui peine à se concentrer sur les apprentissages.",
+      "Classe au climat peu propice au travail scolaire.",
+      "Ensemble bavard qui doit apprendre à canaliser son énergie.",
+    ],
+  },
+  developpement: {
+    travail: [
+      "Le travail personnel reste insuffisant dans plusieurs disciplines.",
+      "L'investissement dans les tâches demandées est globalement satisfaisant.",
+      "Un effort soutenu est constaté dans le suivi des apprentissages.",
+      "Le manque de rigueur dans les devoirs pénalise les progrès.",
+      "Le sérieux et l'application sont remarqués par la plupart des enseignants.",
+    ],
+    comportement: [
+      "Les bavardages perturbent régulièrement l'ambiance de classe.",
+      "Le comportement est globalement respectueux des règles établies.",
+      "Quelques tensions relationnelles nécessitent une vigilance particulière.",
+      "L'agitation excessive nuit à la concentration collective.",
+      "Le respect mutuel et la bienveillance caractérisent ce groupe.",
+    ],
+    participation: [
+      "La participation reste timide malgré les sollicitations répétées.",
+      "Les élèves s'impliquent activement dans les échanges et les débats.",
+      "Une partie du groupe demeure en retrait lors des activités orales.",
+      "L'engagement dans les projets collectifs est remarquable.",
+      "La prise de parole spontanée doit être encouragée.",
+    ],
+    assiduité: [
+      "L'assiduité et la ponctualité sont globalement respectées.",
+      "Des absences répétées fragilisent le suivi des apprentissages.",
+      "La régularité de présence permet une progression continue.",
+      "Les retards fréquents perturbent le bon déroulement des cours.",
+    ],
+  },
+  conclusion: {
+    encourageant: [
+      "Le conseil encourage à poursuivre les efforts engagés.",
+      "Des progrès sont attendus dans les semaines à venir.",
+      "Le potentiel est là, il reste à le concrétiser pleinement.",
+      "La dynamique positive doit être maintenue au prochain trimestre.",
+      "Les enseignants restent confiants dans les capacités du groupe.",
+    ],
+    severe: [
+      "Le conseil met en garde : une mobilisation urgente est nécessaire.",
+      "Des efforts impératifs sont attendus pour le prochain trimestre.",
+      "Un redressement rapide est indispensable pour éviter le décrochage.",
+      "La situation nécessite une prise de conscience collective immédiate.",
+      "Les familles sont invitées à renforcer le suivi du travail personnel.",
+    ],
+    neutre: [
+      "Le conseil attend une régularité accrue dans l'investissement.",
+      "Les axes d'amélioration identifiés doivent faire l'objet d'un suivi.",
+      "La progression du groupe dépendra de l'implication de chacun.",
+      "Les enseignants restent mobilisés pour accompagner la classe.",
+    ],
+  },
+};
+
+/**
+ * ═══════════════════════════════════════════════════════════
+ * VALIDATION - Pre-flight checks
+ * ═══════════════════════════════════════════════════════════
+ */
+interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+function validateAppreciation(text: string, minLength: number, maxLength: number): ValidationResult {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+
+  // ✓ Length check
+  if (text.length < minLength) {
+    errors.push(`Trop court : ${text.length}/${minLength} caractères minimum requis`);
+  }
+  if (text.length > maxLength) {
+    warnings.push(`Dépassement : ${text.length}/${maxLength} caractères (troncature appliquée)`);
+  }
+
+  // ✓ Grade patterns check (moyennes chiffrées)
+  const gradePatterns = [
+    { regex: /\b\d{1,2}[,\.]\d{1,2}\s*(?:\/\s*20)?\b/g, desc: "Note décimale" },
+    { regex: /\b\d{1,2}\s*\/\s*20\b/g, desc: "Note sur 20" },
+    { regex: /\bmoyenne\s+(?:de\s+)?\d+[,\.]?\d*\b/gi, desc: "Moyenne chiffrée" },
+    { regex: /\bde\s+\d{1,2}[,\.]?\d*\b/g, desc: "Référence numérique" },
+  ];
+
+  gradePatterns.forEach(({ regex, desc }) => {
+    const matches = text.match(regex);
+    if (matches) {
+      errors.push(`${desc} détectée : "${matches[0]}"`);
+    }
+  });
+
+  // ✓ Teacher name check
+  const detectedNames = TEACHER_NAMES.filter((name) => new RegExp(`\\b${name}\\b`, "i").test(text));
+  if (detectedNames.length > 0) {
+    errors.push(`Nom(s) de professeur détecté(s) : ${detectedNames.join(", ")}`);
+  }
+
+  // ✓ Class name check
+  const classPatterns = [/\b(?:la|cette)\s+classe\s+de\s+\d+[eè](?:me)?\b/gi, /\bla\s+\d+[eè](?:me)?\d*\b/gi];
+
+  classPatterns.forEach((pattern) => {
+    const matches = text.match(pattern);
+    if (matches) {
+      errors.push(`Nom de classe détecté : "${matches[0]}"`);
+    }
+  });
+
+  // ✓ Quality checks
+  if (text.split(".").length < 2) {
+    warnings.push("Structure trop courte : au moins 2 phrases recommandées");
+  }
+
+  const repetitions = text.match(/\b(\w{5,})\s+\1\b/gi);
+  if (repetitions) {
+    warnings.push(`Répétition détectée : "${repetitions[0]}"`);
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+    warnings,
+  };
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════
+ * TRUNCATION - Intelligent text trimming
+ * ═══════════════════════════════════════════════════════════
  */
 function truncateIntelligently(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
 
-  console.log(`Troncature nécessaire : ${text.length} → ${maxLength}`);
+  console.log(`⚠️ Troncature nécessaire : ${text.length} → ${maxLength} caractères`);
 
   // Strategy 1: Cut at last complete sentence
   const truncated = text.substring(0, maxLength);
-  const lastPeriod = truncated.lastIndexOf('.');
-  const lastExclamation = truncated.lastIndexOf('!');
+  const lastPeriod = truncated.lastIndexOf(".");
+  const lastExclamation = truncated.lastIndexOf("!");
   const bestCut = Math.max(lastPeriod, lastExclamation);
 
   if (bestCut > maxLength * 0.85) {
@@ -44,55 +218,113 @@ function truncateIntelligently(text: string, maxLength: number): string {
   }
 
   // Strategy 2: Cut at last space + add period
-  const lastSpace = truncated.lastIndexOf(' ');
-  if (lastSpace > maxLength * 0.90) {
-    return text.substring(0, lastSpace).trim() + '.';
+  const lastSpace = truncated.lastIndexOf(" ");
+  if (lastSpace > maxLength * 0.9) {
+    return text.substring(0, lastSpace).trim() + ".";
   }
 
   // Strategy 3: Brutal cut with ellipsis
-  return text.substring(0, maxLength - 3).trim() + '...';
+  return text.substring(0, maxLength - 3).trim() + "...";
 }
 
 /**
- * Remove any teacher names that might appear in the text
+ * ═══════════════════════════════════════════════════════════
+ * CLEANUP - Remove forbidden content
+ * ═══════════════════════════════════════════════════════════
  */
 function removeTeacherNames(text: string): string {
   let result = text;
-  
-  TEACHER_NAMES.forEach(name => {
-    // Match variations: "M. NAME", "Mme NAME", "NAME", "pour NAME"
+
+  TEACHER_NAMES.forEach((name) => {
     const patterns = [
-      new RegExp(`\\bM\\.?\\s*${name}\\b`, 'gi'),
-      new RegExp(`\\bMme\\.?\\s*${name}\\b`, 'gi'),
-      new RegExp(`\\bpour\\s+${name}\\b`, 'gi'),
-      new RegExp(`\\bnotamment\\s+(?:pour\\s+)?${name}\\b`, 'gi'),
-      new RegExp(`\\b${name}\\b`, 'gi')
+      new RegExp(`\\bM\\.?\\s*${name}\\b`, "gi"),
+      new RegExp(`\\bMme\\.?\\s*${name}\\b`, "gi"),
+      new RegExp(`\\bpour\\s+${name}\\b`, "gi"),
+      new RegExp(`\\bnotamment\\s+(?:pour\\s+)?${name}\\b`, "gi"),
+      new RegExp(`\\b${name}\\b`, "gi"),
     ];
-    
-    patterns.forEach(regex => {
+
+    patterns.forEach((regex) => {
       if (regex.test(result)) {
-        console.warn(`Nom de professeur détecté et supprimé : ${name}`);
-        result = result.replace(regex, '');
+        console.warn(`🚫 Nom de professeur détecté et supprimé : ${name}`);
+        result = result.replace(regex, "");
       }
     });
   });
-  
-  // Clean up double spaces and orphan commas
-  result = result.replace(/\s+/g, ' ');
-  result = result.replace(/,\s*,/g, ',');
-  result = result.replace(/\s+\./g, '.');
-  result = result.replace(/\s+,/g, ',');
-  
+
+  // Clean up double spaces and orphan punctuation
+  result = result.replace(/\s+/g, " ");
+  result = result.replace(/,\s*,/g, ",");
+  result = result.replace(/\s+\./g, ".");
+  result = result.replace(/\s+,/g, ",");
+
   return result.trim();
 }
 
+function removeGradesAndClassNames(text: string): string {
+  let result = text;
+
+  // Remove numerical grades/averages
+  const gradePatterns = [
+    /\b\d{1,2}[,\.]\d{1,2}\s*(?:\/\s*20)?\b/g,
+    /\b\d{1,2}\s*\/\s*20\b/g,
+    /\bmoyenne\s+(?:de\s+)?\d+[,\.]?\d*\b/gi,
+    /\bavec\s+une\s+moyenne\s+de\s+\d+[,\.]?\d*\b/gi,
+    /\bune\s+moyenne\s+de\s+\d+[,\.]?\d*\b/gi,
+    /\bde\s+\d{1,2}[,\.]?\d*\s*(?:\/\s*20)?\b/g,
+    /\b\d{1,2}\s*points?\b/gi,
+    /\b\d{2,3}\s*%/g,
+    /\b\d{1,2}\s*,\s*\d{1,2}\b/g,
+  ];
+
+  gradePatterns.forEach((pattern) => {
+    const matches = result.match(pattern);
+    if (matches) {
+      console.warn(`🚫 Moyenne/chiffre détecté et supprimé : ${matches[0]}`);
+      result = result.replace(pattern, "");
+    }
+  });
+
+  // Remove class name mentions
+  const classNamePatterns = [
+    /\bla\s+classe\s+de\s+\d+[eè](?:me)?\d*\b/gi,
+    /\bcette\s+classe\s+de\s+\d+[eè](?:me)?\b/gi,
+    /\bles\s+élèves\s+de\s+\d+[eè](?:me)?\b/gi,
+    /\bla\s+\d+[eè](?:me)?\d*\b/gi,
+    /\b(?:classe|élèves)\s+de\s+\d+[A-Z]+\b/gi,
+  ];
+
+  classNamePatterns.forEach((pattern) => {
+    const matches = result.match(pattern);
+    if (matches) {
+      console.warn(`🚫 Nom de classe détecté et supprimé : ${matches[0]}`);
+      result = result.replace(pattern, "");
+    }
+  });
+
+  // Clean up orphan spaces
+  result = result.replace(/\s+/g, " ").trim();
+  result = result.replace(/\s+\./g, ".");
+  result = result.replace(/\s+,/g, ",");
+
+  return result;
+}
+
 /**
- * Build a rich context from theme analysis
+ * ═══════════════════════════════════════════════════════════
+ * THEME ANALYSIS - Enhanced pattern detection
+ * ═══════════════════════════════════════════════════════════
  */
 function buildThemeContext(themes: Record<string, number>): string {
   const observations: string[] = [];
-  
-  // === RÉSULTATS SCOLAIRES ===
+  const totalThemes = Object.values(themes).reduce((sum, val) => sum + val, 0);
+
+  // Si aucun thème détecté
+  if (totalThemes === 0) {
+    return "Aucune observation particulière transmise par les enseignants.";
+  }
+
+  // ═══ RÉSULTATS SCOLAIRES ═══
   if (themes.solide > themes.fragile * 1.5) {
     observations.push("Les résultats sont globalement satisfaisants selon la majorité des enseignants");
   } else if (themes.fragile > themes.solide * 1.5) {
@@ -104,274 +336,388 @@ function buildThemeContext(themes: Record<string, number>): string {
   } else if (themes.fragile > 0) {
     observations.push("Les résultats sont préoccupants dans plusieurs disciplines");
   }
-  
-  if (themes.heterogene >= 3) {
-    observations.push("Forte hétérogénéité soulignée par plusieurs professeurs");
+
+  // HÉTÉROGÉNÉITÉ (écarts entre élèves)
+  if (themes.heterogene >= 4) {
+    observations.push(
+      "🚨 Hétérogénéité TRÈS MARQUÉE - écarts importants entre élèves signalés par de nombreux professeurs",
+    );
+  } else if (themes.heterogene >= 2) {
+    observations.push("Disparités entre élèves observées dans plusieurs matières");
   } else if (themes.heterogene >= 1) {
-    observations.push("Disparités entre élèves observées");
+    observations.push("Quelques écarts de niveau constatés");
   }
-  
+
+  // PROGRESSION
   if (themes.progressif >= 3) {
-    observations.push("Progression observée par plusieurs enseignants");
+    observations.push("Progression observée et encouragée par plusieurs enseignants");
   } else if (themes.progressif >= 1) {
     observations.push("Des progrès sont constatés");
   }
-  
-  // === AMBIANCE DE TRAVAIL ===
+
+  // ═══ AMBIANCE DE TRAVAIL ═══
+
+  // SÉRIEUX
   if (themes.serieux >= 4) {
-    observations.push("Classe décrite comme sérieuse et appliquée");
+    observations.push("Classe décrite comme sérieuse et appliquée par la plupart des professeurs");
   } else if (themes.serieux >= 2) {
     observations.push("Travail globalement sérieux");
   }
-  
-  if (themes.bavardages >= 4) {
-    observations.push("Bavardages perturbateurs mentionnés par plusieurs professeurs - ambiance de travail TRÈS difficile");
+
+  // BAVARDAGES (hiérarchisé par gravité)
+  if (themes.bavardages >= 5) {
+    observations.push("🚨 BAVARDAGES GÉNÉRALISÉS - climat de travail TRÈS dégradé selon presque tous les enseignants");
+  } else if (themes.bavardages >= 3) {
+    observations.push("Bavardages perturbateurs mentionnés par plusieurs professeurs - ambiance de travail difficile");
   } else if (themes.bavardages >= 2) {
-    observations.push("Bavardages signalés perturbant les apprentissages");
+    observations.push("Bavardages signalés perturbant ponctuellement les apprentissages");
   }
-  
+
+  // PARTICIPATION
   if (themes.participation >= 3) {
     if (themes.passif >= 2) {
-      observations.push("Participation décrite comme timide ou insuffisante");
+      observations.push("Participation décrite comme timide ou insuffisante malgré les sollicitations");
     } else {
-      observations.push("Participation active soulignée");
+      observations.push("Participation active et engagement oral soulignés");
     }
-  } else if (themes.passif >= 3) {
-    observations.push("Passivité IMPORTANTE observée - manque d'implication généralisé");
+  } else if (themes.passif >= 4) {
+    observations.push("🚨 PASSIVITÉ GÉNÉRALISÉE - manque d'engagement oral préoccupant dans la majorité des cours");
+  } else if (themes.passif >= 2) {
+    observations.push("Une partie des élèves reste en retrait et participe peu");
   } else if (themes.passif >= 1) {
-    observations.push("Une partie des élèves est passive ou en retrait");
+    observations.push("Quelques élèves gagneraient à s'impliquer davantage à l'oral");
   }
-  
+
+  // CONCENTRATION
   if (themes.concentration >= 3) {
-    observations.push("Bonne concentration notée en classe");
+    observations.push("Bonne concentration et attention notées en classe");
   }
-  
-  if (themes.travail >= 4) {
-    observations.push("Travail personnel TRÈS insuffisant signalé par de nombreux enseignants - manque flagrant d'investissement");
+
+  // TRAVAIL PERSONNEL (hiérarchisé)
+  if (themes.travail >= 5) {
+    observations.push(
+      "🚨 Travail personnel TRÈS insuffisant signalé par de nombreux enseignants - manque flagrant d'investissement hors classe",
+    );
+  } else if (themes.travail >= 3) {
+    observations.push(
+      "Travail personnel insuffisant signalé par plusieurs enseignants - révisions et devoirs négligés",
+    );
   } else if (themes.travail >= 2) {
-    observations.push("Travail personnel insuffisant signalé par plusieurs enseignants");
+    observations.push("Travail personnel à renforcer dans certaines matières");
   } else if (themes.travail >= 1) {
-    observations.push("Travail personnel à renforcer");
+    observations.push("Le travail à la maison doit être plus régulier");
   }
-  
+
+  // INVESTISSEMENT
   if (themes.investissement >= 3) {
-    observations.push("Investissement satisfaisant dans les tâches");
+    observations.push("Investissement satisfaisant dans les tâches proposées");
   }
-  
-  // === RELATIONS ET CLIMAT ===
+
+  // ═══ RELATIONS ET CLIMAT ═══
+
   if (themes.bonneAmbiance >= 3) {
-    observations.push("Bonne ambiance de classe mentionnée");
+    observations.push("Bonne ambiance de classe et climat serein mentionnés");
   } else if (themes.bonneAmbiance >= 1) {
     observations.push("Ambiance de classe agréable");
   }
-  
+
   if (themes.cohesion >= 2) {
-    observations.push("Cohésion du groupe observée");
+    observations.push("Cohésion du groupe et entraide observées");
   }
-  
+
   if (themes.tensions >= 2) {
-    observations.push("Tensions relationnelles à surveiller");
+    observations.push("Tensions relationnelles à surveiller - quelques conflits signalés");
   }
-  
+
   if (themes.respect >= 3) {
-    observations.push("Relations respectueuses entre élèves");
+    observations.push("Relations respectueuses et bienveillantes entre élèves");
   }
-  
-  // === POINTS D'ATTENTION ===
+
+  // ═══ POINTS D'ATTENTION ═══
+
+  // ABSENCES
   if (themes.absences >= 4) {
-    observations.push("Absentéisme préoccupant signalé");
+    observations.push("🚨 Absentéisme préoccupant signalé - impact négatif sur les apprentissages");
   } else if (themes.absences >= 2) {
-    observations.push("Absences à surveiller");
+    observations.push("Absences répétées à surveiller dans plusieurs matières");
   }
-  
-  if (themes.retards >= 4) {
-    observations.push("Problèmes de ponctualité relevés");
+
+  // RETARDS
+  if (themes.retards >= 3) {
+    observations.push("Problèmes de ponctualité relevés par plusieurs enseignants");
   } else if (themes.retards >= 2) {
-    observations.push("Quelques retards signalés");
+    observations.push("Quelques retards perturbent le bon déroulement des cours");
   }
-  
-  if (themes.comportement >= 4) {
-    observations.push("Comportement nécessitant une vigilance particulière - difficultés à respecter les règles de base");
+
+  // COMPORTEMENT (hiérarchisé)
+  if (themes.comportement >= 5) {
+    observations.push("🚨 PROBLÈMES DE COMPORTEMENT MAJEURS - difficultés importantes à respecter les règles de base");
+  } else if (themes.comportement >= 3) {
+    observations.push("Comportement nécessitant une vigilance particulière - rappels fréquents nécessaires");
   } else if (themes.comportement >= 2) {
     observations.push("Comportement globalement correct mais à surveiller");
   }
-  
-  return observations.length > 0 
-    ? observations.join(".\n") + "."
-    : "Pas d'observations particulières dans les appréciations des enseignants.";
+
+  // Si aucune observation n'a été ajoutée
+  if (observations.length === 0) {
+    return "Profil de classe standard sans points d'alerte particuliers.";
+  }
+
+  return observations.join(".\n") + ".";
 }
 
+/**
+ * ═══════════════════════════════════════════════════════════
+ * MAIN HANDLER
+ * ═══════════════════════════════════════════════════════════
+ */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Authentication: Validate JWT token
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(
-        JSON.stringify({ error: 'Authentification requise' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // ═══ AUTHENTICATION ═══
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Authentification requise" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Create Supabase client with auth header to validate token
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-    
-    // Validate JWT and get user
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    
+    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseClient.auth.getUser();
+
     if (authError || !user) {
-      console.error('Auth error:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Token invalide ou expiré' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error("❌ Auth error:", authError);
+      return new Response(JSON.stringify({ error: "Token invalide ou expiré" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { 
-      classData, 
-      themes, 
-      exceptionalSubjects, 
-      tone: rawTone = 'standard',
-      maxCharacters = 255 
+    // ═══ PARSE REQUEST ═══
+    const {
+      classData,
+      themes,
+      exceptionalSubjects,
+      tone: rawTone = "standard",
+      maxCharacters = 255,
     } = await req.json();
-    
-    // Migrate old tones
+
+    // Migrate old tones to new system
     const migrateTone = (t: string): AppreciationTone => {
       const migration: Record<string, AppreciationTone> = {
-        'ferme': 'severe',
-        'neutre': 'standard',
-        'bienveillant': 'encourageant',
-        'constructif': 'standard',
-        'caring': 'encourageant',
-        'praising': 'elogieux'
+        ferme: "severe",
+        neutre: "standard",
+        bienveillant: "encourageant",
+        constructif: "standard",
+        caring: "encourageant",
+        praising: "elogieux",
       };
-      return migration[t] || (t as AppreciationTone) || 'standard';
+      return migration[t] || (t as AppreciationTone) || "standard";
     };
-    
+
     const tone = migrateTone(rawTone);
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    
+
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // ═══ BUILD CONTEXT ═══
     const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
     const themeContext = buildThemeContext(themes || {});
-    
-    // Build exceptional subjects context (only if significant deviation)
+
+    // Build exceptional subjects context
     let exceptionalContext = "";
     if (exceptionalSubjects?.exceptional?.length > 0) {
-      exceptionalContext += `\n- Matière exceptionnellement forte : ${exceptionalSubjects.exceptional[0]}`;
+      exceptionalContext += `\n📈 Matière(s) où la classe excelle : ${exceptionalSubjects.exceptional.join(", ")}`;
     }
     if (exceptionalSubjects?.struggling?.length > 0) {
-      exceptionalContext += `\n- Matière en difficulté marquée : ${exceptionalSubjects.struggling[0]}`;
+      exceptionalContext += `\n📉 Matière(s) en difficulté marquée : ${exceptionalSubjects.struggling.join(", ")}`;
     }
 
-    // Determine if short or long format
+    // Determine format
     const isShortFormat = maxCharacters <= 280;
-    
-    // Calculate minimum length (should be at least 85% of max, or previous tier)
     const minCharacters = Math.floor(maxCharacters * 0.85);
 
+    // ═══ BUILD PROMPTS ═══
     const systemPrompt = `Tu es un professeur principal expérimenté rédigeant l'appréciation générale de classe pour le bulletin du conseil de classe français.
 
-CONTRAINTES DE LONGUEUR CRITIQUES :
-- MINIMUM ABSOLU : ${minCharacters} caractères
-- MAXIMUM ABSOLU : ${maxCharacters} caractères
-- Tu DOIS produire un texte entre ${minCharacters} et ${maxCharacters} caractères.
+═══════════════════════════════════════════════════════════
+🎯 OBJECTIF PRINCIPAL
+═══════════════════════════════════════════════════════════
+Synthétiser la dynamique globale de la classe en t'appuyant EXCLUSIVEMENT sur les observations des enseignants. L'appréciation sera lue par les parents et l'administration.
 
-CONTEXTE : Cette appréciation sera lue par les parents et l'administration. Elle doit synthétiser fidèlement les observations des professeurs.
+═══════════════════════════════════════════════════════════
+⚠️ CONTRAINTES DE LONGUEUR CRITIQUES
+═══════════════════════════════════════════════════════════
+• MINIMUM ABSOLU : ${minCharacters} caractères
+• MAXIMUM ABSOLU : ${maxCharacters} caractères
+• Tu DOIS produire un texte entre ${minCharacters} et ${maxCharacters} caractères
 
-${isShortFormat ? `
-STRUCTURE COURTE (≤280 caractères) :
-- 2-3 phrases courtes mais complètes
-- Phrase 1 : Caractérisation générale de la classe (ambiance, dynamique)
-- Phrase 2 : Points forts ou axes d'amélioration
-- Phrase 3 optionnelle : Perspective/encouragement
-` : `
-STRUCTURE DÉVELOPPÉE (>280 caractères) - OBLIGATOIRE :
-- 4-6 phrases pour REMPLIR l'espace disponible (${minCharacters}-${maxCharacters} caractères)
-- Paragraphe 1 (2 phrases) : Caractérisation de la classe (ambiance, dynamique de groupe)
-- Paragraphe 2 (2-3 phrases) : Travail, comportement, participation - DÉVELOPPÉS avec précision
-- Paragraphe 3 (1 phrase) : Perspectives, attentes et encouragements
-`}
+═══════════════════════════════════════════════════════════
+📐 ARCHITECTURE DU TEXTE
+═══════════════════════════════════════════════════════════
 
-EXEMPLES DE FORMULATIONS NATURELLES À UTILISER :
+${
+  isShortFormat
+    ? `
+🎯 FORMAT COURT (≤280 caractères) - STRUCTURE DENSE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Phrase 1 : Caractérisation globale (ex: "Classe hétérogène...")
+• Phrase 2 : 1-2 points saillants (travail, comportement OU participation)
+• Phrase 3 : Perspective rapide (encouragement/alerte)
 
-Tonalité positive :
-- "Classe agréable dans l'ensemble qui participe avec intérêt aux activités proposées."
-- "Groupe classe dynamique et investi dans les apprentissages."
-- "Classe globalement sérieuse qui s'investit correctement dans le travail."
-- "Bon groupe classe, volontaire et à l'écoute."
-- "Classe plaisante à enseigner, avec une bonne ambiance de travail."
+⚠️ Évite les énumérations longues - VA À L'ESSENTIEL.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`
+    : `
+🎯 FORMAT DÉVELOPPÉ (>280 caractères) - STRUCTURE COMPLÈTE :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+§ PARAGRAPHE 1 - CARACTÉRISATION (2 phrases, ~80-100 car.) :
+  → Ambiance générale de classe
+  → Profil du groupe (hétérogène, dynamique, investi, etc.)
 
-Tonalité nuancée :
-- "Classe hétérogène avec des profils très différents."
-- "Groupe classe au potentiel intéressant mais à l'investissement variable."
-- "Classe au comportement correct mais dont l'engagement reste inégal."
-- "Ensemble classe sympathique mais manquant parfois de rigueur."
-- "Classe globalement calme mais dont la participation reste timide."
+§ PARAGRAPHE 2 - ANALYSE DÉTAILLÉE (3-4 phrases, ~${Math.floor(maxCharacters * 0.6)} car.) :
+  → Travail personnel et investissement
+  → Comportement et participation orale
+  → Points forts/faibles selon disciplines SI PERTINENT
+  → Assiduité ou ponctualité SI SIGNIFICATIF
+  
+§ PARAGRAPHE 3 - PERSPECTIVES (1-2 phrases, ~60-80 car.) :
+  → Attentes du conseil pour le trimestre suivant
+  → Encouragements OU alertes selon la situation
 
-Tonalité critique mais constructive :
-- "Classe difficile à mobiliser malgré les efforts des enseignants."
-- "Groupe classe agité qui peine à se concentrer sur les apprentissages."
-- "Classe au climat peu propice au travail, des efforts importants sont attendus."
-- "Ensemble classe bavard qui doit apprendre à canaliser son énergie."
+⚠️ TU DOIS REMPLIR L'ESPACE : ${minCharacters}-${maxCharacters} caractères !
+⚠️ DÉVELOPPE chaque point avec PRÉCISION et EXEMPLES CONCRETS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`
+}
 
-INTERDICTIONS ABSOLUES - TOUTE VIOLATION = ÉCHEC TOTAL :
+═══════════════════════════════════════════════════════════
+📚 EXEMPLES DE FORMULATIONS NATURELLES
+═══════════════════════════════════════════════════════════
 
-🚫 ZÉRO CHIFFRE dans le texte :
-- JAMAIS de moyenne ("moyenne de 14", "11.5", "12/20", "X/20") - LA MOYENNE EST DÉJÀ VISIBLE DANS LE BULLETIN
-- JAMAIS de pourcentages ("60% des élèves")
-- JAMAIS de statistiques numériques
+🟢 OUVERTURES POSITIVES :
+${FORMULATION_EXAMPLES.ouverture.positive.map((ex) => `• "${ex}"`).join("\n")}
 
-🚫 ZÉRO NOM :
-- JAMAIS de noms de professeurs
-- JAMAIS de noms d'élèves
-- JAMAIS le nom ou niveau de la classe ("La classe de 3ème", "La 5e3")
+🟡 OUVERTURES NUANCÉES :
+${FORMULATION_EXAMPLES.ouverture.nuancee.map((ex) => `• "${ex}"`).join("\n")}
 
-✅ OBLIGATIONS STRICTES :
-- Utiliser les formulations naturelles comme les exemples ci-dessus
-- Vocabulaire 100% QUALITATIF : "agréable", "sérieuse", "hétérogène", "dynamique", "timide", "investi"
-- Longueur entre ${minCharacters} et ${maxCharacters} caractères - IMPÉRATIF
-- Base-toi UNIQUEMENT sur les thèmes fournis (bavardages, sérieux, participation, etc.)
-- Mentionner les matières fortes et faibles qualitativement si pertinent
+🔴 OUVERTURES CRITIQUES (mais constructives) :
+${FORMULATION_EXAMPLES.ouverture.critique.map((ex) => `• "${ex}"`).join("\n")}
 
-TONALITÉ : ${toneInstruction}
+💼 DÉVELOPPEMENT - TRAVAIL :
+${FORMULATION_EXAMPLES.developpement.travail
+  .slice(0, 3)
+  .map((ex) => `• "${ex}"`)
+  .join("\n")}
 
-${isShortFormat ? `
-EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
+👥 DÉVELOPPEMENT - COMPORTEMENT :
+${FORMULATION_EXAMPLES.developpement.comportement
+  .slice(0, 3)
+  .map((ex) => `• "${ex}"`)
+  .join("\n")}
+
+🗣️ DÉVELOPPEMENT - PARTICIPATION :
+${FORMULATION_EXAMPLES.developpement.participation
+  .slice(0, 3)
+  .map((ex) => `• "${ex}"`)
+  .join("\n")}
+
+═══════════════════════════════════════════════════════════
+🚫 INTERDICTIONS ABSOLUES (violation = échec total)
+═══════════════════════════════════════════════════════════
+
+❌ ZÉRO CHIFFRE dans le texte :
+   • JAMAIS de moyenne ("moyenne de 14", "11.5", "12/20")
+   • JAMAIS de pourcentages ("60% des élèves")
+   • JAMAIS de statistiques numériques
+   ✅ Raison : LA MOYENNE EST DÉJÀ VISIBLE DANS LE BULLETIN
+
+❌ ZÉRO NOM :
+   • JAMAIS de noms de professeurs
+   • JAMAIS de noms d'élèves
+   • JAMAIS le nom ou niveau de la classe ("La classe de 3ème", "La 5e3")
+
+❌ FORMULES STÉRÉOTYPÉES À ÉVITER :
+   • "Dans l'ensemble" (répétitif)
+   • "Il faudrait que" (trop distant)
+   • Commencer par "La classe de..." (révèle le niveau)
+
+═══════════════════════════════════════════════════════════
+✅ OBLIGATIONS STRICTES
+═══════════════════════════════════════════════════════════
+• Vocabulaire 100% QUALITATIF : "agréable", "sérieuse", "hétérogène", "dynamique", "timide", "investi", "fragile", "préoccupant"
+• Base-toi UNIQUEMENT sur les thèmes fournis (bavardages, sérieux, participation, absences, etc.)
+• Mentionne les matières fortes et faibles QUALITATIVEMENT si pertinent ("les sciences expérimentales", "les matières littéraires", etc.)
+• Longueur entre ${minCharacters} et ${maxCharacters} caractères - IMPÉRATIF
+
+═══════════════════════════════════════════════════════════
+🎭 TONALITÉ À ADOPTER
+═══════════════════════════════════════════════════════════
+${toneInstruction}
+
+═══════════════════════════════════════════════════════════
+📝 EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.)
+═══════════════════════════════════════════════════════════
+${
+  isShortFormat
+    ? `
 "Classe agréable et sérieuse dans l'ensemble. Les bavardages restent à maîtriser pour une meilleure concentration. Le conseil encourage à poursuivre les efforts engagés."
-` : `
-EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
-"Classe hétérogène avec des profils très différents. Le groupe montre un investissement variable selon les disciplines : les matières artistiques et sportives suscitent un réel enthousiasme tandis que l'engagement reste timide en sciences. Les bavardages perturbent parfois l'ambiance de travail et une partie des élèves manque de rigueur dans le travail personnel. Le conseil attend une mobilisation plus régulière pour progresser collectivement."
-`}`;
+`
+    : `
+"Classe hétérogène avec des profils très différents. Le groupe montre un investissement variable selon les disciplines : les matières artistiques et sportives suscitent un réel enthousiasme tandis que l'engagement reste timide en sciences et en langues. Les bavardages perturbent parfois l'ambiance de travail et une partie des élèves manque de rigueur dans le travail personnel. L'assiduité est globalement satisfaisante. Le conseil attend une mobilisation plus régulière et une meilleure concentration pour progresser collectivement au trimestre suivant."
+`
+}`;
 
     const userPrompt = `Rédige l'appréciation générale pour le bulletin du conseil de classe.
 
-RAPPEL CRITIQUE - LONGUEUR OBLIGATOIRE : entre ${minCharacters} et ${maxCharacters} caractères !
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ RAPPEL CRITIQUE - LONGUEUR OBLIGATOIRE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Entre ${minCharacters} et ${maxCharacters} caractères !
 
-ANALYSE DES APPRÉCIATIONS DES ENSEIGNANTS :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 DONNÉES D'ANALYSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${themeContext}
-${exceptionalContext ? `\nMATIÈRES PARTICULIÈRES :${exceptionalContext}\n` : ''}
+${
+  exceptionalContext
+    ? `
+🎯 MATIÈRES PARTICULIÈRES :${exceptionalContext}
+`
+    : ""
+}
 
-VÉRIFICATIONS À FAIRE AVANT DE RÉPONDRE :
-1. ✓ Le texte fait-il entre ${minCharacters} et ${maxCharacters} caractères ? (OBLIGATOIRE)
-2. ✓ Y a-t-il ZÉRO chiffre dans le texte ? (pas de 14, 12/20, moyenne de X, pourcentages)
-3. ✓ Le texte commence-t-il par une formulation variée ? (PAS par "La classe de...")
-4. ✓ Aucun nom de professeur ni d'élève ?
-5. ✓ Les matières fortes et faibles sont-elles mentionnées qualitativement ?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ CHECKLIST PRÉ-RÉDACTION (vérifie mentalement) :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ✓ Longueur entre ${minCharacters} et ${maxCharacters} caractères
+2. ✓ ZÉRO chiffre (pas de 14, 12/20, moyenne de X)
+3. ✓ ZÉRO nom (prof, élève, classe)
+4. ✓ Formulation naturelle et variée
+5. ✓ Tonalité ${tone} respectée
+6. ✓ Matières exceptionnelles mentionnées qualitativement SI PERTINENT
+7. ✓ Structure ${isShortFormat ? "COURTE (2-3 phrases)" : "DÉVELOPPÉE (5-7 phrases)"}
 
-${isShortFormat ? 'FORMAT COURT : 2-3 phrases denses.' : `FORMAT DÉVELOPPÉ : 5-7 phrases pour atteindre ${minCharacters} caractères minimum !`}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 GÉNÈRE MAINTENANT (${minCharacters}-${maxCharacters} car.) :
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
 
-Génère maintenant l'appréciation (${minCharacters}-${maxCharacters} caractères) :`;
+    // ═══ CALL AI GATEWAY ═══
+    console.log(
+      `🤖 Génération avec Gemini 2.5 Flash - Tonalité: ${tone} - Longueur: ${minCharacters}-${maxCharacters}`,
+    );
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -391,93 +737,81 @@ Génère maintenant l'appréciation (${minCharacters}-${maxCharacters} caractèr
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("AI Gateway error:", response.status, errorText);
-      
+      console.error("❌ AI Gateway error:", response.status, errorText);
+
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Trop de requêtes. Veuillez patienter quelques instants." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Trop de requêtes. Veuillez patienter quelques instants." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Crédits AI épuisés. Veuillez réessayer plus tard." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Crédits AI épuisés. Veuillez réessayer plus tard." }), {
+          status: 402,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      
+
       throw new Error(`AI Gateway error: ${response.status}`);
     }
 
     const data = await response.json();
     let appreciation = data.choices?.[0]?.message?.content || "";
-    
-    // Clean up the response
+
+    // ═══ CLEANUP PHASE ═══
     appreciation = appreciation.trim();
-    
-    // Remove any teacher names that might have slipped through
+
+    console.log(`📝 Appréciation brute générée : ${appreciation.length} caractères`);
+
+    // Remove forbidden content
     appreciation = removeTeacherNames(appreciation);
-    
-    // CRITICAL: Remove any numerical grades/averages that might have slipped through
-    // Patterns: "11.5", "12/20", "moyenne de 11", "11,5/20", "X points", "de 14", etc.
-    const gradePatterns = [
-      /\b\d{1,2}[,\.]\d{1,2}\s*(?:\/\s*20)?\b/g,  // 11.5 or 11,5 or 11.5/20
-      /\b\d{1,2}\s*\/\s*20\b/g,                     // 12/20
-      /\bmoyenne\s+(?:de\s+)?\d+[,\.]?\d*\b/gi,     // moyenne de 11.5
-      /\bavec\s+une\s+moyenne\s+de\s+\d+[,\.]?\d*\b/gi, // avec une moyenne de 14
-      /\bune\s+moyenne\s+de\s+\d+[,\.]?\d*\b/gi,    // une moyenne de 14
-      /\bde\s+\d{1,2}[,\.]?\d*\s*(?:\/\s*20)?\b/g,  // de 14, de 11.5
-      /\b\d{1,2}\s*points?\b/gi,                    // 11 points
-      /\b\d{2,3}\s*%/g,                             // 60%
-      /\b\d{1,2}\s*,\s*\d{1,2}\b/g,                 // 14,5
-    ];
-    
-    gradePatterns.forEach(pattern => {
-      if (pattern.test(appreciation)) {
-        console.warn(`Moyenne/chiffre détecté et supprimé: ${appreciation.match(pattern)}`);
-        appreciation = appreciation.replace(pattern, '');
-      }
-    });
-    
-    // Remove class name mentions
-    const classNamePatterns = [
-      /\bla\s+classe\s+de\s+\d+[eè](?:me)?\d*\b/gi,  // la classe de 3ème, la classe de 5e3
-      /\bcette\s+classe\s+de\s+\d+[eè](?:me)?\b/gi,  // cette classe de 3ème
-      /\bles\s+élèves\s+de\s+\d+[eè](?:me)?\b/gi,    // les élèves de 3ème
-      /\bla\s+\d+[eè](?:me)?\d*\b/gi,                // la 3ème, la 5e3
-      /\b(?:classe|élèves)\s+de\s+\d+[A-Z]+\b/gi,    // classe de 4BAY
-    ];
-    
-    classNamePatterns.forEach(pattern => {
-      if (pattern.test(appreciation)) {
-        console.warn(`Nom de classe détecté et supprimé: ${appreciation.match(pattern)}`);
-        appreciation = appreciation.replace(pattern, '');
-      }
-    });
-    
-    // Clean up orphan spaces after removals
-    appreciation = appreciation.replace(/\s+/g, ' ').trim();
-    appreciation = appreciation.replace(/\s+\./g, '.');
-    appreciation = appreciation.replace(/\s+,/g, ',');
-    
-    // Enforce character limit
-    if (appreciation.length > maxCharacters) {
-      console.warn(`Dépassement détecté : ${appreciation.length}/${maxCharacters} caractères`);
-      appreciation = truncateIntelligently(appreciation, maxCharacters);
+    appreciation = removeGradesAndClassNames(appreciation);
+
+    // ═══ VALIDATION ═══
+    const validation = validateAppreciation(appreciation, minCharacters, maxCharacters);
+
+    if (!validation.isValid) {
+      console.error("❌ Validation échouée :", validation.errors);
+      // Log errors but continue - cleanup should have fixed most issues
+      validation.errors.forEach((error) => console.warn(`⚠️ ${error}`));
     }
 
-    return new Response(JSON.stringify({ 
-      appreciation,
-      characterCount: appreciation.length,
-      maxCharacters 
-    }), {
+    if (validation.warnings.length > 0) {
+      validation.warnings.forEach((warning) => console.warn(`⚠️ ${warning}`));
+    }
+
+    // ═══ ENFORCE LENGTH ═══
+    if (appreciation.length > maxCharacters) {
+      console.warn(`⚠️ Dépassement détecté : ${appreciation.length}/${maxCharacters} caractères`);
+      appreciation = truncateIntelligently(appreciation, maxCharacters);
+      console.log(`✂️ Après troncature : ${appreciation.length} caractères`);
+    }
+
+    console.log(
+      `✅ Appréciation finale : ${appreciation.length} caractères (objectif: ${minCharacters}-${maxCharacters})`,
+    );
+
+    return new Response(
+      JSON.stringify({
+        appreciation,
+        characterCount: appreciation.length,
+        maxCharacters,
+        minCharacters,
+        validation: {
+          isValid: validation.isValid,
+          errors: validation.errors,
+          warnings: validation.warnings,
+        },
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
+  } catch (error) {
+    console.error("❌ Error:", error);
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error) {
-    console.error("Error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
   }
 });
