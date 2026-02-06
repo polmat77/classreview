@@ -285,62 +285,73 @@ serve(async (req) => {
 CONTRAINTES DE LONGUEUR CRITIQUES :
 - MINIMUM ABSOLU : ${minCharacters} caractères
 - MAXIMUM ABSOLU : ${maxCharacters} caractères
-- Tu DOIS produire un texte entre ${minCharacters} et ${maxCharacters} caractères. Un texte plus court est INACCEPTABLE.
+- Tu DOIS produire un texte entre ${minCharacters} et ${maxCharacters} caractères.
 
 CONTEXTE : Cette appréciation sera lue par les parents et l'administration. Elle doit synthétiser fidèlement les observations des professeurs.
 
 ${isShortFormat ? `
 STRUCTURE COURTE (≤280 caractères) :
 - 2-3 phrases courtes mais complètes
-- Phrase 1 : Résultats généraux (qualitatif UNIQUEMENT, SANS AUCUN CHIFFRE)
-- Phrase 2 : Ambiance de travail / comportement
-- Phrase 3 optionnelle : Conclusion/perspective
+- Phrase 1 : Caractérisation générale de la classe (ambiance, dynamique)
+- Phrase 2 : Points forts ou axes d'amélioration
+- Phrase 3 optionnelle : Perspective/encouragement
 ` : `
 STRUCTURE DÉVELOPPÉE (>280 caractères) - OBLIGATOIRE :
-- 5-7 phrases pour REMPLIR l'espace disponible (${minCharacters}-${maxCharacters} caractères)
-- Paragraphe 1 (2 phrases) : Résultats et tendances - DÉTAILLÉS, vocabulaire riche
-- Paragraphe 2 (2-3 phrases) : Ambiance de travail, comportement, participation - DÉVELOPPÉS avec précision
-- Paragraphe 3 (1-2 phrases) : Perspectives, attentes et encouragements - COMPLETS
-- UTILISE TOUT L'ESPACE : ne t'arrête pas avant ${minCharacters} caractères !
+- 4-6 phrases pour REMPLIR l'espace disponible (${minCharacters}-${maxCharacters} caractères)
+- Paragraphe 1 (2 phrases) : Caractérisation de la classe (ambiance, dynamique de groupe)
+- Paragraphe 2 (2-3 phrases) : Travail, comportement, participation - DÉVELOPPÉS avec précision
+- Paragraphe 3 (1 phrase) : Perspectives, attentes et encouragements
 `}
 
-FORMULATIONS DE DÉBUT OBLIGATOIRES (VARIER, NE JAMAIS RÉPÉTER LA MÊME) :
-- "Ce trimestre, la classe présente..."
-- "Ce trimestre révèle..."
-- "L'ambiance de classe ce trimestre..."
-- "Les résultats ce trimestre témoignent..."
-- "Ce trimestre se caractérise par..."
-- "Résultats encourageants pour..."
-- "Le niveau affiché ce trimestre..."
+EXEMPLES DE FORMULATIONS NATURELLES À UTILISER :
+
+Tonalité positive :
+- "Classe agréable dans l'ensemble qui participe avec intérêt aux activités proposées."
+- "Groupe classe dynamique et investi dans les apprentissages."
+- "Classe globalement sérieuse qui s'investit correctement dans le travail."
+- "Bon groupe classe, volontaire et à l'écoute."
+- "Classe plaisante à enseigner, avec une bonne ambiance de travail."
+
+Tonalité nuancée :
+- "Classe hétérogène avec des profils très différents."
+- "Groupe classe au potentiel intéressant mais à l'investissement variable."
+- "Classe au comportement correct mais dont l'engagement reste inégal."
+- "Ensemble classe sympathique mais manquant parfois de rigueur."
+- "Classe globalement calme mais dont la participation reste timide."
+
+Tonalité critique mais constructive :
+- "Classe difficile à mobiliser malgré les efforts des enseignants."
+- "Groupe classe agité qui peine à se concentrer sur les apprentissages."
+- "Classe au climat peu propice au travail, des efforts importants sont attendus."
+- "Ensemble classe bavard qui doit apprendre à canaliser son énergie."
 
 INTERDICTIONS ABSOLUES - TOUTE VIOLATION = ÉCHEC TOTAL :
 
 🚫 ZÉRO CHIFFRE dans le texte :
-- JAMAIS "moyenne de 14", "11.5", "12/20", "X/20", "X points"
-- JAMAIS "60% des élèves", aucun pourcentage
-- JAMAIS aucune statistique numérique
+- JAMAIS de moyenne ("moyenne de 14", "11.5", "12/20", "X/20") - LA MOYENNE EST DÉJÀ VISIBLE DANS LE BULLETIN
+- JAMAIS de pourcentages ("60% des élèves")
+- JAMAIS de statistiques numériques
 
 🚫 ZÉRO NOM :
 - JAMAIS de noms de professeurs
 - JAMAIS de noms d'élèves
-- JAMAIS le nom ou niveau de la classe ("La classe de 3ème", "La 5e3", "Les élèves de 4ème")
+- JAMAIS le nom ou niveau de la classe ("La classe de 3ème", "La 5e3")
 
 ✅ OBLIGATIONS STRICTES :
-- Commencer DIRECTEMENT par une des formulations autorisées ci-dessus
-- Vocabulaire 100% QUALITATIF : "satisfaisants", "corrects", "fragiles", "en progression", "insuffisants"
+- Utiliser les formulations naturelles comme les exemples ci-dessus
+- Vocabulaire 100% QUALITATIF : "agréable", "sérieuse", "hétérogène", "dynamique", "timide", "investi"
 - Longueur entre ${minCharacters} et ${maxCharacters} caractères - IMPÉRATIF
-- Base-toi UNIQUEMENT sur les thèmes fournis
-- Mentionner les matières fortes et faibles si disponibles (sans moyennes chiffrées)
-- Commenter l'ambiance générale (studieuse, dynamique, agréable, hétérogène...)
+- Base-toi UNIQUEMENT sur les thèmes fournis (bavardages, sérieux, participation, etc.)
+- Mentionner les matières fortes et faibles qualitativement si pertinent
 
 TONALITÉ : ${toneInstruction}
 
 ${isShortFormat ? `
 EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
-"Ce trimestre, résultats corrects mais fragiles par manque de travail régulier. Les bavardages fréquents et la passivité de nombreux élèves perturbent les apprentissages. Des efforts soutenus sont attendus."
+"Classe agréable et sérieuse dans l'ensemble. Les bavardages restent à maîtriser pour une meilleure concentration. Le conseil encourage à poursuivre les efforts engagés."
 ` : `
 EXEMPLE CONFORME (${minCharacters}-${maxCharacters} car.) :
-"Ce trimestre se caractérise par des résultats globalement corrects mais fragiles en raison d'un manque de travail personnel régulier et d'un investissement insuffisant. L'ambiance de travail est préoccupante : les bavardages perturbent le bon déroulement des cours et une partie des élèves reste passive. La participation est trop timide et seule une minorité s'implique véritablement dans les échanges. Les disciplines artistiques et sportives sont particulièrement réussies tandis que des efforts sont attendus en mathématiques. Le conseil attend une prise de conscience et des efforts soutenus."
+"Classe hétérogène avec des profils très différents. Le groupe montre un investissement variable selon les disciplines : les matières artistiques et sportives suscitent un réel enthousiasme tandis que l'engagement reste timide en sciences. Les bavardages perturbent parfois l'ambiance de travail et une partie des élèves manque de rigueur dans le travail personnel. Le conseil attend une mobilisation plus régulière pour progresser collectivement."
 `}`;
 
     const userPrompt = `Rédige l'appréciation générale pour le bulletin du conseil de classe.
