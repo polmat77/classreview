@@ -469,14 +469,14 @@ function buildThemeContext(themes: Record<string, number>): string {
 
   // ═══ RELATIONS ET CLIMAT ═══
 
-  // NE mentionner "bonne ambiance" QUE si MAJORITAIRE ET sans problèmes graves
-  // Règle : Ne pas dire "agréable" si bavardages >= 5 ou difficile >= 5
-  if (themes.bonneAmbiance >= 5 && themes.bavardages < 3 && themes.difficile < 3) {
-    observations.push("Bonne ambiance de classe et climat serein mentionnés");
-  } else if (themes.bonneAmbiance >= 3 && themes.bavardages < 5 && themes.difficile < 5) {
-    observations.push("Quelques cours se déroulent dans une ambiance agréable");
-  }
-  // Sinon, ne pas mentionner "agréable" du tout
+// NE mentionner "bonne ambiance" QUE si MAJORITAIRE ET sans problèmes graves
+// Règle : Ne pas dire "agréable" si bavardages >= 5 ou difficile >= 5
+if (themes.bonneAmbiance >= 5 && themes.bavardages < 3 && themes.difficile < 3) {
+  observations.push("Bonne ambiance de classe et climat serein mentionnés");
+} else if (themes.bonneAmbiance >= 3 && themes.bavardages < 5 && themes.difficile < 5) {
+  observations.push("Quelques cours se déroulent dans une ambiance agréable");
+}
+// Sinon, ne pas mentionner "agréable" du tout
 
   if (themes.cohesion >= 2) {
     observations.push("Cohésion du groupe et entraide observées");
@@ -706,6 +706,63 @@ ${FORMULATION_EXAMPLES.developpement.participation
 
 ⚠️ SI TU TE SURPRENDS À VOULOIR ÉCRIRE UN NOM, ARRÊTE ET REFORMULE !
 Ces interdictions sont ABSOLUES - AUCUNE EXCEPTION POSSIBLE.
+
+═══════════════════════════════════════════════════════════
+⚠️ RÈGLE CRITIQUE - HIÉRARCHIE DES OBSERVATIONS
+═══════════════════════════════════════════════════════════
+
+Si PLUSIEURS THÈMES CONTRADICTOIRES sont détectés, tu DOIS prioriser :
+
+1️⃣ Les PROBLÈMES GÉNÉRALISÉS (≥50% des profs) → EN PREMIER
+2️⃣ Les POINTS POSITIFS MINORITAIRES (<30% des profs) → EN DERNIER
+
+📊 EXEMPLES CONCRETS :
+
+✅ CORRECT (9 profs mentionnent bavardages, 1 seul dit "agréable") :
+"Classe très difficile à canaliser avec des bavardages généralisés. 
+Seules l'EPS et les matières artistiques révèlent un engagement positif."
+
+❌ INCORRECT :
+"Classe agréable, mais des bavardages généralisés..."
+→ "agréable" ne peut PAS être le premier mot si 9 profs sur 11 
+   mentionnent des problèmes majeurs !
+
+🎯 RÈGLE SIMPLE :
+Si bavardages ≥ 5 OU difficile ≥ 5 OU travail ≥ 5
+→ NE JAMAIS commencer par "Classe agréable"
+→ Commence par "Classe difficile" OU "Classe au comportement préoccupant"
+
+═══════════════════════════════════════════════════════════
+✅ OBLIGATIONS STRICTES
+```
+
+---
+
+## 📦 Résumé des Changements
+
+| Zone | Ligne Approx. | Action |
+|------|---------------|--------|
+| **Fonction `buildThemeContext()`** | ~540-570 | Remplacer la logique "bonneAmbiance" |
+| **Prompt système** | ~730 | Ajouter règle de hiérarchisation |
+
+---
+
+## 🧪 Test Après Modification
+
+Après avoir fait ces 2 modifications :
+
+1. **Sauvegarde** le fichier
+2. **Attends le déploiement** ("✅ Deployed")
+3. **Recharge** ClassCouncil AI
+4. **Régénère** l'appréciation du bulletin 5e3
+
+### **Tu devrais obtenir :**
+```
+Classe très difficile à canaliser avec des bavardages généralisés 
+selon la majorité des enseignants. Le manque de travail personnel 
+est flagrant et la passivité d'une grande partie du groupe freine 
+les apprentissages. Seules l'EPS et les matières artistiques révèlent 
+un engagement positif.
 
 ═══════════════════════════════════════════════════════════
 ✅ OBLIGATIONS STRICTES
