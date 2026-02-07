@@ -272,12 +272,9 @@ function removeTeacherReferences(text: string, providedNames?: string[]): string
   }
 
   // UNIVERSAL PATTERN 3: Full UPPERCASE names (2+ words, likely teacher names)
-  // Matches: "KASSA BEGHDOUCHE", "LE MOIGNE", "DUPONT MARTIN"
-  // But excludes: single words, common abbreviations
   const pattern3 = /\b[A-ZÀ-ÜØÆŒß]{2,}(?:\s+[A-ZÀ-ÜØÆŒß]{2,})+\b/g;
   const matches3 = result.match(pattern3);
   if (matches3) {
-    // Filter out common false positives (country names, abbreviations, etc.)
     const falsePositives = ["FRANCE", "PARIS", "EDUCATION NATIONALE", "BULLETIN", "TRIMESTRE"];
     const realNames = matches3.filter(
       (match) => !falsePositives.some((fp) => match.includes(fp)) && match.length > 4 && match.length < 40,
@@ -293,12 +290,58 @@ function removeTeacherReferences(text: string, providedNames?: string[]): string
     }
   }
 
-  // UNIVERSAL PATTERN 4: "le/la professeur de X", "l'enseignant(e) de Y"
-  const pattern4 = /\b(?:le|la|l')\s*(?:professeur|enseignant)(?:e)?\s+(?:de\s+)?[A-ZÀ-Ü][-a-zà-üA-ZÀ-Ü\s]+\b/gi;
+  // UNIVERSAL PATTERN 4: Single UPPERCASE word (5+ chars) - Likely teacher surname
+  // Matches: "GUILLIEY", "DUROCHER", "KARBOWY", etc.
+  const pattern4 = /\b[A-ZÀ-ÜØÆŒß]{5,}\b/g;
   const matches4 = result.match(pattern4);
   if (matches4) {
-    result = result.replace(pattern4, "");
-    console.warn(`🚫 Référence "le professeur de X" détectée et supprimée`);
+    // Common words to exclude (not teacher names)
+    const commonWords = [
+      "TRIMESTRE",
+      "BULLETIN",
+      "CLASSE",
+      "COLLEGE",
+      "WAZIERS",
+      "FRANCE",
+      "PARIS",
+      "ANGLAIS",
+      "FRANCAIS",
+      "ESPAGNOL",
+      "ITALIEN",
+      "MATHEMATIQUES",
+      "PHYSIQUE",
+      "CHIMIE",
+      "SCIENCES",
+      "HISTOIRE",
+      "GEOGRAPHIE",
+      "EDUCATION",
+      "MUSICALE",
+      "PLASTIQUES",
+      "TECHNOLOGIE",
+      "ELEVES",
+      "ENSEIGNANTS",
+      "PROFESSEURS",
+      "CONSEIL",
+      "MOYENNE",
+      "APPRECIATION",
+      "RESULTAT",
+      "TRAVAIL",
+      "COMPORTEMENT",
+      "PARTICIPATION",
+    ];
+
+    const suspectedNames = matches4.filter(
+      (word) => !commonWords.includes(word) && word.length >= 5 && word.length <= 20,
+    );
+
+    if (suspectedNames.length > 0) {
+      suspectedNames.forEach((name) => removedPatterns.push(name));
+      suspectedNames.forEach((name) => {
+        const regex = new RegExp(`\\b${name}\\b`, "g");
+        result = result.replace(regex, "");
+      });
+      console.warn(`🚫 Nom de prof suspecté (mot unique en majuscules) : ${suspectedNames.join(", ")}`);
+    }
   }
 
   // Clean up double spaces and orphan punctuation
