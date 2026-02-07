@@ -467,16 +467,16 @@ function buildThemeContext(themes: Record<string, number>): string {
     observations.push("Investissement satisfaisant dans les tâches proposées");
   }
 
-  // === RELATIONS ET CLIMAT ===
+  // ═══ RELATIONS ET CLIMAT ═══
 
-  // NE mentionner "bonne ambiance" QUE si c'est MAJORITAIRE
-  // ET qu'il n'y a PAS de problèmes comportementaux graves
+  // NE mentionner "bonne ambiance" QUE si MAJORITAIRE ET sans problèmes graves
+  // Règle : Ne pas dire "agréable" si bavardages >= 5 ou difficile >= 5
   if (themes.bonneAmbiance >= 5 && themes.bavardages < 3 && themes.difficile < 3) {
     observations.push("Bonne ambiance de classe et climat serein mentionnés");
   } else if (themes.bonneAmbiance >= 3 && themes.bavardages < 5 && themes.difficile < 5) {
     observations.push("Quelques cours se déroulent dans une ambiance agréable");
   }
-  // Sinon, ne pas mentionner "agréable" du tout !
+  // Sinon, ne pas mentionner "agréable" du tout
 
   if (themes.cohesion >= 2) {
     observations.push("Cohésion du groupe et entraide observées");
