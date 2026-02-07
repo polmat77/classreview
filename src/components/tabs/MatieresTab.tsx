@@ -14,6 +14,7 @@ import FileActionButtons from "@/components/FileActionButtons";
 import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
+import { analyzeTeacherAppreciations, identifyExceptionalSubjects } from "@/utils/appreciationThemeAnalyzer";
 
 const CHAR_LIMIT_OPTIONS = [
   { value: 200, label: "200 caractères", description: "très court" },
@@ -22,42 +23,43 @@ const CHAR_LIMIT_OPTIONS = [
   { value: 300, label: "300 caractères", description: "détaillé" },
   { value: 350, label: "350 caractères", description: "très détaillé" },
   { value: 400, label: "400 caractères", description: "maximum" },
+  { value: 500, label: "500 caractères", description: "très détaillé" },
 ];
 
 const truncateIntelligently = (text: string, limit: number): string => {
   if (text.length <= limit) return text;
-  
+
   const truncated = text.substring(0, limit);
-  const lastPeriod = truncated.lastIndexOf('.');
-  const lastExclamation = truncated.lastIndexOf('!');
-  const lastQuestion = truncated.lastIndexOf('?');
-  
+  const lastPeriod = truncated.lastIndexOf(".");
+  const lastExclamation = truncated.lastIndexOf("!");
+  const lastQuestion = truncated.lastIndexOf("?");
+
   const lastPunctuation = Math.max(lastPeriod, lastExclamation, lastQuestion);
-  
+
   if (lastPunctuation > limit * 0.7) {
     return truncated.substring(0, lastPunctuation + 1);
   }
-  
-  const lastSpace = truncated.lastIndexOf(' ');
+
+  const lastSpace = truncated.lastIndexOf(" ");
   if (lastSpace > limit * 0.8) {
-    return truncated.substring(0, lastSpace) + '...';
+    return truncated.substring(0, lastSpace) + "...";
   }
-  
-  return truncated + '...';
+
+  return truncated + "...";
 };
 
 const getCharCountColor = (current: number, limit: number): string => {
   const percentage = (current / limit) * 100;
-  if (percentage < 90) return 'text-green-600';
-  if (percentage <= 100) return 'text-amber-600';
-  return 'text-destructive';
+  if (percentage < 90) return "text-green-600";
+  if (percentage <= 100) return "text-amber-600";
+  return "text-destructive";
 };
 
 const getCharBadgeVariant = (current: number, limit: number): "default" | "secondary" | "destructive" => {
   const percentage = (current / limit) * 100;
-  if (percentage < 90) return 'default';
-  if (percentage <= 100) return 'secondary';
-  return 'destructive';
+  if (percentage < 90) return "default";
+  if (percentage <= 100) return "secondary";
+  return "destructive";
 };
 
 interface MatieresTabProps {
@@ -77,10 +79,10 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
   const [generalText, setGeneralText] = useState(data?.generalAppreciation || "");
   const [isLoadingGeneral, setIsLoadingGeneral] = useState(false);
-  const [classTone, setClassTone] = useState<AppreciationTone>('standard');
+  const [classTone, setClassTone] = useState<AppreciationTone>("standard");
   const [currentFileName, setCurrentFileName] = useState<string>("");
   const [charLimit, setCharLimit] = useState<number>(() => {
-    const saved = localStorage.getItem('classcouncil_char_limit');
+    const saved = localStorage.getItem("classcouncil_char_limit");
     return saved ? parseInt(saved, 10) : 255;
   });
   const [wasTruncated, setWasTruncated] = useState(false);
@@ -88,7 +90,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
 
   const handleCopyAppreciation = async () => {
     if (!generalText.trim()) return;
-    
+
     try {
       await navigator.clipboard.writeText(generalText);
       setIsCopied(true);
@@ -108,7 +110,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
 
   // Persist char limit preference
   useEffect(() => {
-    localStorage.setItem('classcouncil_char_limit', charLimit.toString());
+    localStorage.setItem("classcouncil_char_limit", charLimit.toString());
   }, [charLimit]);
 
   const bulletinClasse = data?.bulletinClasse || localBulletinClasse;
@@ -118,7 +120,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.pdf')) {
+    if (!file.name.endsWith(".pdf")) {
       toast({
         title: "Format invalide",
         description: "Seuls les fichiers PDF sont acceptés",
@@ -140,29 +142,49 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           title: "✓ Bulletin de classe chargé",
           description: `${parsedData.matieres.length} matières détectées. Génération de l'appréciation en cours...`,
         });
-        
+
         // Auto-generate appreciation with standard tone
         setTimeout(async () => {
           setIsLoadingGeneral(true);
           try {
-            const classData = {
-              className: parsedData.classe || "3ème",
-              trimester: parsedData.trimestre || "1er trimestre",
-              averageClass: parsedData.matieres.reduce((sum, m) => sum + m.moyenne, 0) / (parsedData.matieres.length || 1),
-              subjects: parsedData.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
-            };
-            
-            const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-              body: { type: 'general', tone: 'standard', classData },
+            console.log("🚀 Auto-génération de l'appréciation au chargement...");
+
+            // Analyser les thèmes depuis les appréciations des profs
+            const themes = analyzeTeacherAppreciations(parsedData);
+            const exceptionalSubjects = identifyExceptionalSubjects(parsedData);
+
+            const { data: result, error } = await supabase.functions.invoke("generate-class-appreciation", {
+              body: {
+                classData: parsedData,
+                themes: themes,
+                exceptionalSubjects: exceptionalSubjects,
+                tone: "standard",
+                maxCharacters: charLimit,
+              },
             });
-            
+
             if (!error && result?.appreciation) {
               setGeneralText(result.appreciation);
               onDataLoaded?.({ generalAppreciation: result.appreciation });
-              toast({ title: "✓ Appréciation générée", description: "L'appréciation générale a été générée automatiquement." });
+              toast({
+                title: "✓ Appréciation générée",
+                description: "L'appréciation générale a été générée automatiquement.",
+              });
+            } else {
+              console.error("Erreur lors de la génération:", error);
+              toast({
+                title: "Erreur",
+                description: "Impossible de générer l'appréciation automatiquement",
+                variant: "destructive",
+              });
             }
           } catch (err) {
-            console.error('Auto-generate error:', err);
+            console.error("Auto-generate error:", err);
+            toast({
+              title: "Erreur",
+              description: "Impossible de générer l'appréciation automatiquement",
+              variant: "destructive",
+            });
           } finally {
             setIsLoadingGeneral(false);
           }
@@ -171,7 +193,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         throw new Error("Impossible de parser le bulletin de classe");
       }
     } catch (error) {
-      console.error('Erreur lors du traitement du PDF:', error);
+      console.error("Erreur lors du traitement du PDF:", error);
       toast({
         title: "Erreur",
         description: error instanceof Error ? error.message : "Impossible de lire le fichier PDF",
@@ -179,7 +201,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
       });
     } finally {
       setIsProcessing(false);
-      event.target.value = '';
+      event.target.value = "";
     }
   };
 
@@ -187,51 +209,89 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     setLocalBulletinClasse(null);
     setCurrentFileName("");
     setGeneralText("");
-    setClassTone('standard');
+    setClassTone("standard");
     onDataLoaded?.({ bulletinClasse: null });
   };
 
   const generateAppreciation = async (): Promise<string> => {
-    const classData = classeCSV ? {
-      className: "3ème",
-      trimester: "1er trimestre",
-      averageClass: classeCSV.statistiques.moyenneClasse,
-      subjects: classeCSV.matieres.map(m => ({ name: m, average: 0 })),
-    } : bulletinClasse ? {
-      className: bulletinClasse.classe || "3ème",
-      trimester: bulletinClasse.trimestre || "1er trimestre",
-      averageClass: bulletinClasse.matieres.reduce((sum, m) => sum + m.moyenne, 0) / (bulletinClasse.matieres.length || 1),
-      subjects: bulletinClasse.matieres.map(m => ({ name: m.nom, average: m.moyenne })),
-    } : undefined;
+    if (!bulletinClasse) {
+      throw new Error("Bulletin de classe non chargé");
+    }
 
-    const { data: result, error } = await supabase.functions.invoke('generate-appreciation', {
-      body: { type: 'general', tone: classTone, classData, charLimit },
+    console.log("🚀 Génération de l'appréciation de classe...");
+    console.log("   Tonalité:", classTone);
+    console.log("   Longueur max:", charLimit);
+
+    // Étape 1 : Analyser les thèmes depuis les appréciations des profs
+    console.log("📊 Analyse des thèmes...");
+    const themes = analyzeTeacherAppreciations(bulletinClasse);
+
+    // Étape 2 : Identifier les matières exceptionnelles
+    const exceptionalSubjects = identifyExceptionalSubjects(bulletinClasse);
+
+    // Étape 3 : Appeler l'Edge Function avec les thèmes
+    console.log("📡 Appel à l'Edge Function generate-class-appreciation...");
+    const { data: result, error } = await supabase.functions.invoke("generate-class-appreciation", {
+      body: {
+        classData: bulletinClasse,
+        themes: themes,
+        exceptionalSubjects: exceptionalSubjects,
+        tone: classTone,
+        maxCharacters: charLimit,
+      },
     });
 
-    if (error) throw error;
-    
+    if (error) {
+      console.error("❌ Erreur Edge Function:", error);
+      throw error;
+    }
+
+    if (!result || !result.appreciation) {
+      console.error("❌ Réponse invalide:", result);
+      throw new Error("Réponse invalide du serveur");
+    }
+
+    console.log("✅ Appréciation générée:", result.characterCount, "/", charLimit, "caractères");
+
     // Apply truncation as safety net if AI exceeded limit
     let appreciation = result.appreciation;
     if (appreciation.length > charLimit) {
+      console.warn("⚠️ Appréciation trop longue, troncature appliquée");
       appreciation = truncateIntelligently(appreciation, charLimit);
       setWasTruncated(true);
     } else {
       setWasTruncated(false);
     }
-    
+
     return appreciation;
   };
 
   const handleRegenerateGeneral = async () => {
+    if (!bulletinClasse) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez d'abord charger un bulletin de classe",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoadingGeneral(true);
     try {
       const appreciation = await generateAppreciation();
       setGeneralText(appreciation);
       onDataLoaded?.({ generalAppreciation: appreciation });
-      toast({ title: "Appréciation générée", description: "L'appréciation générale a été générée avec succès." });
+      toast({
+        title: "✓ Appréciation générée",
+        description: "L'appréciation générale a été générée avec succès.",
+      });
     } catch (error) {
-      console.error('Error generating general appreciation:', error);
-      toast({ title: "Erreur", description: "Impossible de générer l'appréciation.", variant: "destructive" });
+      console.error("Error generating general appreciation:", error);
+      toast({
+        title: "Erreur",
+        description: error instanceof Error ? error.message : "Impossible de générer l'appréciation.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoadingGeneral(false);
     }
@@ -247,8 +307,10 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         description="Générez automatiquement l'appréciation générale du conseil de classe grâce à l'intelligence artificielle : une synthèse de la dynamique du groupe et des axes de progression."
         accept=".pdf"
         features={[
-          { text: "Appréciation générale de classe (200-255 caractères)" },
-          { text: "Synthèse de la dynamique du groupe et des axes de progression" },
+          { text: "Appréciation générale de classe (200-500 caractères)" },
+          { text: "Analyse automatique des observations des enseignants" },
+          { text: "Détection des thèmes récurrents (bavardages, travail, participation)" },
+          { text: "Identification des matières fortes et faibles" },
           { text: "Vous pourrez relire, modifier et valider l'appréciation avant export" },
         ]}
         isLoading={isProcessing}
@@ -270,10 +332,9 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           <div>
             <h2 className="text-2xl font-bold text-foreground">Appréciation de la classe</h2>
             <p className="text-muted-foreground">
-              {bulletinClasse 
+              {bulletinClasse
                 ? `${bulletinClasse.classe} • ${bulletinClasse.matieres.length} matières`
-                : `${classeCSV?.matieres.length || 0} matières analysées`
-              }
+                : `${classeCSV?.matieres.length || 0} matières analysées`}
             </p>
           </div>
         </div>
@@ -301,13 +362,10 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
             <label className="text-sm font-medium">Tonalité</label>
             <ToneSelector value={classTone} onChange={setClassTone} />
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Limite de caractères</label>
-            <Select
-              value={charLimit.toString()}
-              onValueChange={(value) => setCharLimit(parseInt(value, 10))}
-            >
+            <Select value={charLimit.toString()} onValueChange={(value) => setCharLimit(parseInt(value, 10))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -379,13 +437,9 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
                 size="sm"
                 className="gap-2 bg-accent text-accent-foreground hover:bg-accent-hover transition-colors shadow-sm"
                 onClick={handleRegenerateGeneral}
-                disabled={isLoadingGeneral}
+                disabled={isLoadingGeneral || !bulletinClasse}
               >
-                {isLoadingGeneral ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
+                {isLoadingGeneral ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                 Régénérer avec IA
               </Button>
             </div>
@@ -412,9 +466,11 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
                   </span>
                 )}
               </span>
-              <span className={`bg-muted text-foreground px-2 py-1 rounded text-sm font-medium border ${
-                generalText.length > charLimit ? 'border-destructive bg-destructive/10' : 'border-border'
-              }`}>
+              <span
+                className={`bg-muted text-foreground px-2 py-1 rounded text-sm font-medium border ${
+                  generalText.length > charLimit ? "border-destructive bg-destructive/10" : "border-border"
+                }`}
+              >
                 {charLimit - generalText.length} restants
               </span>
             </div>
@@ -434,11 +490,13 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
               <div key={index} className="flex items-start gap-3 rounded-lg border bg-card p-3">
                 <div className="flex-1">
                   <p className="text-sm font-medium">{matiere.nom}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
                     {matiere.appreciation || "Pas d'appréciation disponible"}
                   </p>
                 </div>
-                <Badge variant={matiere.moyenne >= 14 ? "default" : matiere.moyenne >= 10 ? "secondary" : "destructive"}>
+                <Badge
+                  variant={matiere.moyenne >= 14 ? "default" : matiere.moyenne >= 10 ? "secondary" : "destructive"}
+                >
                   {matiere.moyenne.toFixed(1)}
                 </Badge>
               </div>
