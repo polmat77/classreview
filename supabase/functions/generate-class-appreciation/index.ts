@@ -244,49 +244,107 @@ function removeTeacherReferences(text: string, providedNames?: string[]): string
     console.warn(`🚫 Référence "le professeur de X" détectée et supprimée`);
   }
 
-  // UNIVERSAL PATTERN 5: Single UPPERCASE word (4+ chars) that matches a known teacher name
-  const commonUppercaseWords = new Set([
-    "FRANCE", "PARIS", "BULLETIN", "TRIMESTRE", "SEMESTRE",
-    "POLE", "SCIENCES", "LITTERAIRE", "ARTISTIQUE", "CULTURELLE",
-    "EDUCATION", "PHYSIQUE", "SPORT", "MUSICALE", "NATIONALE",
-    "OPTIONS", "EURO", "ANGLAIS", "FRANCAIS", "ITALIEN", "ESPAGNOL", "ALLEMAND",
-    "MATHEMATIQUES", "TECHNOLOGIE", "HISTOIRE", "GEOGRAPHIE",
-    "EXPRESSION", "ARTS", "PLASTIQUES", "CHIMIE", "TERRE",
-    "CLASSE", "CONSEIL", "TRAVAIL", "ELEVES", "PROFESSEURS",
-    "MALGRE", "AUSSI", "CEPENDANT", "NOTAMMENT", "ENSEMBLE",
-    "CERTAINS", "PLUSIEURS", "CHAQUE", "AUCUNE", "TOUTE",
-    "COLLEGE", "LYCEE", "ECOLE", "ACADEMIE", "RECTEUR"
+  // UNIVERSAL PATTERN 5: Single UPPERCASE word (4+ chars) - works for ANY school
+  // Uses whitelist approach: anything not explicitly allowed is likely a proper name
+  const ALLOWED_UPPERCASE_WORDS = new Set([
+    // Matières scolaires
+    "ANGLAIS", "FRANCAIS", "FRANÇAIS", "ITALIEN", "ESPAGNOL", "ALLEMAND",
+    "MATHEMATIQUES", "MATHÉMATIQUES", "TECHNOLOGIE", "PHYSIQUE", "CHIMIE",
+    "HISTOIRE", "GEOGRAPHIE", "GÉOGRAPHIE", "SCIENCES", "TERRE",
+    "ARTS", "PLASTIQUES", "MUSICALE", "MUSIQUE", "LATIN", "GREC",
+    
+    // Pôles et catégories scolaires
+    "POLE", "PÔLE", "LITTERAIRE", "LITTÉRAIRE", "SCIENTIFIQUE", "ARTISTIQUE",
+    "CULTURELLE", "CULTUREL", "EXPRESSION", "EDUCATION", "ÉDUCATION",
+    "SPORT", "SPORTIVE", "SPORTIF", "NATIONALE", "OPTIONS", "EURO",
+    
+    // Mots administratifs scolaires
+    "BULLETIN", "TRIMESTRE", "SEMESTRE", "CLASSE", "CONSEIL",
+    "ELEVES", "ÉLÈVES", "PROFESSEURS", "ENSEIGNANTS", "COLLEGE",
+    "COLLÈGE", "LYCEE", "LYCÉE", "ECOLE", "ÉCOLE", "PRONOTE",
+    "ACADEMIE", "ACADÉMIE", "RECTEUR", "RECTORAT",
+    
+    // Géographie commune
+    "FRANCE", "PARIS", "EUROPE", "MONDE",
+    
+    // Mots français courants pouvant apparaître en majuscules
+    "TRAVAIL", "ENSEMBLE", "MALGRE", "MALGRÉ", "AUSSI", "CEPENDANT",
+    "NOTAMMENT", "CERTAINS", "CERTAINES", "PLUSIEURS", "CHAQUE",
+    "AUCUNE", "AUCUN", "TOUTE", "TOUT", "TOUS", "TOUTES",
+    "TRES", "TRÈS", "BIEN", "PLUS", "MOINS", "ASSEZ",
+    "BONNE", "BONS", "BONNES", "BILAN", "RESULTATS", "RÉSULTATS",
+    "MOYENNE", "GENERAL", "GÉNÉRALE", "GENERALE", "GÉNÉRAL",
+    "COMPORTEMENT", "PARTICIPATION", "PROGRESSION", "ATTENTION",
+    "EFFORT", "EFFORTS", "NIVEAU", "DIFFICULTÉS", "DIFFICULTES",
+    "ENCOURAGEMENTS", "FELICITATIONS", "FÉLICITATIONS", "AVERTISSEMENT",
+    "ORAL", "ECRIT", "ÉCRIT", "CIVIQUE", "MORAL", "MORALE",
+    "DEVOIRS", "LECONS", "LEÇONS", "ABSENCES", "RETARDS",
+    "PREMIER", "DEUXIEME", "DEUXIÈME", "TROISIEME", "TROISIÈME",
+    "BRAVO", "CONTINUEZ", "POURSUIVEZ", "GROUPE", "ELEVE", "ÉLÈVE",
+    "DYNAMIQUE", "SCOLAIRE", "APPRENTISSAGES", "INVESTISSEMENT",
+    "SERIEUX", "SÉRIEUX", "APPLICATION", "CONCENTRATION",
+    "EXCELLENT", "REMARQUABLE", "SATISFAISANT", "INSUFFISANT",
+    "PROGRÈS", "PROGRES", "PERSPECTIVES", "OBJECTIFS"
   ]);
 
   const pattern5 = /\b[A-ZÀ-ÜØÆŒß]{4,}\b/g;
   const matches5 = result.match(pattern5);
   if (matches5) {
-    const suspectNames = matches5.filter(m => !commonUppercaseWords.has(m));
-    if (suspectNames.length > 0 && providedNames && providedNames.length > 0) {
-      suspectNames.forEach(name => {
-        const matchesProvidedName = providedNames.some(pn => {
-          const normalizedPn = pn.toUpperCase().replace(/[^A-ZÀ-ÜØÆŒß]/g, '');
-          const normalizedName = name.replace(/[^A-ZÀ-ÜØÆŒß]/g, '');
-          return normalizedPn.includes(normalizedName) || normalizedName.includes(normalizedPn);
+    const uniqueMatches = [...new Set(matches5)];
+    uniqueMatches.forEach(word => {
+      // Normalize for comparison (remove accents)
+      const normalizedWord = word.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+      const isAllowed = ALLOWED_UPPERCASE_WORDS.has(word) || 
+                        ALLOWED_UPPERCASE_WORDS.has(normalizedWord);
+      
+      if (!isAllowed) {
+        // This uppercase word is NOT in the whitelist → likely a proper name
+        // Remove it along with surrounding context patterns
+        const contextPatterns = [
+          new RegExp(`(?:notamment|particulièrement|surtout|spécialement)\\s+(?:en|de|pour|chez)\\s+${word}`, 'gi'),
+          new RegExp(`(?:en|de|pour|chez)\\s+${word}(?=\\s|\\.|,|$)`, 'gi'),
+          new RegExp(`\\b${word}\\b`, 'g'),
+        ];
+        contextPatterns.forEach(regex => {
+          if (regex.test(result)) {
+            result = result.replace(regex, '');
+          }
         });
-        
-        if (matchesProvidedName) {
-          // Remove the name AND any preceding context like "notamment en"
-          const contextRegex = new RegExp(`(?:notamment\\s+(?:en|de|pour)\\s+)?\\b${name}\\b`, 'gi');
-          result = result.replace(contextRegex, '');
-          removedPatterns.push(name);
-          console.warn(`🚫 Nom isolé en majuscules détecté et supprimé : ${name}`);
-        }
-      });
-    }
+        removedPatterns.push(word);
+        console.warn(`🚫 Nom propre probable détecté et supprimé (whitelist): ${word}`);
+      }
+    });
   }
 
-  // Clean up double spaces and orphan punctuation
-  result = result.replace(/\s+/g, " ");
-  result = result.replace(/,\s*,/g, ",");
-  result = result.replace(/\s+\./g, ".");
-  result = result.replace(/\s+,/g, ",");
-  result = result.replace(/\.\s*\./g, ".");
+  // SAFETY NET: Also remove any providedNames in any case (mixed, lowercase)
+  if (providedNames && providedNames.length > 0) {
+    providedNames.forEach((name) => {
+      const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      // Match in any case (the AI might write "Guilliey" instead of "GUILLIEY")
+      const caseInsensitiveRegex = new RegExp(`\\b${escapedName}\\b`, "gi");
+      if (caseInsensitiveRegex.test(result)) {
+        result = result.replace(caseInsensitiveRegex, "");
+        removedPatterns.push(name);
+        console.warn(`🚫 Nom fourni détecté (case-insensitive) et supprimé : ${name}`);
+      }
+    });
+  }
+
+  // Enhanced cleanup after all removals
+  result = result.replace(/\s{2,}/g, ' ');
+  result = result.replace(/,\s*,/g, ',');
+  result = result.replace(/\s+\./g, '.');
+  result = result.replace(/\s+,/g, ',');
+  result = result.replace(/\.\s*\./g, '.');
+  result = result.replace(/,\s*\./g, '.');
+  result = result.replace(/\ben\s*\./g, '.');  // "en ." after name removal
+  result = result.replace(/\ben\s*,/g, ',');   // "en ," after name removal  
+  result = result.replace(/\bde\s*\./g, '.');  // "de ." after name removal
+  result = result.replace(/\bde\s*,/g, ',');   // "de ," after name removal
+  result = result.replace(/\bpour\s*\./g, '.'); // "pour ." after name removal
+  result = result.replace(/\bchez\s*\./g, '.');
+  result = result.replace(/\bnotamment\s*\./g, '.'); // "notamment ." orphelin
+  result = result.replace(/\bnotamment\s*,/g, ',');
 
   if (removedPatterns.length > 0) {
     console.log(`✅ Total de références supprimées : ${removedPatterns.length}`);
