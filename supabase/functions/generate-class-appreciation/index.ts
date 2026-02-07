@@ -161,20 +161,79 @@ function truncateIntelligently(text: string, maxLength: number): string {
   console.log(`⚠️ Troncature nécessaire : ${text.length} → ${maxLength} caractères`);
 
   const truncated = text.substring(0, maxLength);
-  const lastPeriod = truncated.lastIndexOf(".");
-  const lastExclamation = truncated.lastIndexOf("!");
-  const bestCut = Math.max(lastPeriod, lastExclamation);
 
-  if (bestCut > maxLength * 0.85) {
-    return text.substring(0, bestCut + 1).trim();
+  // Strategy 1: Find the last REAL sentence ending
+  // A real sentence ending = "." or "!" or "?" preceded by at least 15 chars of actual sentence content
+  let bestCut = -1;
+  const sentenceEnders = /[.!?]/g;
+  let match;
+
+  while ((match = sentenceEnders.exec(truncated)) !== null) {
+    const pos = match.index;
+    // Check this is a real sentence end:
+    // - The text before this point, back to the previous sentence ender, is at least 15 chars
+    const textBefore = truncated.substring(0, pos);
+    const lastSentenceEnd = Math.max(
+      textBefore.lastIndexOf('.'),
+      textBefore.lastIndexOf('!'),
+      textBefore.lastIndexOf('?')
+    );
+    const sentenceLength = pos - lastSentenceEnd - 1;
+
+    // Only accept as valid sentence end if the sentence is at least 15 chars
+    // This filters out "la.", "M.", "un.", "etc." type false positives
+    if (sentenceLength >= 15) {
+      bestCut = pos;
+    }
   }
 
-  const lastSpace = truncated.lastIndexOf(" ");
-  if (lastSpace > maxLength * 0.9) {
-    return text.substring(0, lastSpace).trim() + ".";
+  // Accept if we found a good cut point in the last 30% of the text
+  if (bestCut > maxLength * 0.7) {
+    const result = text.substring(0, bestCut + 1).trim();
+    console.log(`✂️ Troncature à la phrase : ${result.length} caractères`);
+    return result;
   }
 
-  return text.substring(0, maxLength - 3).trim() + "...";
+  // Strategy 2: If no good sentence end found, cut at last comma or semicolon
+  const lastComma = truncated.lastIndexOf(',');
+  const lastSemicolon = truncated.lastIndexOf(';');
+  const bestPunctuation = Math.max(lastComma, lastSemicolon);
+
+  if (bestPunctuation > maxLength * 0.75) {
+    // End the thought at the comma/semicolon level
+    const result = text.substring(0, bestPunctuation).trim() + ".";
+    if (result.length <= maxLength) {
+      console.log(`✂️ Troncature à la virgule : ${result.length} caractères`);
+      return result;
+    }
+  }
+
+  // Strategy 3: Last resort - cut at last space before a "safe" word boundary
+  // Avoid cutting after articles (le, la, les, un, une, des, du, au, en, de)
+  const articles = new Set(['le', 'la', 'les', 'un', 'une', 'des', 'du', 'au', 'en', 'de', 'à', 'et', 'ou', 'ni', 'que', 'qui', 'pour', 'par', 'sur', 'dans', 'avec']);
+
+  let cutPos = truncated.lastIndexOf(' ');
+  while (cutPos > maxLength * 0.8) {
+    const wordAfterSpace = truncated.substring(cutPos + 1).split(/\s/)[0].toLowerCase().replace(/[.,;:!?]/, '');
+    if (!articles.has(wordAfterSpace)) {
+      break; // Good cut point - not before an article
+    }
+    // Try previous space
+    cutPos = truncated.lastIndexOf(' ', cutPos - 1);
+  }
+
+  if (cutPos > maxLength * 0.8) {
+    const result = text.substring(0, cutPos).trim() + ".";
+    if (result.length <= maxLength) {
+      console.log(`✂️ Troncature au mot : ${result.length} caractères`);
+      return result;
+    }
+  }
+
+  // Strategy 4: Absolute last resort
+  const result = text.substring(0, maxLength - 1).trim() + ".";
+  console.log(`✂️ Troncature forcée : ${result.length} caractères`);
+  return result;
 }
 
 function removeTeacherReferences(text: string, providedNames?: string[]): string {
