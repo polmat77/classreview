@@ -153,6 +153,14 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
             const themes = analyzeTeacherAppreciations(parsedData);
             const exceptionalSubjects = identifyExceptionalSubjects(parsedData);
 
+            // Extract teacher names from matieres for the scrubbing filter
+            const teacherNames = parsedData.matieres
+              .map(m => m.appreciation || '')
+              .join(' ')
+              .match(/\b(?:M\.|Mme|Mlle)\s+([A-ZÀ-Ü][-A-ZÀ-Ü\s]+)/g)
+              ?.map(name => name.replace(/^(M\.|Mme|Mlle)\s*/, '').trim())
+              .filter(name => name.length > 1) || [];
+
             const { data: result, error } = await supabase.functions.invoke("generate-class-appreciation", {
               body: {
                 classData: parsedData,
@@ -160,6 +168,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
                 exceptionalSubjects: exceptionalSubjects,
                 tone: "standard",
                 maxCharacters: charLimit,
+                teacherNames: teacherNames,
               },
             });
 
@@ -229,7 +238,17 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
     // Étape 2 : Identifier les matières exceptionnelles
     const exceptionalSubjects = identifyExceptionalSubjects(bulletinClasse);
 
-    // Étape 3 : Appeler l'Edge Function avec les thèmes
+    // Étape 3 : Extraire les noms de professeurs depuis les appréciations
+    const teacherNames = bulletinClasse.matieres
+      .map(m => m.appreciation || '')
+      .join(' ')
+      .match(/\b(?:M\.|Mme|Mlle)\s+([A-ZÀ-Ü][-A-ZÀ-Ü\s]+)/g)
+      ?.map(name => name.replace(/^(M\.|Mme|Mlle)\s*/, '').trim())
+      .filter(name => name.length > 1) || [];
+    
+    console.log("👤 Noms de professeurs extraits:", teacherNames);
+
+    // Étape 4 : Appeler l'Edge Function avec les thèmes
     console.log("📡 Appel à l'Edge Function generate-class-appreciation...");
     const { data: result, error } = await supabase.functions.invoke("generate-class-appreciation", {
       body: {
@@ -238,6 +257,7 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         exceptionalSubjects: exceptionalSubjects,
         tone: classTone,
         maxCharacters: charLimit,
+        teacherNames: teacherNames,
       },
     });
 
