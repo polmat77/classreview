@@ -1,4 +1,5 @@
 import { ClasseDataCSV, EleveData } from "@/utils/csvParser";
+import { BulletinClasseData } from "@/utils/pdfParser";
 import { calculateClassAverage, calculateStdDev, getSubjectAverages } from "@/utils/statisticsCalculations";
 
 /**
@@ -18,6 +19,7 @@ export interface AppreciationThemes {
   concentration: number;
   investissement: number;
   passif: number;
+  difficile: number;
 
   // Student relations
   bonneAmbiance: number;
@@ -30,6 +32,14 @@ export interface AppreciationThemes {
   retards: number;
   travail: number;
   comportement: number;
+}
+
+/**
+ * Exceptional subjects identified
+ */
+export interface ExceptionalSubjects {
+  exceptional: string[];
+  struggling: string[];
 }
 
 /**
@@ -46,6 +56,7 @@ const themeKeywords: Record<keyof AppreciationThemes, string[]> = {
   concentration: ["concentré", "attentif", "distrait", "inattentif", "écoute"],
   investissement: ["investi", "motivé", "impliqué", "engagé", "volontaire"],
   passif: ["passif", "peu impliqué", "effacé", "en retrait", "démotivé"],
+  difficile: ["difficile", "pénible", "compliqué", "problématique", "classe difficile"],
   bonneAmbiance: ["bonne ambiance", "agréable", "sympathique", "climat positif", "cordial"],
   cohesion: ["cohésion", "solidaire", "entraide", "groupe soudé", "équipe"],
   tensions: ["tensions", "conflits", "difficultés relationnelles", "disputes", "incident"],
@@ -58,8 +69,9 @@ const themeKeywords: Record<keyof AppreciationThemes, string[]> = {
 
 /**
  * Analyze teacher appreciations to extract themes
+ * Accepts either a string array or BulletinClasseData
  */
-export function analyzeTeacherAppreciations(appreciations: string[]): AppreciationThemes {
+export function analyzeTeacherAppreciations(input: string[] | BulletinClasseData): AppreciationThemes {
   const themes: AppreciationThemes = {
     fragile: 0,
     solide: 0,
@@ -71,6 +83,7 @@ export function analyzeTeacherAppreciations(appreciations: string[]): Appreciati
     concentration: 0,
     investissement: 0,
     passif: 0,
+    difficile: 0,
     bonneAmbiance: 0,
     cohesion: 0,
     tensions: 0,
@@ -80,6 +93,15 @@ export function analyzeTeacherAppreciations(appreciations: string[]): Appreciati
     travail: 0,
     comportement: 0,
   };
+
+  // Extract appreciations from input
+  let appreciations: string[] = [];
+  if (Array.isArray(input)) {
+    appreciations = input;
+  } else if (input && typeof input === 'object' && 'matieres' in input) {
+    // BulletinClasseData - extract appreciations from each matière
+    appreciations = input.matieres.map(m => m.appreciation).filter(Boolean);
+  }
 
   appreciations.forEach((appreciation) => {
     if (!appreciation) return;
@@ -99,27 +121,51 @@ export function analyzeTeacherAppreciations(appreciations: string[]): Appreciati
 
 /**
  * Identify subjects that are exceptionally different from the class average
+ * Accepts either ClasseDataCSV or BulletinClasseData
  */
 export function identifyExceptionalSubjects(
-  classeData: ClasseDataCSV,
+  classeData: ClasseDataCSV | BulletinClasseData,
   threshold: number = 4,
-): { exceptional: string[]; struggling: string[] } {
-  const subjects = getSubjectAverages(classeData);
-  const generalAverage = calculateClassAverage(classeData.eleves);
-
+): ExceptionalSubjects {
   const exceptional: string[] = [];
   const struggling: string[] = [];
 
-  subjects.forEach((subject) => {
-    const diff = subject.currentAvg - generalAverage;
+  // Handle ClasseDataCSV type
+  if ('eleves' in classeData && 'poles' in classeData) {
+    const subjects = getSubjectAverages(classeData as ClasseDataCSV);
+    const generalAverage = calculateClassAverage((classeData as ClasseDataCSV).eleves);
 
-    if (diff >= threshold) {
-      exceptional.push(subject.name);
+    subjects.forEach((subject) => {
+      const diff = subject.currentAvg - generalAverage;
+
+      if (diff >= threshold) {
+        exceptional.push(subject.name);
+      }
+      if (diff <= -threshold) {
+        struggling.push(subject.name);
+      }
+    });
+  } 
+  // Handle BulletinClasseData type
+  else if ('matieres' in classeData) {
+    const bulletinData = classeData as BulletinClasseData;
+    const validMatieres = bulletinData.matieres.filter(m => m.moyenne !== undefined && !isNaN(m.moyenne));
+    
+    if (validMatieres.length > 0) {
+      const generalAverage = validMatieres.reduce((sum, m) => sum + (m.moyenne || 0), 0) / validMatieres.length;
+      
+      validMatieres.forEach((matiere) => {
+        const diff = (matiere.moyenne || 0) - generalAverage;
+
+        if (diff >= threshold) {
+          exceptional.push(matiere.nom);
+        }
+        if (diff <= -threshold) {
+          struggling.push(matiere.nom);
+        }
+      });
     }
-    if (diff <= -threshold) {
-      struggling.push(subject.name);
-    }
-  });
+  }
 
   return { exceptional, struggling };
 }
@@ -139,6 +185,7 @@ export function deriveThemesFromStats(classeData: ClasseDataCSV): AppreciationTh
     concentration: 0,
     investissement: 0,
     passif: 0,
+    difficile: 0,
     bonneAmbiance: 0,
     cohesion: 0,
     tensions: 0,
