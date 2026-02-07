@@ -467,13 +467,16 @@ function buildThemeContext(themes: Record<string, number>): string {
     observations.push("Investissement satisfaisant dans les tâches proposées");
   }
 
-  // ═══ RELATIONS ET CLIMAT ═══
+  // === RELATIONS ET CLIMAT ===
 
-  if (themes.bonneAmbiance >= 3) {
+  // NE mentionner "bonne ambiance" QUE si c'est MAJORITAIRE
+  // ET qu'il n'y a PAS de problèmes comportementaux graves
+  if (themes.bonneAmbiance >= 5 && themes.bavardages < 3 && themes.difficile < 3) {
     observations.push("Bonne ambiance de classe et climat serein mentionnés");
-  } else if (themes.bonneAmbiance >= 1) {
-    observations.push("Ambiance de classe agréable");
+  } else if (themes.bonneAmbiance >= 3 && themes.bavardages < 5 && themes.difficile < 5) {
+    observations.push("Quelques cours se déroulent dans une ambiance agréable");
   }
+  // Sinon, ne pas mentionner "agréable" du tout !
 
   if (themes.cohesion >= 2) {
     observations.push("Cohésion du groupe et entraide observées");
@@ -669,14 +672,6 @@ ${FORMULATION_EXAMPLES.developpement.participation
 ═══════════════════════════════════════════════════════════
 
 ❌ INTERDICTION N°1 - AUCUN NOM DE PERSONNE :
-   
-   ATTENTION CRITIQUE : JAMAIS DE MOTS EN MAJUSCULES SEULS !
-   • Si tu veux mentionner une matière, utilise TOUJOURS le nom complet :
-     ✅ "en éducation physique" 
-     ❌ "en GUILLIEY" ou "en EPS avec GUILLIEY"
-   • Si tu veux mentionner un prof, utilise des formulations génériques :
-     ✅ "l'enseignant d'EPS observe..."
-     ❌ "GUILLIEY observe..." ou "pour GUILLIEY"
    
    Professeurs :
    • JAMAIS "M. ROBINEAU", "Mme KARBOWY", "selon M. X"
