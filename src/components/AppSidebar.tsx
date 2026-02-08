@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DarkModeToggle from '@/components/DarkModeToggle';
+import UserMenu from '@/components/auth/UserMenu';
 
 const logo = "/images/logos/ClassCouncilAI_logo.png";
 import {
@@ -223,6 +224,14 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
 
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
+
+        {/* User Menu */}
+        <div className={cn(
+          "border-t border-slate-100 dark:border-slate-800",
+          isCollapsed ? "px-3 py-3" : "px-4 py-3"
+        )}>
+          <UserMenu variant="sidebar" isCollapsed={isCollapsed} />
+        </div>
 
         {/* Dark Mode Toggle */}
         {!isCollapsed && (
