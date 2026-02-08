@@ -14,7 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      generations: {
+        Row: {
+          action: string
+          class_id: string | null
+          created_at: string
+          id: string
+          is_free: boolean | null
+          is_free_regeneration: boolean | null
+          metadata: Json | null
+          students_used: number | null
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          is_free?: boolean | null
+          is_free_regeneration?: boolean | null
+          metadata?: Json | null
+          students_used?: number | null
+          tool: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          class_id?: string | null
+          created_at?: string
+          id?: string
+          is_free?: boolean | null
+          is_free_regeneration?: boolean | null
+          metadata?: Json | null
+          students_used?: number | null
+          tool?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          email: string
+          free_regenerations_used: Json | null
+          free_students_remaining: number | null
+          id: string
+          plan: string | null
+          plan_expires_at: string | null
+          plan_purchased_at: string | null
+          students_balance: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          email: string
+          free_regenerations_used?: Json | null
+          free_students_remaining?: number | null
+          id: string
+          plan?: string | null
+          plan_expires_at?: string | null
+          plan_purchased_at?: string | null
+          students_balance?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          email?: string
+          free_regenerations_used?: Json | null
+          free_students_remaining?: number | null
+          id?: string
+          plan?: string | null
+          plan_expires_at?: string | null
+          plan_purchased_at?: string | null
+          students_balance?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
