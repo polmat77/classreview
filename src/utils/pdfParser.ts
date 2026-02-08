@@ -1,5 +1,16 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import {
+  extractHeaderWordsToIgnore,
+  shouldIgnoreWord,
+  isIgnoredName,
+  extractStudentNameFromText as extractStudentNameUniversal,
+  extractMoyenneGenerale as extractMoyenneGeneraleUniversal,
+  createStudentKey as createStudentKeyUniversal,
+  MATIERES_SCOLAIRES,
+  determinePole,
+  isValidMatiereIntitule,
+} from './pdfParserUniversal';
 
 // Configure le worker avec l'URL correcte pour Vite
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -34,8 +45,8 @@ export interface BulletinEleveData {
   appreciationGenerale?: string;
   absences?: number;
   retards?: number;
-  moyenneGenerale?: number; // Moyenne générale de l'élève (ligne "Moyennes générales")
-  pageCount?: number; // Nombre de pages du bulletin (pour les bulletins multi-pages)
+  moyenneGenerale?: number;
+  pageCount?: number;
 }
 
 export async function extractTextFromPDF(file: File): Promise<string> {
@@ -89,14 +100,14 @@ export function parseBulletinClasse(text: string): BulletinClasseData | null {
     const lignes = text.split('\n');
     
     // Extraction des informations d'en-tête
-    const etablissement = lignes.find(l => l.includes('COLLEGE'))?.trim() || '';
+    const etablissement = lignes.find(l => l.includes('COLLEGE') || l.includes('LYCEE'))?.trim() || '';
     const trimestre = lignes.find(l => l.includes('Trimestre'))?.match(/(\d+)(?:er|ème)\s+Trimestre/)?.[0] || '';
     const anneeScolaire = lignes.find(l => l.includes('Année scolaire'))?.match(/\d{4}\/\d{4}/)?.[0] || '';
     const professeurPrincipal = lignes.find(l => l.includes('Professeur principal'))?.split(':')[1]?.trim() || '';
     
-    // Extraction de la classe depuis le contexte
-    const classeMatch = text.match(/3[eè](\d+)/);
-    const classe = classeMatch ? `3e${classeMatch[1]}` : '';
+    // Extraction de la classe depuis le contexte (format universel: 3e2, 5e1, 6A, etc.)
+    const classeMatch = text.match(/([3456])[eè](\d+)/i) || text.match(/([3456])([A-Z])\b/);
+    const classe = classeMatch ? `${classeMatch[1]}e${classeMatch[2]}` : '';
     
     const matieres: BulletinClasseData['matieres'] = [];
     let poleActuel = '';
@@ -113,20 +124,14 @@ export function parseBulletinClasse(text: string): BulletinClasseData | null {
     while ((match = matiereRegex.exec(text)) !== null) {
       const [, nom, moyenne, appreciation] = match;
       
-      // Déterminer le pôle
-      if (nom.includes('MATHEMATIQUES') || nom.includes('PHYSIQUE') || nom.includes('SCIENCES') || nom.includes('TECHNOLOGIE')) {
-        poleActuel = 'Sciences';
-      } else if (nom.includes('ANGLAIS') || nom.includes('FRANCAIS') || nom.includes('HISTOIRE') || nom.includes('ESPAGNOL') || nom.includes('ITALIEN')) {
-        poleActuel = 'Littéraire';
-      } else if (nom.includes('ARTS') || nom.includes('MUSIQUE') || nom.includes('EPS')) {
-        poleActuel = 'Artistique et culturelle';
-      }
+      // Déterminer le pôle via la fonction universelle
+      const pole = determinePole(nom) || poleActuel;
       
       matieres.push({
         nom: nom.trim(),
         moyenne: parseFloat(moyenne.replace(',', '.')),
         appreciation: appreciation.trim(),
-        pole: poleActuel
+        pole
       });
     }
     
@@ -145,64 +150,17 @@ export function parseBulletinClasse(text: string): BulletinClasseData | null {
 }
 
 /**
- * Patterns à ignorer pour l'extraction des noms d'élèves
+ * Extrait la moyenne générale depuis le texte brut de la page (wrapper pour compatibilité)
  */
-const IGNORE_NAME_PATTERNS = [
-  /DEMI-PENSIONNAIRE/i,
-  /PENSIONNAIRE/i,
-  /EXTERNE/i,
-  /ETABLISSEMENT/i,
-  /Née?\s+le/i,
-  /Professeur/i,
-  /attention\s+de/i,
-  /POLE\s+(LITTERAIRE|SCIENCES)/i,
-  /EXPRESSION\s+ARTISTIQUE/i,
-  /DANS\s+L/i,
-  /^DANS$/i,
-  /DEMI\s+PENSIONNAIRE/i,
-];
-
-/**
- * Mots à ignorer qui ne sont pas des noms d'élèves
- */
-const IGNORE_WORDS = [
-  'WAZIERS', 'ROLLAND', 'COLLEGE', 'ROMAIN', 'ALLEE', 'GEORGES', 'LARUE',
-  'TRIMESTRE', 'BULLETIN', 'POLE', 'SCIENCES', 'LITTERAIRE', 'ARTISTIQUE',
-  'DEMI', 'PENSIONNAIRE', 'EXTERNE', 'DANS', 'ETABLISSEMENT', 'RUE', 'AVENUE',
-  'MATHEMATIQUES', 'FRANCAIS', 'ANGLAIS', 'ESPAGNOL', 'ITALIEN',
-  'HISTOIRE', 'GEOGRAPHIE', 'PHYSIQUE', 'CHIMIE', 'TECHNOLOGIE',
-  'ARTS', 'PLASTIQUES', 'MUSIQUE', 'MUSICALE', 'EDUCATION', 'SPORT',
-  'ATELIER', 'SCIENTIFIQUE', 'MOYENNES', 'GENERALES', 'VIE', 'SCOLAIRE',
-  'EMAIL', 'TEL', 'ANNEE', 'SCOLAIRE', 'ATTENTION', 'ELEVES', 'PRINCIPAL'
-];
-
-/**
- * Vérifie si un mot doit être ignoré (n'est pas un nom d'élève)
- */
-function shouldIgnoreWord(word: string): boolean {
-  if (!word || word.length < 2) return true;
-  const upper = word.toUpperCase();
-  return IGNORE_WORDS.includes(upper);
+function extractMoyenneGenerale(pageText: string): { studentAverage: number; classAverage: number } | null {
+  return extractMoyenneGeneraleUniversal(pageText);
 }
 
 /**
- * Vérifie si un texte correspond à un pattern à ignorer
+ * Crée une clé unique pour identifier un élève (wrapper pour compatibilité)
  */
-function isIgnoredName(text: string): boolean {
-  if (!text) return true;
-  
-  // Vérifier les patterns regex
-  if (IGNORE_NAME_PATTERNS.some(pattern => pattern.test(text))) {
-    return true;
-  }
-  
-  // Vérifier si le texte est composé uniquement de mots à ignorer
-  const words = text.toUpperCase().split(/\s+/);
-  if (words.every(word => IGNORE_WORDS.includes(word))) {
-    return true;
-  }
-  
-  return false;
+function createStudentKey(nom: string, prenom: string): string {
+  return createStudentKeyUniversal(nom, prenom);
 }
 
 /**
@@ -280,21 +238,21 @@ function extractStudentNameFromText(text: string): { nom: string; prenom: string
     }
   }
   
-  // PATTERN FALLBACK 2: Recherche après "WAZIERS" ou autre ville connue (sans le pattern complet)
-  // "WAZIERS BENDES Lukas" - le nom vient après la ville
-  const villePattern = normalizedText.match(
-    /(?:WAZIERS|DOUAI|LENS|ARRAS|LILLE|VALENCIENNES)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+)/i
+  // PATTERN FALLBACK 2: Pattern universel après code postal + ville
+  // Fonctionne pour N'IMPORTE QUELLE ville française
+  const universalCityPattern = normalizedText.match(
+    /\d{5}\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ]+(?:[-\s][A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎÇ]+)*\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,}(?:\s+[A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ]{2,})*)\s+([A-ZÉÈÊËÀÂÄÔÖÙÛÜÏÎ][a-zéèêëàâäôöùûüïîç]+)/
   );
   
-  if (villePattern) {
-    const potentialNom = villePattern[1].trim();
-    const potentialPrenom = villePattern[2].trim();
+  if (universalCityPattern) {
+    const potentialNom = universalCityPattern[1].trim();
+    const potentialPrenom = universalCityPattern[2].trim();
     
     const nomParts = potentialNom.split(/\s+/).filter(part => !shouldIgnoreWord(part));
     
     if (nomParts.length > 0 && !isIgnoredName(potentialPrenom) && !isIgnoredName(nomParts.join(' '))) {
       const result = { nom: nomParts.join(' '), prenom: potentialPrenom };
-      console.log('  ✓ (fallback2) Nom:', result.nom, '| Prénom:', result.prenom);
+      console.log('  ✓ (fallback2 universel) Nom:', result.nom, '| Prénom:', result.prenom);
       return result;
     }
   }
@@ -329,22 +287,8 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     
     const matieres: BulletinEleveData['matieres'] = [];
     
-    // Liste des matières connues
-    const matieresConnues = [
-      'MATHEMATIQUES',
-      'PHYSIQUE-CHIMIE',
-      'SCIENCES VIE & TERRE',
-      'TECHNOLOGIE',
-      'ANGLAIS LV1',
-      'FRANCAIS',
-      'HISTOIRE-GEOGRAPHIE',
-      'ESPAGNOL LV2',
-      'ITALIEN LV2',
-      'ARTS PLASTIQUES',
-      'ED.PHYSIQUE & SPORT.',
-      'EDUCATION MUSICALE',
-      'ATELIER SCIENTIFIQUE'
-    ];
+    // Utiliser la liste étendue des matières depuis le module universel
+    const matieresConnues = MATIERES_SCOLAIRES;
     
     // Pattern simplifié: MATIERE [PROF] NOMBRE NOMBRE (puis appréciation)
     for (const matiere of matieresConnues) {
@@ -385,15 +329,8 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
         let appreciation = match[5] ? match[5].trim().replace(/\s+/g, ' ') : '';
         appreciation = appreciation.replace(/^[:\s]+/, '').replace(/\s+$/, '');
         
-        // Déterminer le pôle selon la matière
-        let pole = '';
-        if (['MATHEMATIQUES', 'PHYSIQUE-CHIMIE', 'SCIENCES VIE & TERRE', 'TECHNOLOGIE', 'ATELIER SCIENTIFIQUE'].includes(matiere)) {
-          pole = 'Sciences';
-        } else if (['ANGLAIS LV1', 'FRANCAIS', 'HISTOIRE-GEOGRAPHIE', 'ESPAGNOL LV2', 'ITALIEN LV2'].includes(matiere)) {
-          pole = 'Littéraire';
-        } else if (['ARTS PLASTIQUES', 'ED.PHYSIQUE & SPORT.', 'EDUCATION MUSICALE'].includes(matiere)) {
-          pole = 'Artistique et culturelle';
-        }
+        // Déterminer le pôle selon la matière (fonction universelle)
+        const pole = determinePole(matiere);
         
         if (moyEleve >= 0 && moyEleve <= 20 && moyClasse >= 0 && moyClasse <= 20) {
           matieres.push({
@@ -401,7 +338,7 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
             moyenneEleve: moyEleve,
             moyenneClasse: moyClasse,
             appreciation: appreciation,
-            pole: pole
+            pole
           });
           console.log('✓ Matière détectée:', matiere, '| Élève:', moyEleve, '| Classe:', moyClasse);
         }
@@ -458,64 +395,6 @@ export function parseBulletinEleve(text: string): BulletinEleveData | null {
     console.error('Erreur lors du parsing du bulletin élève:', error);
     return null;
   }
-}
-
-/**
- * Crée une clé unique pour identifier un élève
- */
-function createStudentKey(nom: string, prenom: string): string {
-  return `${nom}_${prenom}`
-    .toUpperCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Retirer les accents
-    .trim();
-}
-
-/**
- * Extrait la moyenne générale depuis le texte brut de la page
- * Cherche spécifiquement la ligne "Moyennes générales" qui contient la vraie moyenne
- */
-/**
- * Extrait la moyenne générale depuis le texte brut de la page
- * Cherche SPÉCIFIQUEMENT la ligne "Moyennes générales" qui contient la vraie moyenne
- * IMPORTANT: Ne JAMAIS calculer la moyenne à partir des matières !
- */
-function extractMoyenneGenerale(pageText: string): { studentAverage: number; classAverage: number } | null {
-  // Normaliser le texte
-  const normalizedText = pageText.replace(/\s+/g, ' ');
-  
-  // Pattern 1: "Moyennes générales 11,55 13,29" (format PRONOTE standard)
-  // Le premier nombre est la moyenne de l'élève, le second celle de la classe
-  const moyennesMatch = normalizedText.match(/Moyennes?\s+g[eé]n[eé]rales?\s+(\d{1,2}[,\.]\d{1,2})\s+(\d{1,2}[,\.]\d{1,2})/i);
-  if (moyennesMatch) {
-    console.log('✓ Moyenne générale trouvée:', moyennesMatch[1], '(élève) /', moyennesMatch[2], '(classe)');
-    return {
-      studentAverage: parseFloat(moyennesMatch[1].replace(',', '.')),
-      classAverage: parseFloat(moyennesMatch[2].replace(',', '.'))
-    };
-  }
-  
-  // Pattern 2: "Moyenne générale : 11,55" (format alternatif avec deux-points)
-  const simpleMatch = normalizedText.match(/Moyennes?\s+g[eé]n[eé]rales?\s*:\s*(\d{1,2}[,\.]\d{1,2})/i);
-  if (simpleMatch) {
-    console.log('✓ Moyenne générale trouvée (format simple):', simpleMatch[1]);
-    return {
-      studentAverage: parseFloat(simpleMatch[1].replace(',', '.')),
-      classAverage: 0
-    };
-  }
-  
-  // Pattern 3: Chercher dans le pied de page - parfois espacé différemment
-  const footerMatch = normalizedText.match(/g[eé]n[eé]rales?\s+(\d{1,2}[,\.]\d{1,2})\s+(\d{1,2}[,\.]\d{1,2})/i);
-  if (footerMatch) {
-    console.log('✓ Moyenne générale trouvée (footer):', footerMatch[1]);
-    return {
-      studentAverage: parseFloat(footerMatch[1].replace(',', '.')),
-      classAverage: parseFloat(footerMatch[2].replace(',', '.'))
-    };
-  }
-  
-  return null;
 }
 
 /**

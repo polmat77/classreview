@@ -1,7 +1,9 @@
 // PDF Parser specifically for PRONOTE grade exports
+// Universal version - works for ANY French school
 import { Student, ClassMetadata } from "@/types/reportcard";
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
+import { STRUCTURAL_WORDS, extractHeaderWordsToIgnore } from './pdfParserUniversal';
 
 // Configure le worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
@@ -159,15 +161,16 @@ function parseNote(noteStr: string | undefined): number | null {
 /**
  * Check if a line is a student data line
  * Pattern: NAME (uppercase) followed by FirstName then numbers
+ * Uses dynamic header detection for universal compatibility
  */
-function isStudentLine(line: string): boolean {
+function isStudentLine(line: string, dynamicIgnoreWords?: Set<string>): boolean {
   // Must start with uppercase letters (the name)
   // Then have mixed case (firstname)  
   // Then have numbers
   const pattern = /^[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ\s'-]+\s+[A-ZÀÂÄÉÈÊËÏÎÔÙÛÜÇ][a-zàâäéèêëïîôùûüç'-]+/;
   const hasNumbers = /\d+[,.]?\d*/.test(line);
   
-  // Exclude header/metadata lines
+  // Exclude header/metadata lines - patterns universels
   const excludePatterns = [
     /^Moy\.?\s/i,
     /^Classe\s*:/i,
@@ -178,16 +181,26 @@ function isStudentLine(line: string): boolean {
     /^Tableau/i,
     /^COLLEGE/i,
     /^LYCEE/i,
+    /^ECOLE/i,
     /Index Education/i,
     /^\d+\s+élèves/i,
     /^Moyenne/i,
     /^Sérieux/i,
     /^Participation/i,
     /Coef\./i,
+    /POLE\s+(LITTERAIRE|SCIENCES|ARTISTIQUE)/i,
   ];
   
   if (excludePatterns.some(p => p.test(line))) {
     return false;
+  }
+  
+  // Check against dynamic ignore words (school name, city, etc.)
+  if (dynamicIgnoreWords) {
+    const firstWord = line.split(/\s+/)[0]?.toUpperCase();
+    if (firstWord && dynamicIgnoreWords.has(firstWord)) {
+      return false;
+    }
   }
   
   return pattern.test(line) && hasNumbers;
