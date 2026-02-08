@@ -20,6 +20,7 @@ const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DarkModeToggle from '@/components/DarkModeToggle';
+import UserMenu from '@/components/auth/UserMenu';
 import {
   Tooltip,
   TooltipContent,
@@ -362,6 +363,14 @@ export function ReportCardSidebar({
 
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
+
+        {/* User Menu */}
+        <div className={cn(
+          "border-t border-slate-100 dark:border-slate-800",
+          isCollapsed ? "px-3 py-3" : "px-4 py-3"
+        )}>
+          <UserMenu variant="sidebar" isCollapsed={isCollapsed} />
+        </div>
 
         {/* Dark Mode Toggle */}
         {!isCollapsed && (
