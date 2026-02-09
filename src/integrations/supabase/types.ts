@@ -61,6 +61,50 @@ export type Database = {
           },
         ]
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          plan: string
+          status: string | null
+          stripe_payment_intent: string | null
+          stripe_session_id: string
+          students_credited: number
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          plan: string
+          status?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id: string
+          students_credited: number
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          plan?: string
+          status?: string | null
+          stripe_payment_intent?: string | null
+          stripe_session_id?: string
+          students_credited?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
