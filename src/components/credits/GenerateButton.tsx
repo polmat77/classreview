@@ -5,6 +5,7 @@ import { useCredits } from '@/hooks/useCredits';
 import { UpgradeModal } from './UpgradeModal';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface GenerateButtonProps extends Omit<ButtonProps, 'onClick'> {
   cost: number;
@@ -30,8 +31,9 @@ export function GenerateButton({
   className,
   ...buttonProps
 }: GenerateButtonProps) {
+  const { toast } = useToast();
   const { isAuthenticated, credits, openAuthModal } = useAuth();
-  const { canGenerate, consumeCredits } = useCredits();
+  const { canGenerate, consumeCreditsServer } = useCredits();
   const [isLoading, setIsLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -39,29 +41,54 @@ export function GenerateButton({
   const hasEnoughCredits = canGenerate(cost);
 
   const handleClick = async () => {
-    // Step 1: Check authentication
+    // Step 1: Check authentication (UI-level)
     if (!isAuthenticated) {
       openAuthModal();
       return;
     }
 
-    // Step 2: Check credits
+    // Step 2: UI hint - check credits (real validation is server-side)
     if (!hasEnoughCredits) {
       setShowUpgradeModal(true);
       return;
     }
 
-    // Step 3: Consume credits and execute
     setIsLoading(true);
     try {
-      const success = await consumeCredits(cost, tool, action, classId, metadata);
-      if (success) {
-        await onGenerate();
-      } else {
-        setShowUpgradeModal(true);
+      // Step 3: Server-side credit consumption (CRITICAL - this is the real check)
+      const result = await consumeCreditsServer(cost, tool, action, classId, metadata);
+      
+      if (!result.success) {
+        // Handle different error types
+        if (result.error === 'NO_CREDITS') {
+          setShowUpgradeModal(true);
+        } else if (result.error === 'AUTH_REQUIRED') {
+          openAuthModal();
+        } else if (result.error === 'RACE_CONDITION') {
+          toast({
+            title: "Veuillez réessayer",
+            description: "Un conflit de mise à jour s'est produit.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Erreur",
+            description: "Une erreur est survenue lors de la vérification des crédits.",
+            variant: "destructive",
+          });
+        }
+        return;
       }
+
+      // Step 4: Credits consumed successfully - execute the generation
+      await onGenerate();
     } catch (error) {
       console.error('Error during generation:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la génération.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -98,3 +125,4 @@ export function GenerateButton({
 }
 
 export default GenerateButton;
+
