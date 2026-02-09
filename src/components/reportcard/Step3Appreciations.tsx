@@ -19,6 +19,9 @@ import { supabase } from "@/integrations/supabase/client";
 import ReportCardToneSelector from "./ReportCardToneSelector";
 import StepResetButton from "./StepResetButton";
 import { AIGenerationWarning } from "@/components/AIGenerationWarning";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
+import { UpgradeModal } from "@/components/credits";
 
 interface Step3AppreciationsProps {
   students: Student[];
@@ -44,6 +47,9 @@ const Step3Appreciations = ({
   onReset,
 }: Step3AppreciationsProps) => {
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal, credits } = useAuth();
+  const { canGenerate, consumeCredits } = useCredits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isGeneratingAll, setIsGeneratingAll] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -184,6 +190,27 @@ const Step3Appreciations = ({
   };
 
   const handleGenerateAll = async () => {
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const cost = students.length;
+    
+    // Check credits
+    if (!canGenerate(cost)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Consume credits before generation
+    const success = await consumeCredits(cost, 'reportcard', 'batch', undefined, { studentsCount: students.length });
+    if (!success) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     // Log generation parameters for debugging
     console.log("=== GÉNÉRATION GLOBALE ===");
     console.log("Longueur max:", appreciationSettings.maxCharacters);
@@ -253,6 +280,25 @@ const Step3Appreciations = ({
   const handleRegenerate = async (studentId: number) => {
     const student = students.find((s) => s.id === studentId);
     if (!student) return;
+
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    // Check credits (1 student = 1 credit)
+    if (!canGenerate(1)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Consume credit before generation
+    const success = await consumeCredits(1, 'reportcard', 'appreciation', undefined, { studentId });
+    if (!success) {
+      setShowUpgradeModal(true);
+      return;
+    }
 
     const tone = getStudentTone(studentId);
 
@@ -628,6 +674,11 @@ const Step3Appreciations = ({
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
+      
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   );
 };

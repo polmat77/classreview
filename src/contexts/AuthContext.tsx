@@ -10,6 +10,7 @@ interface UserProfile {
   free_students_remaining: number;
   students_balance: number;
   plan: string;
+  free_regenerations_used: Record<string, number> | null;
 }
 
 interface AuthContextType {

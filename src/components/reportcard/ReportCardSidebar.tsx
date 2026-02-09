@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import UserMenu from '@/components/auth/UserMenu';
+import { CreditsBadge } from '@/components/credits';
 import {
   Tooltip,
   TooltipContent,
@@ -364,9 +365,16 @@ export function ReportCardSidebar({
         {/* Spacer */}
         <div className="flex-grow min-h-4" />
 
+        {/* Credits Badge */}
+        {!isCollapsed && (
+          <div className="px-4 py-3 border-t border-border">
+            <CreditsBadge />
+          </div>
+        )}
+
         {/* User Menu */}
         <div className={cn(
-          "border-t border-slate-100 dark:border-slate-800",
+          "border-t border-border",
           isCollapsed ? "px-3 py-3" : "px-4 py-3"
         )}>
           <UserMenu variant="sidebar" isCollapsed={isCollapsed} />

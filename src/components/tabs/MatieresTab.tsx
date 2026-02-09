@@ -15,6 +15,9 @@ import PronoteHelpTooltip from "@/components/PronoteHelpTooltip";
 import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
 import { analyzeTeacherAppreciations, identifyExceptionalSubjects } from "@/utils/appreciationThemeAnalyzer";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
+import { UpgradeModal } from "@/components/credits";
 
 const CHAR_LIMIT_OPTIONS = [
   { value: 200, label: "200 caractères", description: "très court" },
@@ -75,6 +78,9 @@ interface MatieresTabProps {
 
 const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const { canGenerate, consumeCredits } = useCredits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinClasse, setLocalBulletinClasse] = useState<BulletinClasseData | null>(null);
   const [generalText, setGeneralText] = useState(data?.generalAppreciation || "");
@@ -293,6 +299,27 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         description: "Veuillez d'abord charger un bulletin de classe",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const cost = 5; // Fixed cost for class appreciation
+
+    // Check credits
+    if (!canGenerate(cost)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Consume credits before generation
+    const success = await consumeCredits(cost, 'classcouncil', 'bilan');
+    if (!success) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -535,6 +562,11 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
           Passer aux appréciations individuelles
         </Button>
       </div>
+      
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   );
 };
