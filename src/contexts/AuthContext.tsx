@@ -26,6 +26,7 @@ interface AuthContextType {
   openAuthModal: () => void;
   closeAuthModal: () => void;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -129,6 +130,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const signInWithApple = useCallback(async () => {
+    try {
+      const { error } = await lovable.auth.signInWithOAuth('apple', {
+        redirect_uri: window.location.origin,
+      });
+
+      if (error) {
+        console.error('Apple sign-in error:', error);
+        throw error;
+      }
+    } catch (err) {
+      console.error('Error signing in with Apple:', err);
+      throw err;
+    }
+  }, []);
+
   const signInWithMagicLink = useCallback(async (email: string) => {
     try {
       const { error } = await supabase.auth.signInWithOtp({
@@ -177,6 +194,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     openAuthModal,
     closeAuthModal,
     signInWithGoogle,
+    signInWithApple,
     signInWithMagicLink,
     signOut,
     refreshProfile,
