@@ -5,10 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Shield, ArrowLeft, Star, School } from "lucide-react";
+import { Check, Shield, ArrowLeft, Star, School, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, StripePlanKey } from "@/config/stripe";
 
 const logo = "/images/logos/AIProject4You_logo.png";
 
@@ -129,9 +132,11 @@ const profilePresets = [
 const Pricing = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated, openAuthModal, session } = useAuth();
   const [selectedProfile, setSelectedProfile] = useState<number | null>(null);
   const [classCount, setClassCount] = useState(4);
   const [isVisible, setIsVisible] = useState<Record<string, boolean>>({});
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const sectionsRef = useRef<Record<string, HTMLElement | null>>({});
 
   // Calculate estimated students based on classes
@@ -173,11 +178,52 @@ const Pricing = () => {
     setClassCount(classes);
   };
 
-  const handlePackClick = () => {
-    toast({
-      title: "🚀 Paiement bientôt disponible",
-      description: "Contactez-nous à contact@aiproject4you.com pour réserver votre pack.",
-    });
+  const handlePackClick = async (planId: string) => {
+    // Free plan
+    if (planId === "free") {
+      if (!isAuthenticated) {
+        openAuthModal();
+      } else {
+        navigate("/classcouncil-ai/app");
+      }
+      return;
+    }
+
+    // Paid plans - require auth
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const planKey = planId as StripePlanKey;
+    if (!(planKey in STRIPE_PLANS)) return;
+
+    setLoadingPlan(planId);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          price_id: STRIPE_PLANS[planKey].price_id,
+          plan: planKey,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de lancer le paiement. Réessayez.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
   };
 
   return (
@@ -250,7 +296,8 @@ const Pricing = () => {
               <PricingCard
                 key={plan.id}
                 plan={plan}
-                onSelect={handlePackClick}
+                onSelect={() => handlePackClick(plan.id)}
+                loading={loadingPlan === plan.id}
               />
             ))}
           </div>
@@ -398,9 +445,10 @@ const Pricing = () => {
 interface PricingCardProps {
   plan: typeof pricingPlans[0];
   onSelect: () => void;
+  loading?: boolean;
 }
 
-const PricingCard = ({ plan, onSelect }: PricingCardProps) => {
+const PricingCard = ({ plan, onSelect, loading }: PricingCardProps) => {
   const isGold = plan.theme === "gold";
   const isDark = plan.theme === "dark";
 
@@ -500,6 +548,7 @@ const PricingCard = ({ plan, onSelect }: PricingCardProps) => {
       {/* CTA */}
       <Button
         onClick={onSelect}
+        disabled={loading}
         className={cn(
           "w-full rounded-xl h-11 font-medium transition-all",
           isGold && "bg-gradient-to-r from-accent to-accent-hover text-white hover:shadow-lg",
@@ -507,7 +556,7 @@ const PricingCard = ({ plan, onSelect }: PricingCardProps) => {
           !isGold && !isDark && "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
         )}
       >
-        {plan.cta}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : plan.cta}
       </Button>
     </Card>
   );
