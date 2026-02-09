@@ -55,23 +55,22 @@ export function useAdminPromoCode() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check admin status
+  // Check admin status using dedicated RPC function
   const checkAdminStatus = useCallback(async () => {
-    if (!session?.access_token) {
+    if (!session?.user?.id) {
       setIsAdmin(false);
       setIsCheckingAdmin(false);
       return;
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke('admin-promo-codes', {
-        body: { action: 'stats' },
+      const { data: hasAdminRole, error } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin',
       });
 
-      // If we can fetch stats, user is admin
-      if (!error && data?.stats) {
+      if (!error && hasAdminRole) {
         setIsAdmin(true);
-        setStats(data.stats);
       } else {
         setIsAdmin(false);
       }
@@ -80,7 +79,7 @@ export function useAdminPromoCode() {
     } finally {
       setIsCheckingAdmin(false);
     }
-  }, [session?.access_token]);
+  }, [session?.user?.id]);
 
   useEffect(() => {
     checkAdminStatus();
