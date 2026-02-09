@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 const logo = "/images/logos/AIProject4You_logo.png";
 
@@ -13,6 +15,7 @@ interface NavbarProps {
 const Navbar = ({ onScrollToSection }: NavbarProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { isAuthenticated, openAuthModal } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -68,9 +71,21 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
           ))}
         </div>
 
-        {/* CTA Button + Dark Mode Toggle */}
+        {/* CTA Button + Dark Mode Toggle + Auth */}
         <div className="hidden md:flex items-center gap-3">
           <DarkModeToggle />
+          {isAuthenticated ? (
+            <UserMenu variant="header" />
+          ) : (
+            <Button
+              variant="outline"
+              onClick={openAuthModal}
+              className="border-accent/50 text-accent hover:bg-accent/10 hover:border-accent gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              Connexion
+            </Button>
+          )}
           <Button
             onClick={() => onScrollToSection("outils")}
             className="bg-[#f0a830] hover:bg-[#e09520] text-white px-6 rounded-lg font-medium"
@@ -82,6 +97,15 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
         {/* Mobile Menu Button */}
         <div className="flex items-center gap-2 md:hidden">
           <DarkModeToggle />
+          {!isAuthenticated && (
+            <button
+              onClick={openAuthModal}
+              className="text-accent p-2"
+              aria-label="Se connecter"
+            >
+              <LogIn className="w-5 h-5" />
+            </button>
+          )}
           <button
             className="text-foreground p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
