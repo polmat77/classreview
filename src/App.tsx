@@ -15,6 +15,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MentionsLegales from "./pages/MentionsLegales";
 import Confidentialite from "./pages/Confidentialite";
 import Pricing from "./pages/Pricing";
+import PromoCodesAdmin from "./pages/admin/PromoCodesAdmin";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,8 @@ const App = () => (
             <Route path="/reportcard-ai/app" element={<ReportCardAI />} />
             {/* Pricing page */}
             <Route path="/pricing" element={<Pricing />} />
+            {/* Admin pages */}
+            <Route path="/admin/promo-codes" element={<PromoCodesAdmin />} />
             {/* Legal pages */}
             <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />

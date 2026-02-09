@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Check, Shield, ArrowLeft, Star, School } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import PromoCodeInput from "@/components/promo/PromoCodeInput";
 
 const logo = "/images/logos/AIProject4You_logo.png";
 
@@ -359,6 +360,26 @@ const Pricing = () => {
               Nous contacter →
             </Button>
           </Card>
+        </section>
+
+        {/* Promo Code Section */}
+        <section
+          id="promo-code"
+          ref={(el) => (sectionsRef.current["promo-code"] = el)}
+          className={cn(
+            "max-w-[500px] mx-auto mb-12 transition-all duration-700 delay-500",
+            isVisible["promo-code"] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+          )}
+        >
+          <PromoCodeInput 
+            variant="card" 
+            onSuccess={() => {
+              toast({
+                title: "🎉 Crédits ajoutés !",
+                description: "Votre solde a été mis à jour.",
+              });
+            }}
+          />
         </section>
 
         {/* Garantie */}

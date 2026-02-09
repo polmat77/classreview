@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LogOut, User, ChevronDown, Sparkles } from 'lucide-react';
+import { LogOut, User, ChevronDown, Sparkles, Gift } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import PromoCodeInput from '@/components/promo/PromoCodeInput';
 
 interface UserMenuProps {
   variant?: 'sidebar' | 'header';
@@ -19,6 +26,7 @@ interface UserMenuProps {
 export function UserMenu({ variant = 'sidebar', isCollapsed = false }: UserMenuProps) {
   const { user, profile, isAuthenticated, openAuthModal, signOut, credits, freeCredits, paidCredits } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [showPromoDialog, setShowPromoDialog] = useState(false);
 
   if (!isAuthenticated || !user) {
     // Not authenticated - show login button
@@ -46,105 +54,143 @@ export function UserMenu({ variant = 'sidebar', isCollapsed = false }: UserMenuP
   const avatarUrl = user.user_metadata?.avatar_url;
   const initials = displayName.substring(0, 2).toUpperCase();
 
+  const promoDialog = (
+    <Dialog open={showPromoDialog} onOpenChange={setShowPromoDialog}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Utiliser un code promo</DialogTitle>
+        </DialogHeader>
+        <PromoCodeInput 
+          variant="default" 
+          onSuccess={() => {
+            setTimeout(() => setShowPromoDialog(false), 2000);
+          }}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+
   if (isCollapsed) {
     // Collapsed sidebar - just show avatar
     return (
+      <>
+        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center justify-center p-2 rounded-xl hover:bg-muted transition-colors">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={avatarUrl} alt={displayName} />
+                <AvatarFallback className="bg-accent/20 text-accent text-xs font-medium">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-3 py-2">
+              <p className="font-medium text-sm text-foreground">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <div className="px-3 py-2 bg-accent/10 rounded-md mx-2 mb-2">
+              <div className="flex items-center gap-2 text-accent">
+                <Sparkles className="w-4 h-4" />
+                <span className="text-sm font-medium">{credits} crédits</span>
+              </div>
+              <p className="text-xs text-accent/80 mt-1">
+                {freeCredits > 0 && `${freeCredits} gratuits`}
+                {freeCredits > 0 && paidCredits > 0 && ' + '}
+                {paidCredits > 0 && `${paidCredits} payants`}
+              </p>
+            </div>
+            <DropdownMenuItem 
+              onClick={() => setShowPromoDialog(true)}
+              className="cursor-pointer"
+            >
+              <Gift className="w-4 h-4 mr-2 text-accent" />
+              Code promo
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => signOut()}
+              className="text-destructive cursor-pointer"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Se déconnecter
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        {promoDialog}
+      </>
+    );
+  }
+
+  // Full sidebar or header view
+  return (
+    <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center justify-center p-2 rounded-xl hover:bg-slate-100 transition-colors">
-            <Avatar className="w-8 h-8">
+          <button 
+            className={`
+              flex items-center gap-3 w-full rounded-xl transition-all duration-200
+              ${variant === 'header' 
+                ? 'px-3 py-2 hover:bg-muted' 
+                : 'px-4 py-3 hover:bg-muted/50 border border-border'
+              }
+            `}
+          >
+            <Avatar className="w-9 h-9">
               <AvatarImage src={avatarUrl} alt={displayName} />
-              <AvatarFallback className="bg-amber-100 text-amber-700 text-xs font-medium">
+              <AvatarFallback className="bg-accent/20 text-accent text-sm font-medium">
                 {initials}
               </AvatarFallback>
             </Avatar>
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+              <div className="flex items-center gap-1 text-xs text-accent">
+                <Sparkles className="w-3 h-3" />
+                <span>{credits} crédits</span>
+              </div>
+            </div>
+            <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <div className="px-3 py-2">
-            <p className="font-medium text-sm text-slate-900">{displayName}</p>
-            <p className="text-xs text-slate-500 truncate">{user.email}</p>
+            <p className="font-medium text-sm text-foreground">{displayName}</p>
+            <p className="text-xs text-muted-foreground truncate">{user.email}</p>
           </div>
           <DropdownMenuSeparator />
-          <div className="px-3 py-2 bg-amber-50 rounded-md mx-2 mb-2">
-            <div className="flex items-center gap-2 text-amber-700">
+          <div className="px-3 py-2 bg-accent/10 rounded-md mx-2 mb-2">
+            <div className="flex items-center gap-2 text-accent">
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">{credits} crédits</span>
+              <span className="text-sm font-medium">{credits} crédits élèves</span>
             </div>
-            <p className="text-xs text-amber-600 mt-1">
+            <p className="text-xs text-accent/80 mt-1">
               {freeCredits > 0 && `${freeCredits} gratuits`}
               {freeCredits > 0 && paidCredits > 0 && ' + '}
               {paidCredits > 0 && `${paidCredits} payants`}
+              {credits === 0 && 'Aucun crédit restant'}
             </p>
           </div>
           <DropdownMenuItem 
+            onClick={() => setShowPromoDialog(true)}
+            className="cursor-pointer"
+          >
+            <Gift className="w-4 h-4 mr-2 text-accent" />
+            Code promo
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
             onClick={() => signOut()}
-            className="text-red-600 cursor-pointer"
+            className="text-destructive cursor-pointer"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Se déconnecter
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    );
-  }
-
-  // Full sidebar or header view
-  return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <button 
-          className={`
-            flex items-center gap-3 w-full rounded-xl transition-all duration-200
-            ${variant === 'header' 
-              ? 'px-3 py-2 hover:bg-slate-100' 
-              : 'px-4 py-3 hover:bg-slate-50 border border-slate-200'
-            }
-          `}
-        >
-          <Avatar className="w-9 h-9">
-            <AvatarImage src={avatarUrl} alt={displayName} />
-            <AvatarFallback className="bg-amber-100 text-amber-700 text-sm font-medium">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-sm font-medium text-slate-900 truncate">{displayName}</p>
-            <div className="flex items-center gap-1 text-xs text-amber-600">
-              <Sparkles className="w-3 h-3" />
-              <span>{credits} crédits</span>
-            </div>
-          </div>
-          <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-3 py-2">
-          <p className="font-medium text-sm text-slate-900">{displayName}</p>
-          <p className="text-xs text-slate-500 truncate">{user.email}</p>
-        </div>
-        <DropdownMenuSeparator />
-        <div className="px-3 py-2 bg-amber-50 rounded-md mx-2 mb-2">
-          <div className="flex items-center gap-2 text-amber-700">
-            <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">{credits} crédits élèves</span>
-          </div>
-          <p className="text-xs text-amber-600 mt-1">
-            {freeCredits > 0 && `${freeCredits} gratuits`}
-            {freeCredits > 0 && paidCredits > 0 && ' + '}
-            {paidCredits > 0 && `${paidCredits} payants`}
-            {credits === 0 && 'Aucun crédit restant'}
-          </p>
-        </div>
-        <DropdownMenuItem 
-          onClick={() => signOut()}
-          className="text-red-600 cursor-pointer"
-        >
-          <LogOut className="w-4 h-4 mr-2" />
-          Se déconnecter
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      {promoDialog}
+    </>
   );
 }
 
