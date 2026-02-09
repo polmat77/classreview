@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.generate-reportcard-summary]
 verify_jwt = false
+
+[functions.check-and-consume-credits]
+verify_jwt = false

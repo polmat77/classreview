@@ -12,45 +12,46 @@ interface UseGenerationWithCreditsOptions {
 interface GenerationResult {
   success: boolean;
   data?: unknown;
-  error?: Error;
+  error?: Error | string;
   wasFree?: boolean;
 }
 
 /**
- * Hook that wraps AI generation functions with credit checking
- * Handles authentication, credit verification, consumption, and upgrade modal
+ * Hook that wraps AI generation functions with SERVER-SIDE credit checking
+ * All credit validation happens on the server to prevent bypass
  */
 export function useGenerationWithCredits(options: UseGenerationWithCreditsOptions) {
   const { isAuthenticated, openAuthModal } = useAuth();
-  const { canGenerate, consumeCredits, consumeRegeneration, getFreeRegenerationsRemaining } = useCredits();
+  const { canGenerate, consumeCreditsServer, getFreeRegenerationsRemaining } = useCredits();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   /**
-   * Execute a generation function with credit checking
+   * Execute a generation function with SERVER-SIDE credit checking
+   * Credits are consumed BEFORE the generation is executed
    */
   const executeWithCredits = useCallback(async (
     cost: number,
     generateFn: () => Promise<unknown>,
     metadata?: Record<string, unknown>
   ): Promise<GenerationResult> => {
-    // Step 1: Check authentication
+    // Step 1: Check authentication (UI-level check)
     if (!isAuthenticated) {
       openAuthModal();
-      return { success: false };
+      return { success: false, error: 'AUTH_REQUIRED' };
     }
 
-    // Step 2: Check credits
+    // Step 2: UI hint - quick client-side check (real validation is server-side)
     if (!canGenerate(cost)) {
       setShowUpgradeModal(true);
-      return { success: false };
+      return { success: false, error: 'NO_CREDITS' };
     }
 
     setIsProcessing(true);
 
     try {
-      // Step 3: Consume credits BEFORE generation
-      const creditSuccess = await consumeCredits(
+      // Step 3: SERVER-SIDE credit consumption (CRITICAL - this is the real check)
+      const creditResult = await consumeCreditsServer(
         cost,
         options.tool,
         options.action,
@@ -58,12 +59,16 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
         metadata
       );
 
-      if (!creditSuccess) {
-        setShowUpgradeModal(true);
-        return { success: false };
+      if (!creditResult.success) {
+        if (creditResult.error === 'NO_CREDITS') {
+          setShowUpgradeModal(true);
+        } else if (creditResult.error === 'AUTH_REQUIRED') {
+          openAuthModal();
+        }
+        return { success: false, error: creditResult.error };
       }
 
-      // Step 4: Execute the actual generation
+      // Step 4: Execute the actual generation (only after server confirmed credits)
       const result = await generateFn();
       return { success: true, data: result };
     } catch (error) {
@@ -75,10 +80,10 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
     } finally {
       setIsProcessing(false);
     }
-  }, [isAuthenticated, openAuthModal, canGenerate, consumeCredits, options]);
+  }, [isAuthenticated, openAuthModal, canGenerate, consumeCreditsServer, options]);
 
   /**
-   * Execute a regeneration with free regeneration checking
+   * Execute a regeneration with SERVER-SIDE free regeneration checking
    */
   const executeRegeneration = useCallback(async (
     type: 'appreciation' | 'bilan',
@@ -87,7 +92,7 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
     // Step 1: Check authentication
     if (!isAuthenticated) {
       openAuthModal();
-      return { success: false };
+      return { success: false, error: 'AUTH_REQUIRED' };
     }
 
     const classId = options.classId || 'default';
@@ -96,20 +101,29 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
     setIsProcessing(true);
 
     try {
-      // Step 2: Attempt regeneration (handles free vs paid automatically)
-      const { success, isFree } = await consumeRegeneration(classId, type, options.tool);
+      // Step 2: SERVER-SIDE regeneration check (handles free vs paid automatically)
+      const creditResult = await consumeCreditsServer(
+        cost,
+        options.tool,
+        'regeneration',
+        classId,
+        { type },
+        true, // isRegeneration
+        type  // regenerationType
+      );
 
-      if (!success) {
-        // Check if it's because of no credits
-        if (!canGenerate(cost)) {
+      if (!creditResult.success) {
+        if (creditResult.error === 'NO_CREDITS') {
           setShowUpgradeModal(true);
+        } else if (creditResult.error === 'AUTH_REQUIRED') {
+          openAuthModal();
         }
-        return { success: false };
+        return { success: false, error: creditResult.error };
       }
 
       // Step 3: Execute the actual generation
       const result = await generateFn();
-      return { success: true, data: result, wasFree: isFree };
+      return { success: true, data: result, wasFree: creditResult.wasFree };
     } catch (error) {
       console.error('Regeneration error:', error);
       return { 
@@ -119,10 +133,10 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
     } finally {
       setIsProcessing(false);
     }
-  }, [isAuthenticated, openAuthModal, consumeRegeneration, canGenerate, options]);
+  }, [isAuthenticated, openAuthModal, consumeCreditsServer, options]);
 
   /**
-   * Check how many free regenerations remain for this class
+   * Check how many free regenerations remain for this class (UI hint only)
    */
   const checkFreeRegenerations = useCallback((type: 'appreciation' | 'bilan'): number => {
     const classId = options.classId || 'default';
@@ -151,3 +165,4 @@ export function useGenerationWithCredits(options: UseGenerationWithCreditsOption
 }
 
 export default useGenerationWithCredits;
+
