@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import MentionsLegales from "./pages/MentionsLegales";
 import Confidentialite from "./pages/Confidentialite";
+import Pricing from "./pages/Pricing";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,8 @@ const App = () => (
             {/* Actual application pages */}
             <Route path="/classcouncil-ai/app" element={<Index />} />
             <Route path="/reportcard-ai/app" element={<ReportCardAI />} />
+            {/* Pricing page */}
+            <Route path="/pricing" element={<Pricing />} />
             {/* Legal pages */}
             <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
             <Route path="/mentions-legales" element={<MentionsLegales />} />
