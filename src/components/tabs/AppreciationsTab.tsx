@@ -36,6 +36,9 @@ import {
   AIActionBar,
   AttributionToggle,
 } from "@/components/appreciation";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
+import { UpgradeModal } from "@/components/credits";
 
 interface StudentData {
   name: string;
@@ -59,6 +62,9 @@ interface AppreciationsTabProps {
 
 const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps) => {
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const { canGenerate, consumeCredits } = useCredits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [localBulletinsEleves, setLocalBulletinsEleves] = useState<BulletinEleveData[]>([]);
   
@@ -94,6 +100,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   const [showSummaryDialog, setShowSummaryDialog] = useState(false);
   const [isAnalyzingAll, setIsAnalyzingAll] = useState(false);
   const [manuallyRemovedAttributions, setManuallyRemovedAttributions] = useState<Set<number>>(new Set());
+
 
   // Persist settings
   useEffect(() => {
@@ -332,8 +339,27 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   };
 
   const handleRegenerateStudent = async (index: number) => {
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    // Check credits (1 student = 1 credit)
+    if (!canGenerate(1)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setLoadingStudentIndex(index);
     try {
+      // Consume credit before generation
+      const success = await consumeCredits(1, 'classcouncil', 'appreciation', undefined, { studentIndex: index });
+      if (!success) {
+        setShowUpgradeModal(true);
+        return;
+      }
+
       const { appreciation, justifications } = await generateAppreciation(students[index], studentTones[index] || 'standard', index);
       const newTexts = [...studentTexts]; newTexts[index] = appreciation;
       setStudentTexts(newTexts);
@@ -349,8 +375,29 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   };
 
   const handleRegenerateAll = async () => {
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const cost = students.length;
+    
+    // Check credits (1 per student)
+    if (!canGenerate(cost)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setIsLoadingAll(true);
     try {
+      // Consume all credits before generation
+      const success = await consumeCredits(cost, 'classcouncil', 'batch', undefined, { studentsCount: students.length });
+      if (!success) {
+        setShowUpgradeModal(true);
+        return;
+      }
+
       const newTexts = [...studentTexts];
       const newJustifications: Record<number, Justification[]> = {};
       for (let i = 0; i < students.length; i++) {
@@ -417,6 +464,7 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         onAnonymizationChange={setAnonymizationLevel}
         onGenerateAll={handleRegenerateAll}
         isLoading={isLoadingAll}
+        studentsCount={students.length}
       />
 
       {/* Student Cards */}
@@ -496,6 +544,11 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         summary={generateAttributionSummary(Object.values(studentAttributions).map(a => a.attribution))}
         onConfirm={handleApplySuggestions}
         onCancel={() => setShowSummaryDialog(false)}
+      />
+      
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
       />
     </div>
   );

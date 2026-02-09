@@ -51,6 +51,9 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from "recharts";
 import StepResetButton from "./StepResetButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCredits } from "@/hooks/useCredits";
+import { UpgradeModal } from "@/components/credits";
 
 interface Step4ClassSummaryProps {
   students: Student[];
@@ -70,6 +73,9 @@ const Step4ClassSummary = ({
   onReset,
 }: Step4ClassSummaryProps) => {
   const { toast } = useToast();
+  const { isAuthenticated, openAuthModal } = useAuth();
+  const { canGenerate: canAffordCredits, consumeCredits } = useCredits();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -182,6 +188,27 @@ const Step4ClassSummary = ({
         description: "Veuillez sélectionner une option dans chaque catégorie",
         variant: "destructive",
       });
+      return;
+    }
+
+    // Check auth first
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const cost = 5; // Fixed cost for class summary
+
+    // Check credits
+    if (!canAffordCredits(cost)) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Consume credits before generation
+    const success = await consumeCredits(cost, 'reportcard', 'bilan');
+    if (!success) {
+      setShowUpgradeModal(true);
       return;
     }
 
@@ -621,6 +648,11 @@ const Step4ClassSummary = ({
           Retour
         </Button>
       </div>
+      
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+      />
     </div>
   );
 };
