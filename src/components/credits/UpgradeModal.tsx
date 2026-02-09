@@ -1,10 +1,12 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Check, X, Mail, ExternalLink } from 'lucide-react';
+import { Check, X, Mail, ExternalLink, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import PromoCodeInput from '@/components/promo/PromoCodeInput';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -47,6 +49,8 @@ const pricingPlans = [
 ];
 
 export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
+  const [showPromoInput, setShowPromoInput] = useState(false);
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -124,6 +128,26 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
             Voir tous les détails des offres
             <ExternalLink className="h-3 w-3" />
           </Link>
+        </div>
+
+        {/* Promo Code Section */}
+        <div className="mt-4 pt-4 border-t border-border">
+          {!showPromoInput ? (
+            <button
+              onClick={() => setShowPromoInput(true)}
+              className="w-full flex items-center justify-center gap-2 text-sm text-accent hover:text-accent-hover transition-colors"
+            >
+              <Gift className="h-4 w-4" />
+              J'ai un code promo
+            </button>
+          ) : (
+            <PromoCodeInput 
+              variant="compact" 
+              onSuccess={() => {
+                onClose();
+              }}
+            />
+          )}
         </div>
 
         {/* Payment notice */}

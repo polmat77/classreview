@@ -16,3 +16,9 @@ verify_jwt = false
 
 [functions.check-and-consume-credits]
 verify_jwt = false
+
+[functions.redeem-promo-code]
+verify_jwt = false
+
+[functions.admin-promo-codes]
+verify_jwt = false
