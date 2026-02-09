@@ -23,10 +23,10 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
   }, []);
 
   const navLinks = [
-    { label: "Outils", sectionId: "outils" },
-    { label: "Fonctionnalités", sectionId: "features" },
-    { label: "Témoignages", sectionId: "testimonials" },
-    { label: "Tarifs", sectionId: "pricing" },
+    { label: "Outils", sectionId: "outils", isRoute: false },
+    { label: "Fonctionnalités", sectionId: "features", isRoute: false },
+    { label: "Témoignages", sectionId: "testimonials", isRoute: false },
+    { label: "Tarifs", sectionId: "/pricing", isRoute: true },
   ];
 
   return (
@@ -48,13 +48,23 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
-            <button
-              key={link.sectionId}
-              onClick={() => onScrollToSection(link.sectionId)}
-              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-sm font-medium"
-            >
-              {link.label}
-            </button>
+            link.isRoute ? (
+              <Link
+                key={link.sectionId}
+                to={link.sectionId}
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+              >
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                key={link.sectionId}
+                onClick={() => onScrollToSection(link.sectionId)}
+                className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+              >
+                {link.label}
+              </button>
+            )
           ))}
         </div>
 
@@ -73,7 +83,7 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
         <div className="flex items-center gap-2 md:hidden">
           <DarkModeToggle />
           <button
-            className="text-slate-700 dark:text-slate-300 p-2"
+            className="text-foreground p-2"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Toggle menu"
           >
@@ -84,26 +94,37 @@ const Navbar = ({ onScrollToSection }: NavbarProps) => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-4 px-6">
+        <div className="md:hidden bg-background border-t border-border py-4 px-6">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
-              <button
-                key={link.sectionId}
-                onClick={() => {
-                  onScrollToSection(link.sectionId);
-                  setIsMenuOpen(false);
-                }}
-                className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors text-left py-2"
-              >
-                {link.label}
-              </button>
+              link.isRoute ? (
+                <Link
+                  key={link.sectionId}
+                  to={link.sectionId}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-muted-foreground hover:text-foreground transition-colors text-left py-2"
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <button
+                  key={link.sectionId}
+                  onClick={() => {
+                    onScrollToSection(link.sectionId);
+                    setIsMenuOpen(false);
+                  }}
+                  className="text-muted-foreground hover:text-foreground transition-colors text-left py-2"
+                >
+                  {link.label}
+                </button>
+              )
             ))}
             <Button
               onClick={() => {
                 onScrollToSection("outils");
                 setIsMenuOpen(false);
               }}
-              className="bg-[#f0a830] hover:bg-[#e09520] text-white w-full mt-2"
+              className="bg-accent hover:bg-accent-hover text-accent-foreground w-full mt-2"
             >
               Commencer
             </Button>

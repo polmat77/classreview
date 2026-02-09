@@ -1,8 +1,9 @@
+import { Link } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Check, X, Mail } from 'lucide-react';
+import { Check, X, Mail, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UpgradeModalProps {
@@ -113,8 +114,20 @@ export function UpgradeModal({ open, onClose }: UpgradeModalProps) {
           ))}
         </div>
 
+        {/* Link to full pricing page */}
+        <div className="mt-4 text-center">
+          <Link 
+            to="/pricing" 
+            onClick={onClose}
+            className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent-hover hover:underline transition-colors"
+          >
+            Voir tous les détails des offres
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
+
         {/* Payment notice */}
-        <div className="mt-6 p-4 bg-muted/50 rounded-xl text-center space-y-2">
+        <div className="mt-4 p-4 bg-muted/50 rounded-xl text-center space-y-2">
           <p className="text-sm text-muted-foreground">
             Le paiement sera bientôt disponible.
           </p>
