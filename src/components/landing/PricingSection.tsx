@@ -131,17 +131,35 @@ const PricingSection = () => {
       return;
     }
 
+    // Refresh session to ensure valid JWT
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log('Session check:', { hasSession: !!sessionData?.session, error: sessionError });
+    
+    if (!sessionData?.session) {
+      console.error('No valid session, re-opening auth modal');
+      openAuthModal();
+      return;
+    }
+
     const stripeKey = planToStripeKey[plan.name];
     if (!stripeKey) return;
 
     setLoadingPlan(plan.name);
     try {
+      console.log('Calling create-checkout-session with:', {
+        price_id: STRIPE_PLANS[stripeKey].price_id,
+        plan: stripeKey,
+      });
+
       const { data, error } = await supabase.functions.invoke('create-checkout-session', {
         body: {
           price_id: STRIPE_PLANS[stripeKey].price_id,
           plan: stripeKey,
         },
       });
+
+      console.log('Edge function response:', { data, error });
+
       if (error) throw error;
       if (data?.url) {
         window.location.href = data.url;
