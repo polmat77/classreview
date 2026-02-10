@@ -1,13 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-
-const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
-  apiVersion: '2023-10-16',
-  httpClient: Stripe.createFetchHttpClient(),
-});
-
-const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
+import Stripe from "https://esm.sh/stripe@11.2.0?target=deno";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const PLAN_STUDENTS: Record<string, number> = {
   one_class: 35,
@@ -31,6 +24,12 @@ serve(async (req) => {
 
   const body = await req.text();
   console.log('📦 Body length:', body.length);
+
+  const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
+    apiVersion: '2022-11-15',
+    httpClient: Stripe.createFetchHttpClient(),
+  });
+  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
 
   let event: Stripe.Event;
   try {
