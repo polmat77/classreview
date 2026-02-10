@@ -1,8 +1,11 @@
-import { Check, Shield } from "lucide-react";
+import { useState } from "react";
+import { Check, Shield, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { STRIPE_PLANS, StripePlanKey } from "@/config/stripe";
 import PricingFAQ from "./pricing/PricingFAQ";
 
 interface PricingPlan {
@@ -106,17 +109,54 @@ const plans: PricingPlan[] = [
   },
 ];
 
-const PricingSection = () => {
-  const { openAuthModal } = useAuth();
+const planToStripeKey: Record<string, StripePlanKey> = {
+  "1 Classe": "one_class",
+  "4 Classes": "four_classes",
+  "Année complète": "year",
+  "Toutes les classes": "all_classes",
+};
 
-  const handleCtaClick = (plan: PricingPlan) => {
+const PricingSection = () => {
+  const { openAuthModal, isAuthenticated } = useAuth();
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  const handleCtaClick = async (plan: PricingPlan) => {
     if (plan.price === "0€") {
       openAuthModal();
-    } else {
-      toast({
-        title: "Paiement bientôt disponible",
-        description: "Contactez contact@aiproject4you.com pour souscrire.",
+      return;
+    }
+
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+
+    const stripeKey = planToStripeKey[plan.name];
+    if (!stripeKey) return;
+
+    setLoadingPlan(plan.name);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+        body: {
+          price_id: STRIPE_PLANS[stripeKey].price_id,
+          plan: stripeKey,
+        },
       });
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err: any) {
+      console.error('Checkout error:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible de lancer le paiement. Réessayez.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -200,6 +240,7 @@ const PricingSection = () => {
 
                 <Button
                   onClick={() => handleCtaClick(plan)}
+                  disabled={loadingPlan === plan.name}
                   className={`w-full text-sm ${
                     plan.highlighted
                       ? "bg-[#f0a830] hover:bg-[#e09520] hover:shadow-[0_4px_16px_rgba(240,168,48,0.4)] text-white border-0"
@@ -209,7 +250,11 @@ const PricingSection = () => {
                   }`}
                   variant="outline"
                 >
-                  {plan.cta}
+                  {loadingPlan === plan.name ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    plan.cta
+                  )}
                 </Button>
               </CardContent>
             </Card>
@@ -228,7 +273,7 @@ const PricingSection = () => {
                 Équipez toute votre équipe pédagogique à partir de 199€/an
               </p>
               <p className="text-sm text-[#64748b] dark:text-slate-400">
-                500 à 2 000 élèves • Licence établissement complète • Formation équipe pédagogique • Support dédié & accompagnement
+                Contactez-nous pour un devis personnalisé • Facture établissement • Formation incluse • Support dédié
               </p>
             </div>
             <a href="mailto:contact@aiproject4you.com?subject=Offre Établissement">
@@ -247,11 +292,11 @@ const PricingSection = () => {
           <p className="text-sm text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 flex-wrap">
             <Shield className="w-4 h-4 text-emerald-500" />
             <span>
-              🔒 Données 100% locales • Aucune donnée élève stockée sur nos serveurs • Conformité RGPD garantie
+              🔒 Paiement sécurisé en ligne — Souscrivez en quelques clics et commencez immédiatement !
             </span>
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-500 mt-2">
-            Satisfait ou remboursé pendant 30 jours • Paiement sécurisé
+            Données 100% locales • Conformité RGPD garantie • Satisfait ou remboursé pendant 30 jours
           </p>
         </div>
 
