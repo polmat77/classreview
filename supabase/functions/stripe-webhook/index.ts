@@ -17,72 +17,84 @@ const PLAN_STUDENTS: Record<string, number> = {
 };
 
 serve(async (req) => {
+  console.log('🔔 Webhook received:', req.method);
+
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200 });
   }
 
   const signature = req.headers.get('stripe-signature');
   if (!signature) {
+    console.error('❌ Missing stripe-signature header');
     return new Response('Missing stripe-signature header', { status: 400 });
   }
 
+  // CRITICAL: read body as raw text BEFORE any parsing
   const body = await req.text();
+  console.log('📦 Body length:', body.length);
 
   let event: Stripe.Event;
   try {
     event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    console.log('✅ Signature verified. Event type:', event.type);
   } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
+    console.error('❌ Webhook signature verification failed:', err.message);
     return new Response(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
+    console.log('💳 Session ID:', session.id);
+    console.log('📋 Session metadata:', JSON.stringify(session.metadata));
+
     const userId = session.metadata?.user_id;
     const plan = session.metadata?.plan;
 
     if (!userId || !plan) {
-      console.error('Missing metadata in session:', session.id);
+      console.error('❌ Missing metadata. user_id:', userId, 'plan:', plan);
       return new Response('OK', { status: 200 });
     }
 
     const studentsToCredit = PLAN_STUDENTS[plan];
     if (!studentsToCredit) {
-      console.error('Unknown plan:', plan);
+      console.error('❌ Unknown plan:', plan);
       return new Response('OK', { status: 200 });
     }
 
+    console.log('📊 Plan:', plan, '| Students to credit:', studentsToCredit);
+
     // Use service role to bypass RLS
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    );
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    console.log('🔑 SUPABASE_URL present:', !!supabaseUrl, '| SERVICE_ROLE_KEY present:', !!serviceRoleKey);
+
+    const supabaseAdmin = createClient(supabaseUrl!, serviceRoleKey!);
 
     // Calculate plan_expires_at: August 31st of current academic year
-    // Sept-Dec → Aug 31 next year; Jan-Aug → Aug 31 this year
     const now = new Date();
     const month = now.getMonth(); // 0-indexed: 0=Jan, 8=Sep
     const year = month >= 8 ? now.getFullYear() + 1 : now.getFullYear();
     const expiresAt = `${year}-08-31T23:59:59Z`;
+    console.log('📅 Expires at:', expiresAt);
 
-    // Update profile
-    const { error: updateError } = await supabaseAdmin.rpc('execute_sql', {} as any).catch(() => ({ error: null }));
-    
-    // Use direct update with increment
+    // Fetch current balance
     const { data: currentProfile, error: fetchError } = await supabaseAdmin
       .from('profiles')
-      .select('students_balance')
+      .select('students_balance, plan')
       .eq('id', userId)
       .single();
 
     if (fetchError) {
-      console.error('Error fetching profile:', fetchError);
+      console.error('❌ Error fetching profile:', JSON.stringify(fetchError));
       return new Response('OK', { status: 200 });
     }
 
+    console.log('👤 Current profile:', JSON.stringify(currentProfile));
+
     const newBalance = (currentProfile.students_balance || 0) + studentsToCredit;
 
-    const { error: profileError } = await supabaseAdmin
+    // Update profile with new balance
+    const { data: updateData, error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
         students_balance: newBalance,
@@ -90,14 +102,17 @@ serve(async (req) => {
         plan_purchased_at: new Date().toISOString(),
         plan_expires_at: expiresAt,
       })
-      .eq('id', userId);
+      .eq('id', userId)
+      .select();
+
+    console.log('📝 UPDATE result - data:', JSON.stringify(updateData), '| error:', JSON.stringify(profileError));
 
     if (profileError) {
-      console.error('Error updating profile:', profileError);
+      console.error('❌ Error updating profile:', JSON.stringify(profileError));
     }
 
     // Log payment
-    const { error: paymentError } = await supabaseAdmin
+    const { data: paymentData, error: paymentError } = await supabaseAdmin
       .from('payments')
       .insert({
         user_id: userId,
@@ -107,13 +122,18 @@ serve(async (req) => {
         amount: session.amount_total || 0,
         students_credited: studentsToCredit,
         status: 'completed',
-      });
+      })
+      .select();
+
+    console.log('💰 Payment log - data:', JSON.stringify(paymentData), '| error:', JSON.stringify(paymentError));
 
     if (paymentError) {
-      console.error('Error logging payment:', paymentError);
+      console.error('❌ Error logging payment:', JSON.stringify(paymentError));
     }
 
-    console.log(`✅ Credited ${studentsToCredit} students to user ${userId} for plan ${plan}`);
+    console.log(`✅ SUCCESS: Credited ${studentsToCredit} students to user ${userId} (${currentProfile.students_balance || 0} → ${newBalance}) for plan ${plan}`);
+  } else {
+    console.log('ℹ️ Unhandled event type:', event.type);
   }
 
   return new Response('OK', { status: 200 });
