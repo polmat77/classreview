@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.14.0?target=deno';
+import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, {
@@ -29,7 +29,6 @@ serve(async (req) => {
     return new Response('Missing stripe-signature header', { status: 400 });
   }
 
-  // CRITICAL: read body as raw text BEFORE any parsing
   const body = await req.text();
   console.log('📦 Body length:', body.length);
 
@@ -63,21 +62,16 @@ serve(async (req) => {
 
     console.log('📊 Plan:', plan, '| Students to credit:', studentsToCredit);
 
-    // Use service role to bypass RLS
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    console.log('🔑 SUPABASE_URL present:', !!supabaseUrl, '| SERVICE_ROLE_KEY present:', !!serviceRoleKey);
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
-    const supabaseAdmin = createClient(supabaseUrl!, serviceRoleKey!);
-
-    // Calculate plan_expires_at: August 31st of current academic year
     const now = new Date();
-    const month = now.getMonth(); // 0-indexed: 0=Jan, 8=Sep
+    const month = now.getMonth();
     const year = month >= 8 ? now.getFullYear() + 1 : now.getFullYear();
     const expiresAt = `${year}-08-31T23:59:59Z`;
-    console.log('📅 Expires at:', expiresAt);
 
-    // Fetch current balance
     const { data: currentProfile, error: fetchError } = await supabaseAdmin
       .from('profiles')
       .select('students_balance, plan')
@@ -93,7 +87,6 @@ serve(async (req) => {
 
     const newBalance = (currentProfile.students_balance || 0) + studentsToCredit;
 
-    // Update profile with new balance
     const { data: updateData, error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
@@ -107,12 +100,7 @@ serve(async (req) => {
 
     console.log('📝 UPDATE result - data:', JSON.stringify(updateData), '| error:', JSON.stringify(profileError));
 
-    if (profileError) {
-      console.error('❌ Error updating profile:', JSON.stringify(profileError));
-    }
-
-    // Log payment
-    const { data: paymentData, error: paymentError } = await supabaseAdmin
+    const { error: paymentError } = await supabaseAdmin
       .from('payments')
       .insert({
         user_id: userId,
@@ -122,18 +110,13 @@ serve(async (req) => {
         amount: session.amount_total || 0,
         students_credited: studentsToCredit,
         status: 'completed',
-      })
-      .select();
-
-    console.log('💰 Payment log - data:', JSON.stringify(paymentData), '| error:', JSON.stringify(paymentError));
+      });
 
     if (paymentError) {
       console.error('❌ Error logging payment:', JSON.stringify(paymentError));
     }
 
-    console.log(`✅ SUCCESS: Credited ${studentsToCredit} students to user ${userId} (${currentProfile.students_balance || 0} → ${newBalance}) for plan ${plan}`);
-  } else {
-    console.log('ℹ️ Unhandled event type:', event.type);
+    console.log(`✅ Credited ${studentsToCredit} students to user ${userId} (${currentProfile.students_balance || 0} → ${newBalance})`);
   }
 
   return new Response('OK', { status: 200 });

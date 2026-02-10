@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import Stripe from 'https://esm.sh/stripe@14.14.0?target=deno';
+import Stripe from 'https://esm.sh/stripe@13.10.0?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
 const corsHeaders = {
@@ -18,7 +18,6 @@ serve(async (req) => {
   }
 
   try {
-    // Verify auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -35,9 +34,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    const userId = user.id;
-    const email = user.email!;
-
     const { price_id, plan } = await req.json();
 
     if (!price_id || !plan) {
@@ -49,19 +45,22 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Invalid plan' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Determine base URL from origin header or fallback
     const origin = req.headers.get('origin') || 'https://aiproject4you.lovable.app';
+
+    console.log('Creating checkout session for user:', user.id, 'plan:', plan, 'price_id:', price_id);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [{ price: price_id, quantity: 1 }],
-      customer_email: email,
-      metadata: { user_id: userId, plan },
+      customer_email: user.email!,
+      metadata: { user_id: user.id, plan },
       success_url: `${origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pricing`,
       locale: 'fr',
       allow_promotion_codes: true,
     });
+
+    console.log('✅ Checkout session created:', session.id);
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
