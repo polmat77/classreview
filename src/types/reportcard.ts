@@ -44,18 +44,10 @@ export interface SpecificObservation {
   observation: string;
 }
 
-// NEW: Per-subject behavior observations for detailed bulletin analysis
-export interface ObservationParMatiere {
-  matiere: string;
-  comportement: string;
-}
-
 export interface StudentObservations {
   behavior: BehaviorObservation | null;
   talkative: TalkativeObservation | null;
   specific: SpecificObservation[];
-  // NEW: Per-student, per-subject observations (optional step 2bis)
-  observationsParMatiere?: Record<number, ObservationParMatiere[]>;
 }
 
 export type AppreciationTone = 'severe' | 'standard' | 'encourageant' | 'elogieux';
