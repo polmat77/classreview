@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { LogOut, User, ChevronDown, Sparkles, Gift } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { LogOut, User, ChevronDown, Sparkles, Gift, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -27,6 +29,14 @@ export function UserMenu({ variant = 'sidebar', isCollapsed = false }: UserMenuP
   const { user, profile, isAuthenticated, openAuthModal, signOut, credits, freeCredits, paidCredits } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [showPromoDialog, setShowPromoDialog] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user?.id) { setIsAdmin(false); return; }
+    supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user?.id]);
 
   if (!isAuthenticated || !user) {
     // Not authenticated - show login button
@@ -102,6 +112,15 @@ export function UserMenu({ variant = 'sidebar', isCollapsed = false }: UserMenuP
                 {paidCredits > 0 && `${paidCredits} payants`}
               </p>
             </div>
+            {isAdmin && (
+              <DropdownMenuItem 
+                onClick={() => navigate('/admin/promo-codes')}
+                className="cursor-pointer"
+              >
+                <Shield className="w-4 h-4 mr-2 text-amber-500" />
+                Administration
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem 
               onClick={() => setShowPromoDialog(true)}
               className="cursor-pointer"
@@ -172,6 +191,15 @@ export function UserMenu({ variant = 'sidebar', isCollapsed = false }: UserMenuP
               {credits === 0 && 'Aucun crédit restant'}
             </p>
           </div>
+          {isAdmin && (
+            <DropdownMenuItem 
+              onClick={() => navigate('/admin/promo-codes')}
+              className="cursor-pointer"
+            >
+              <Shield className="w-4 h-4 mr-2 text-amber-500" />
+              Administration
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem 
             onClick={() => setShowPromoDialog(true)}
             className="cursor-pointer"
