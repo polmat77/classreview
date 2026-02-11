@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Check,
   FileSpreadsheet,
-  BookOpen,
 } from 'lucide-react';
 
 const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
@@ -54,7 +53,6 @@ interface ReportCardSidebarProps {
 const workflowSteps = [
   { id: 1, label: 'Import des données', icon: Upload, description: 'PDF ou saisie' },
   { id: 2, label: 'Observations', icon: MessageSquare, description: 'Comportement' },
-  { id: 2.5, label: 'Par matière', icon: BookOpen, description: 'Optionnel', isOptional: true },
   { id: 3, label: 'Appréciations', icon: FileText, description: 'Génération IA' },
   { id: 4, label: 'Bilan de classe', icon: BarChart3, description: 'Synthèse' },
 ];
@@ -100,8 +98,6 @@ export function ReportCardSidebar({
         return true;
       case 2:
         return hasStudents;
-      case 2.5:
-        return hasStudents && hasObservations;
       case 3:
         return hasStudents;
       case 4:
@@ -117,8 +113,6 @@ export function ReportCardSidebar({
         return hasStudents;
       case 2:
         return hasObservations;
-      case 2.5:
-        return currentStep > 2.5; // Optional step is "completed" if we've passed it
       case 3:
         return hasAppreciations;
       case 4:
