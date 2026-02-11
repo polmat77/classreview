@@ -185,6 +185,9 @@ const Step3Appreciations = ({
   };
 
   const handleGenerateAll = async () => {
+    // Prevent double-clicks
+    if (isGeneratingAll) return;
+
     // Check auth first
     if (!isAuthenticated) {
       openAuthModal();
@@ -199,21 +202,19 @@ const Step3Appreciations = ({
       return;
     }
 
+    // Set loading state BEFORE async call to prevent double-clicks
+    setIsGeneratingAll(true);
+
     // Consume credits before generation
     const success = await consumeCredits(cost, 'reportcard', 'batch', undefined, { studentsCount: students.length });
     if (!success) {
+      setIsGeneratingAll(false);
       setShowUpgradeModal(true);
       return;
     }
 
     // Log generation parameters for debugging
     console.log("=== GÉNÉRATION GLOBALE ===");
-    console.log("Longueur max:", appreciationSettings.maxCharacters);
-    console.log("Ton par défaut:", appreciationSettings.defaultTone);
-    console.log("Tons individuels:", appreciationSettings.individualTones);
-    console.log("Nombre d'élèves:", students.length);
-
-    setIsGeneratingAll(true);
     setGenerationProgress(0);
 
     const newAppreciations: GeneratedAppreciation[] = [];
