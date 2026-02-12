@@ -2,7 +2,7 @@ import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import ToolsSection from "@/components/landing/ToolsSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import HowItWorksSection from "@/components/landing/HowItWorksSection";
+
 import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FAQSection from "@/components/landing/FAQSection";
@@ -23,7 +23,7 @@ const LandingPage = () => {
       <HeroSection onScrollToSection={scrollToSection} />
       <ToolsSection />
       <FeaturesSection />
-      <HowItWorksSection />
+      
       <TestimonialsSection />
       <PricingSection />
       <FAQSection />
