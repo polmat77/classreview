@@ -15,8 +15,10 @@ import {
   RefreshCw,
   Settings,
   Edit3,
+  Lock,
+  GraduationCap,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import DarkModeToggle from "@/components/DarkModeToggle";
 
 const logo = "/images/logos/ReportCardAI_logo.png";
@@ -24,18 +26,15 @@ const logo = "/images/logos/ReportCardAI_logo.png";
 const ReportCardLanding = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors">
-      {/* Hero Section */}
+      {/* ═══════════ HERO SECTION ═══════════ */}
       <section className="relative overflow-hidden bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 py-20 transition-colors">
-        {/* Dark Mode Toggle */}
         <div className="absolute top-4 right-4 z-10">
           <DarkModeToggle />
         </div>
 
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Text Content */}
             <div className="space-y-6">
-              {/* Breadcrumb */}
               <Link
                 to="/"
                 className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 text-sm transition-colors"
@@ -44,7 +43,6 @@ const ReportCardLanding = () => {
                 Retour à AIProject4You
               </Link>
 
-              {/* Badge */}
               <span className="inline-flex items-center px-4 py-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium">
                 📝 Bulletins scolaires
               </span>
@@ -55,25 +53,21 @@ const ReportCardLanding = () => {
               </h1>
 
               <p className="text-xl text-slate-600 dark:text-slate-400">
-                Générez des appréciations individuelles adaptées à chaque élève, avec le ton juste.
+                De l'import PRONOTE à l'appréciation personnalisée en quelques clics
               </p>
 
               {/* Trust Badges */}
-              <div className="flex flex-wrap gap-4 py-4">
-                <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-full text-sm font-medium">
-                  <Check className="w-4 h-4" />
-                  RGPD Conforme
+              <div className="flex flex-wrap gap-3 py-4">
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-white/10 border border-slate-200 dark:border-white/20 text-slate-700 dark:text-white px-4 py-2 rounded-full text-sm">
+                  <Lock className="w-4 h-4 text-emerald-500" />
+                  Conforme RGPD
                 </div>
-                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-full text-sm font-medium">
-                  <Shield className="w-4 h-4" />
-                  Traitement 100% Local
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-white/10 border border-slate-200 dark:border-white/20 text-slate-700 dark:text-white px-4 py-2 rounded-full text-sm">
+                  🇫🇷 Adapté au système français
                 </div>
-                <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-full text-sm font-medium">
-                  🎯 5 Tons Disponibles
-                </div>
-                <div className="flex items-center gap-2 bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 px-4 py-2 rounded-full text-sm font-medium">
-                  <Clock className="w-4 h-4" />
-                  De 10 min à 2 min par élève
+                <div className="flex items-center gap-2 bg-white/80 dark:bg-white/10 border border-slate-200 dark:border-white/20 text-slate-700 dark:text-white px-4 py-2 rounded-full text-sm">
+                  <GraduationCap className="w-4 h-4 text-amber-500" />
+                  Créé par des enseignants
                 </div>
               </div>
 
@@ -81,35 +75,29 @@ const ReportCardLanding = () => {
               <div className="flex flex-wrap gap-4">
                 <Link to="/reportcard-ai/app">
                   <Button className="px-8 py-6 bg-gradient-to-r from-amber-400 to-amber-500 text-white font-semibold rounded-xl shadow-lg shadow-amber-200/50 hover:shadow-xl hover:-translate-y-1 transition-all text-lg">
-                    Commencer Avec ReportCardAI Gratuitement
+                    Essayer ReportCardAI Gratuitement
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                 </Link>
               </div>
 
-              {/* Reassurance */}
               <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />
-                  Gratuit et complet
+                  Gratuit et sans engagement
                 </span>
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />
-                  Sans inscription
-                </span>
-                <span className="flex items-center gap-1">
-                  <Check className="w-4 h-4 text-emerald-500" />
-                  Données 100% confidentielles
+                  Aucune installation requise
                 </span>
               </div>
             </div>
 
-            {/* Logo/Image - aligned with H1 */}
-            <div className="flex justify-center items-start lg:items-center">
+            <div className="flex justify-center items-center">
               <img
                 src={logo}
                 alt="ReportCard AI"
-                className="w-72 md:w-96 lg:w-[28rem]" // Augmentation de 35-40%
+                className="w-72 md:w-96 lg:w-[28rem]"
                 style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.08))" }}
               />
             </div>
@@ -117,7 +105,112 @@ const ReportCardLanding = () => {
         </div>
       </section>
 
-      {/* Problem Section */}
+      {/* ═══════════ WORKFLOW 4 ÉTAPES AVEC SCREENSHOTS ═══════════ */}
+      <section className="py-24 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-800 transition-colors">
+        <div className="max-w-7xl mx-auto px-6 relative">
+          {/* Header */}
+          <div className="text-center mb-20">
+            <span className="inline-flex items-center bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400 px-4 py-1.5 rounded-full text-sm font-medium">
+              ✨ Workflow guidé en 4 étapes
+            </span>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mt-4">
+              Découvrez ReportCard<span className="text-amber-500">AI</span> en action
+            </h2>
+            <p className="text-xl text-slate-600 dark:text-slate-400 mt-4 max-w-2xl mx-auto">
+              De l'import PRONOTE à l'appréciation personnalisée en quelques clics
+            </p>
+          </div>
+
+          {/* Vertical connector line (desktop) */}
+          <div className="absolute left-1/2 top-48 bottom-32 w-px bg-gradient-to-b from-amber-400 via-cyan-400 to-amber-400 opacity-20 hidden lg:block" />
+
+          {/* Step 1 - Text LEFT, Image RIGHT */}
+          <WorkflowShowcaseStep
+            stepNumber={1}
+            title="Importez vos élèves depuis PRONOTE"
+            tagline="Fini la saisie manuelle fastidieuse !"
+            description="Glissez simplement votre PDF PRONOTE. Notre IA extrait automatiquement les noms, moyennes, absences et nombre de notes. Vos 30 élèves sont prêts en 3 secondes."
+            badges={["Import PDF drag & drop", "Extraction automatique", "Compatible tous formats PRONOTE"]}
+            imageSrc="/images/reportcard/ReportCardAI_Import_des_donnees.png"
+            imageAlt="Interface d'import PDF avec liste des élèves extraits automatiquement"
+            imageLeft={false}
+          />
+
+          {/* Step 2 - Image LEFT, Text RIGHT */}
+          <WorkflowShowcaseStep
+            stepNumber={2}
+            title="Signalez les comportements en un clic"
+            tagline="Votre expertise d'enseignant, amplifiée par l'IA"
+            description="Bavardages, passivité, excellent investissement à l'oral... Sélectionnez les élèves concernés parmi les comportements prédéfinis ou ajoutez vos propres observations personnalisées."
+            badges={["Sélection multiple intuitive", "Comportements prédéfinis", "Notes individuelles libres"]}
+            imageSrc="/images/reportcard/ReportCardAI_Comportement3.png"
+            imageAlt="Observations comportementales avec suggestions et notes personnalisées"
+            imageLeft={true}
+          />
+
+          {/* Step 3 - Text LEFT, Image RIGHT */}
+          <WorkflowShowcaseStep
+            stepNumber={3}
+            title="Générez des appréciations personnalisées"
+            tagline="4 tons pour s'adapter à chaque élève"
+            description="Choisissez entre Sévère, Standard, Encourageant ou Élogieux. Ajustez la longueur (200-500 caractères). L'IA rédige une appréciation unique, professionnelle et prête à copier. Pas satisfait ? Régénérez en un clic."
+            badges={["4 tons disponibles", "Longueur ajustable", "Régénération illimitée", "Copie en un clic"]}
+            imageSrc="/images/reportcard/ReportCardAI_Generation_appreciations2.png"
+            imageAlt="Appréciations générées avec 4 tons visibles et boutons Copier/Régénérer"
+            imageLeft={false}
+          />
+
+          {/* Step 4 - Image LEFT, Text RIGHT */}
+          <WorkflowShowcaseStep
+            stepNumber={4}
+            title="Obtenez votre bilan de classe automatique"
+            tagline="Synthèse globale basée sur vos données réelles"
+            description="Statistiques visuelles de la classe, moyenne générale, répartition des notes. Générez un bilan personnalisé selon 4 critères : travail, comportement, participation et progression. Export complet en un clic."
+            badges={["Statistiques visuelles", "4 critères d'analyse", "Export PDF/TXT complet"]}
+            imageSrc="/images/reportcard/ReportCardAI_Generation_appreciations_bilan2.png"
+            imageAlt="Bilan de classe avec texte généré et statistiques visuelles"
+            imageLeft={true}
+          />
+        </div>
+
+        {/* CTA after steps */}
+        <div className="max-w-3xl mx-auto px-6 text-center mt-16">
+          <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-3">
+            Prêt à récupérer vos soirées ?
+          </h3>
+          <p className="text-slate-600 dark:text-slate-400 text-lg mb-8">
+            Rejoignez les enseignants qui gagnent 70% de temps sur leurs bulletins
+          </p>
+
+          <Link to="/reportcard-ai/app">
+            <Button className="px-10 py-7 h-auto bg-gradient-to-r from-amber-400 to-amber-500 text-white font-bold rounded-xl shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all text-lg">
+              Essayer gratuitement maintenant
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
+
+          <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-emerald-500" />
+              100% gratuit
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-emerald-500" />
+              Sans inscription
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Lock className="w-4 h-4 text-emerald-500" />
+              Données 100% confidentielles
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Check className="w-4 h-4 text-emerald-500" />
+              Compatible PRONOTE
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ PROBLEM SECTION ═══════════ */}
       <section className="py-20 bg-white dark:bg-slate-900 transition-colors">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -138,17 +231,13 @@ const ReportCardLanding = () => {
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La répétition</h3>
               <p className="text-slate-600 dark:text-slate-400 text-sm">"Élève sérieux qui participe bien" × 28</p>
             </div>
-
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-2xl">🎭</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Le ton juste</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">
-                Ferme sans être blessant, encourageant sans être naïf
-              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Ferme sans être blessant, encourageant sans être naïf</p>
             </div>
-
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-2xl">📏</span>
@@ -156,29 +245,22 @@ const ReportCardLanding = () => {
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La limite PRONOTE</h3>
               <p className="text-slate-600 dark:text-slate-400 text-sm">255 caractères max, pas un de plus</p>
             </div>
-
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
                 <Clock className="w-6 h-6 text-red-500" />
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Le temps qui file</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">
-                5-10 minutes par élève = une soirée entière pour une classe
-              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">5-10 minutes par élève = une soirée entière pour une classe</p>
             </div>
-
             <div className="bg-red-50 dark:bg-red-500/10 rounded-2xl p-6 border border-red-100 dark:border-red-500/20">
               <div className="w-12 h-12 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center mb-4">
                 <span className="text-2xl">🤯</span>
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">La fatigue</h3>
-              <p className="text-slate-600 dark:text-slate-400 text-sm">
-                Les dernières appréciations sont moins bonnes que les premières
-              </p>
+              <p className="text-slate-600 dark:text-slate-400 text-sm">Les dernières appréciations sont moins bonnes que les premières</p>
             </div>
           </div>
 
-          {/* Empathetic Quote */}
           <div className="max-w-3xl mx-auto text-center">
             <blockquote className="text-xl italic text-slate-600 dark:text-slate-400 border-l-4 border-amber-500 pl-6">
               "Nous savons que vous voulez le meilleur pour chaque élève. ReportCardAI vous aide à maintenir cette
@@ -188,94 +270,33 @@ const ReportCardLanding = () => {
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* ═══════════ POURQUOI CHOISIR ═══════════ */}
       <section className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center px-4 py-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-full text-sm font-medium mb-4">
-              ✨ Votre Copilote Pour les Bulletins Individuels
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Comment ReportCardAI Vous Accompagne
-            </h2>
-          </div>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white text-center mb-12">
+            Pourquoi choisir ReportCard<span className="text-amber-500">AI</span> ?
+          </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {/* Step 1 */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
-                1
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Importez Vos Données</h3>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
-                <li className="flex items-start gap-2">
-                  <FileText className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
-                  <span>Import PDF PRONOTE ou saisie manuelle</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span>Extraction : nom, prénom, moyenne, sérieux, participation, absences</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Step 2 */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
-                2
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Ajoutez Vos Observations</h3>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
-                <li className="flex items-start gap-2">
-                  <Users className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
-                  <span>Sélectionnez les élèves concernés par des comportements spécifiques</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Edit3 className="w-4 h-4 text-cyan-500 mt-0.5 shrink-0" />
-                  <span>Bavardages, insolence, manque de concentration...</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Step 3 */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
-                3
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Générez les Appréciations</h3>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
-                <li className="flex items-start gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <span>Choisissez le ton : Ferme, Neutre, Bienveillant, Encourageant, Constructif</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Settings className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
-                  <span>Limite de caractères configurable (200-500)</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Step 4 */}
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 border border-emerald-200 dark:border-emerald-500/30 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all">
-              <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center text-white font-bold text-lg mb-4">
-                ✓
-              </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-3">Exportez et Copiez</h3>
-              <ul className="space-y-2 text-slate-600 dark:text-slate-400 text-sm">
-                <li className="flex items-start gap-2">
-                  <Copy className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span>Copie en un clic dans le presse-papiers</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <RefreshCw className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                  <span>Régénération possible si besoin</span>
-                </li>
-              </ul>
-            </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <WhyCard
+              emoji="⏱️"
+              title="Gain de temps"
+              description="Réduisez de 70% le temps passé à rédiger vos appréciations de bulletins"
+            />
+            <WhyCard
+              emoji="🔒"
+              title="100% RGPD"
+              description="Traitement local, données anonymisées, aucun stockage serveur"
+            />
+            <WhyCard
+              emoji="🎯"
+              title="Précision professionnelle"
+              description="4 tons disponibles, longueur configurable, appréciations contextuelles"
+            />
           </div>
 
           {/* Time Saved Banner */}
-          <div className="max-w-4xl mx-auto mt-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white text-center">
+          <div className="mt-12 bg-gradient-to-r from-amber-500 to-amber-600 rounded-2xl p-8 text-white text-center">
             <h3 className="text-2xl font-bold mb-4">⏱️ Temps gagné</h3>
             <div className="grid md:grid-cols-3 gap-6">
               <div>
@@ -290,7 +311,7 @@ const ReportCardLanding = () => {
               </div>
               <div>
                 <p className="text-amber-100">Résultat</p>
-                <p className="text-3xl font-bold">80%</p>
+                <p className="text-3xl font-bold">70%</p>
                 <p className="text-amber-100 text-sm">de temps économisé + cohérence garantie</p>
               </div>
             </div>
@@ -298,219 +319,13 @@ const ReportCardLanding = () => {
         </div>
       </section>
 
-      {/* 5 Tones Section */}
-      <section className="py-20 bg-gradient-to-r from-slate-900 to-slate-800 text-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <span className="inline-flex items-center px-4 py-2 bg-amber-500/20 text-amber-400 rounded-full text-sm font-medium mb-4">
-              🎭 Les 5 Tons Pédagogiques
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Adaptez le Message à Chaque Profil d'Élève</h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {/* Tone 1: Ferme */}
-            <div className="bg-red-500/20 backdrop-blur rounded-2xl p-6 border border-red-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-red-500/30 rounded-full flex items-center justify-center text-xl">
-                  🔴
-                </span>
-                <div>
-                  <h3 className="font-bold text-white">Ferme</h3>
-                  <p className="text-slate-400 text-xs">Élève en grande difficulté comportementale ou scolaire</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">Style : Direct, factuel, sans concession mais constructif</p>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <p className="text-slate-300 italic text-sm">
-                  "Les résultats sont préoccupants. Un changement d'attitude immédiat est nécessaire pour éviter un
-                  décrochage."
-                </p>
-              </div>
-            </div>
-
-            {/* Tone 2: Neutre */}
-            <div className="bg-slate-500/20 backdrop-blur rounded-2xl p-6 border border-slate-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-slate-500/30 rounded-full flex items-center justify-center text-xl">
-                  ⚪
-                </span>
-                <div>
-                  <h3 className="font-bold text-white">Neutre</h3>
-                  <p className="text-slate-400 text-xs">Élève sans particularité notable</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">Style : Objectif, équilibré, professionnel</p>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <p className="text-slate-300 italic text-sm">
-                  "Trimestre correct avec des résultats dans la moyenne. Une participation plus soutenue permettrait de
-                  progresser."
-                </p>
-              </div>
-            </div>
-
-            {/* Tone 3: Bienveillant */}
-            <div className="bg-blue-500/20 backdrop-blur rounded-2xl p-6 border border-blue-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-blue-500/30 rounded-full flex items-center justify-center text-xl">
-                  💙
-                </span>
-                <div>
-                  <h3 className="font-bold text-white">Bienveillant</h3>
-                  <p className="text-slate-400 text-xs">Élève qui fait des efforts malgré les difficultés</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">Style : Chaleureux, empathique, positif</p>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <p className="text-slate-300 italic text-sm">
-                  "Malgré quelques difficultés, les efforts constants sont remarquables. Continuez sur cette voie
-                  encourageante."
-                </p>
-              </div>
-            </div>
-
-            {/* Tone 4: Encourageant */}
-            <div className="bg-emerald-500/20 backdrop-blur rounded-2xl p-6 border border-emerald-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-emerald-500/30 rounded-full flex items-center justify-center text-xl">
-                  💚
-                </span>
-                <div>
-                  <h3 className="font-bold text-white">Encourageant</h3>
-                  <p className="text-slate-400 text-xs">Élève en progrès ou avec du potentiel</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">Style : Positif, motivant, valorisant</p>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <p className="text-slate-300 italic text-sm">
-                  "Trimestre en nette amélioration ! Ces progrès montrent de vraies capacités. Poursuivez dans cette
-                  dynamique."
-                </p>
-              </div>
-            </div>
-
-            {/* Tone 5: Constructif */}
-            <div className="bg-cyan-500/20 backdrop-blur rounded-2xl p-6 border border-cyan-500/30">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 bg-cyan-500/30 rounded-full flex items-center justify-center text-xl">
-                  🔵
-                </span>
-                <div>
-                  <h3 className="font-bold text-white">Constructif</h3>
-                  <p className="text-slate-400 text-xs">Bon élève qui peut aller plus loin</p>
-                </div>
-              </div>
-              <p className="text-sm text-slate-300 mb-4">Style : Exigeant, orienté solutions, ambitieux</p>
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <p className="text-slate-300 italic text-sm">
-                  "Résultats satisfaisants. Une implication plus active et une gestion du temps optimisée permettraient
-                  d'atteindre l'excellence."
-                </p>
-              </div>
-            </div>
-
-            {/* Tip */}
-            <div className="bg-amber-500/20 backdrop-blur rounded-2xl p-6 border border-amber-500/30 flex items-center justify-center">
-              <div className="text-center">
-                <span className="text-4xl mb-4 block">💡</span>
-                <p className="text-amber-300 font-medium">Astuce</p>
-                <p className="text-slate-300 text-sm">
-                  Vous pouvez mixer les tons selon les élèves dans une même classe !
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
+      {/* ═══════════ FAQ ═══════════ */}
       <section className="py-20 bg-white dark:bg-slate-900 transition-colors">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <span className="inline-flex items-center px-4 py-2 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 rounded-full text-sm font-medium mb-4">
-              ⚙️ Workflow Intelligent et Personnalisable
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Un Outil Qui S'Adapte À Votre Façon de Travailler
-            </h2>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-amber-100 dark:bg-amber-500/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">🎯</span>
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">Ton global ou individuel</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Définissez un ton par défaut pour toute la classe ou personnalisez le ton élève par élève selon les
-                profils.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-cyan-100 dark:bg-cyan-500/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">📏</span>
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">Limite de caractères configurable</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Adaptez la longueur aux contraintes de votre logiciel (PRONOTE, Educ'Horus...). De 200 à 500 caractères.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-500/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">💾</span>
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">Session persistante</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Vos paramètres sont mémorisés (ton, longueur). Vos données restent disponibles. Reprenez où vous en
-                étiez.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-violet-100 dark:bg-violet-500/20 rounded-xl flex items-center justify-center mb-4">
-                <RefreshCw className="w-6 h-6 text-violet-600 dark:text-violet-400" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">Régénération illimitée</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Pas satisfait ? Régénérez autant de fois que nécessaire. Testez différents tons pour trouver le plus
-                adapté.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center mb-4">
-                <span className="text-2xl">📊</span>
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">Bilan de classe (Étape 4)</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Génération automatique d'une synthèse globale basée sur 4 critères : Travail, Comportement,
-                Participation, Progression.
-              </p>
-            </div>
-
-            <div className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-6 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <h3 className="font-bold text-slate-900 dark:text-white mb-2">100% RGPD</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                Données traitées localement dans votre navigateur. Aucune information envoyée sur un serveur externe.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="py-20 bg-slate-50 dark:bg-slate-800/50 transition-colors">
-        <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <span className="inline-flex items-center px-4 py-2 bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 rounded-full text-sm font-medium mb-4">
-              ❓ Vos Interrogations
-            </span>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">Vos Questions Sur ReportCardAI</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
+              Vos Questions Sur ReportCard<span className="text-amber-500">AI</span>
+            </h2>
           </div>
 
           <div className="max-w-3xl mx-auto space-y-4">
@@ -531,10 +346,6 @@ const ReportCardLanding = () => {
               answer="Non. Vous configurez la limite exacte (ex : 255 caractères pour PRONOTE). Si le texte dépasse, une troncature intelligente s'applique automatiquement au niveau des phrases pour garantir un texte cohérent."
             />
             <FAQItem
-              question="Les moyennes chiffrées apparaissent-elles dans les appréciations ?"
-              answer="Non, jamais. Nous avons délibérément exclu les moyennes chiffrées pour éviter la redondance avec PRONOTE où elles sont déjà affichées. Les appréciations restent qualitatives et pédagogiques."
-            />
-            <FAQItem
               question="Puis-je modifier une appréciation après génération ?"
               answer="Oui, totalement. Vous pouvez éditer le texte manuellement, le régénérer, ou changer le ton et relancer. Vous gardez le contrôle à 100%."
             />
@@ -542,101 +353,30 @@ const ReportCardLanding = () => {
         </div>
       </section>
 
-      {/* Creator Section */}
-      <section className="py-20 bg-white dark:bg-slate-900 transition-colors">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <span className="inline-flex items-center px-4 py-2 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full text-sm font-medium mb-4">
-                👨‍🏫 Conçu Par Un Enseignant, Pour Les Enseignants
-              </span>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-4">
-                L'Expérience du Terrain Traduite en Outil
-              </h2>
-            </div>
+      {/* ═══════════ CTA FINAL ═══════════ */}
+      <section className="py-16 bg-gradient-to-r from-cyan-500 to-blue-600">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Prêt à récupérer vos soirées ?
+          </h2>
+          <p className="text-cyan-100 text-lg mb-8">
+            Des appréciations personnalisées en quelques clics, pas en plusieurs heures.
+          </p>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <FileText className="w-8 h-8 text-amber-600 dark:text-amber-400" />
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Plus de 20 ans d'expérience dans la rédaction de bulletins scolaires
-                </p>
-              </div>
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-cyan-100 dark:bg-cyan-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Brain className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Né d'un besoin réel : gagner du temps sans perdre en qualité
-                </p>
-              </div>
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Check className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Testé et affiné sur plusieurs trimestres avec des centaines d'élèves
-                </p>
-              </div>
-              <div className="text-center p-6">
-                <div className="w-16 h-16 bg-violet-100 dark:bg-violet-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Sparkles className="w-8 h-8 text-violet-600 dark:text-violet-400" />
-                </div>
-                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Pensé pour PRONOTE : respect des contraintes techniques du logiciel
-                </p>
-              </div>
-            </div>
+          <Link to="/reportcard-ai/app">
+            <Button className="px-10 py-7 bg-white text-cyan-700 font-bold rounded-xl shadow-2xl hover:bg-cyan-50 hover:-translate-y-1 transition-all text-lg h-auto">
+              🚀 Essayez ReportCardAI maintenant
+              <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </Link>
 
-            <blockquote className="text-center text-xl italic text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-2xl p-8 border border-slate-200 dark:border-slate-700">
-              "J'ai conçu ReportCardAI parce que je passais mes soirées à rédiger des appréciations. Maintenant, je les
-              termine en 45 minutes au lieu de 3 heures, et la qualité est constante du premier au dernier élève."
-            </blockquote>
-          </div>
+          <p className="mt-6 text-cyan-100/80 text-sm">
+            ✨ Aucune carte bancaire requise · Premier bulletin gratuit
+          </p>
         </div>
       </section>
 
-      {/* Final CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-amber-500 to-amber-600">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Prêt à Récupérer Vos Soirées ?</h2>
-            <p className="text-xl text-amber-100 mb-8">
-              Des appréciations personnalisées en quelques clics, pas en plusieurs heures.
-            </p>
-
-            <Link to="/reportcard-ai/app">
-              <Button className="px-10 py-7 bg-white text-amber-700 font-bold rounded-xl shadow-2xl hover:bg-amber-50 hover:-translate-y-1 transition-all text-lg">
-                Commencer Avec ReportCardAI Gratuitement
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
-
-            <div className="flex flex-wrap justify-center gap-6 mt-8 text-amber-100 text-sm">
-              <span className="flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                Gratuit et complet
-              </span>
-              <span className="flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                Sans inscription
-              </span>
-              <span className="flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                Testez avec vos vrais élèves
-              </span>
-              <span className="flex items-center gap-2">
-                <Check className="w-4 h-4" />
-                Données 100% confidentielles
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
+      {/* ═══════════ FOOTER ═══════════ */}
       <footer className="bg-slate-900 text-slate-400 py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
@@ -650,15 +390,9 @@ const ReportCardLanding = () => {
               </div>
             </div>
             <div className="flex gap-6 text-sm">
-              <Link to="/" className="hover:text-white transition-colors">
-                Accueil
-              </Link>
-              <Link to="/mentions-legales" className="hover:text-white transition-colors">
-                Mentions légales
-              </Link>
-              <Link to="/confidentialite" className="hover:text-white transition-colors">
-                Confidentialité
-              </Link>
+              <Link to="/" className="hover:text-white transition-colors">Accueil</Link>
+              <Link to="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
+              <Link to="/confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
             </div>
             <p className="text-sm">© 2025 AIProject4You. Tous droits réservés.</p>
           </div>
@@ -668,7 +402,139 @@ const ReportCardLanding = () => {
   );
 };
 
-// FAQ Item Component
+/* ═══════════ WORKFLOW SHOWCASE STEP ═══════════ */
+interface WorkflowShowcaseStepProps {
+  stepNumber: number;
+  title: string;
+  tagline: string;
+  description: string;
+  badges: string[];
+  imageSrc: string;
+  imageAlt: string;
+  imageLeft: boolean;
+}
+
+const WorkflowShowcaseStep = ({
+  stepNumber,
+  title,
+  tagline,
+  description,
+  badges,
+  imageSrc,
+  imageAlt,
+  imageLeft,
+}: WorkflowShowcaseStepProps) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setVisible(true);
+      },
+      { threshold: 0.15 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const imageBlock = (
+    <div className="flex-1 lg:max-w-[50%]">
+      {/* Browser mockup frame */}
+      <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+        {/* Browser bar */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-amber-400" />
+            <div className="w-3 h-3 rounded-full bg-emerald-400" />
+          </div>
+          <div className="flex-1 flex justify-center">
+            <div className="bg-white dark:bg-slate-600 rounded-md px-4 py-1 text-xs text-slate-400 dark:text-slate-300 max-w-xs truncate">
+              reportcard-ai.aiproject4you.com
+            </div>
+          </div>
+        </div>
+        {/* Screenshot */}
+        <div className="overflow-hidden">
+          <img
+            src={imageSrc}
+            alt={imageAlt}
+            className="w-full h-auto"
+            loading="lazy"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const textBlock = (
+    <div className="flex-1 space-y-4">
+      {/* Step number */}
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-500 text-white font-bold text-2xl flex items-center justify-center shadow-lg shadow-amber-500/30 hover:scale-110 transition-transform">
+        {stepNumber}
+      </div>
+
+      {/* Title */}
+      <h3 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mt-4">
+        {title}
+      </h3>
+
+      {/* Tagline */}
+      <p className="text-amber-600 dark:text-amber-400 font-semibold text-lg mt-2">
+        {tagline}
+      </p>
+
+      {/* Description */}
+      <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mt-4 max-w-lg">
+        {description}
+      </p>
+
+      {/* Badges */}
+      <div className="flex flex-wrap gap-2 mt-6">
+        {badges.map((badge, i) => (
+          <span
+            key={i}
+            className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-3 py-1.5 rounded-full text-sm font-medium"
+          >
+            <Check className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
+            {badge}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      ref={ref}
+      className={`bg-white dark:bg-slate-800/50 rounded-3xl shadow-xl dark:shadow-none border border-slate-100 dark:border-slate-700 p-8 md:p-12 mb-12 last:mb-0 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 ${
+        visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+      }`}
+      style={{ transitionDuration: "700ms" }}
+    >
+      <div className={`flex flex-col lg:flex-row items-center gap-12 ${imageLeft ? "" : "lg:flex-row-reverse"}`}>
+        {imageBlock}
+        {textBlock}
+      </div>
+    </div>
+  );
+};
+
+/* ═══════════ WHY CARD ═══════════ */
+const WhyCard = ({ emoji, title, description }: { emoji: string; title: string; description: string }) => (
+  <div className="text-center p-8 rounded-2xl border border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-lg transition-all">
+    <div className="w-16 h-16 bg-amber-100 dark:bg-amber-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <span className="text-3xl">{emoji}</span>
+    </div>
+    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{title}</h3>
+    <p className="text-slate-600 dark:text-slate-400 text-sm">{description}</p>
+  </div>
+);
+
+/* ═══════════ FAQ ITEM ═══════════ */
 const FAQItem = ({ question, answer }: { question: string; answer: string }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -681,7 +547,11 @@ const FAQItem = ({ question, answer }: { question: string; answer: string }) => 
         <span className="font-medium text-slate-900 dark:text-white">{question}</span>
         <ChevronDown className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
-      {isOpen && <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">{answer}</div>}
+      {isOpen && (
+        <div className="px-6 pb-4 text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          {answer}
+        </div>
+      )}
     </div>
   );
 };
