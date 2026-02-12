@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
     const response: RedemptionResponse = {
       success: false,
       status: 'ERROR',
-      message: error instanceof Error ? error.message : 'Une erreur est survenue.',
+      message: 'Une erreur est survenue.',
     };
 
     return new Response(JSON.stringify(response), {
