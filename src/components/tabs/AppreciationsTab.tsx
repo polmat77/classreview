@@ -26,6 +26,7 @@ import {
 import { generateBulletinAnalysis } from "@/utils/bulletinAnalysisGenerator";
 import AttributionSummaryDialog from "@/components/AttributionSummaryDialog";
 import { ManualFirstNameReplacer } from "@/components/ManualFirstNameReplacer";
+import StepInfoBanner from "@/components/StepInfoBanner";
 import { useAnonymizationLevel } from "@/hooks/useAnonymizationLevel";
 import { useStudentTones } from "@/hooks/useStudentTones";
 import { useStudentAppreciations } from "@/hooks/useStudentAppreciations";
@@ -420,7 +421,9 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
   // STATE A: No bulletins loaded
   if (!hasBulletinsEleves) {
     return (
-      <TabUploadPlaceholder
+      <div>
+        <StepInfoBanner step={3} />
+        <TabUploadPlaceholder
         title="Appréciations individuelles"
         icon={<PenLine className="h-6 w-6" />}
         description="Générez automatiquement une appréciation personnalisée pour chaque élève grâce à l'intelligence artificielle."
@@ -436,12 +439,14 @@ const AppreciationsTab = ({ onNext, data, onDataLoaded }: AppreciationsTabProps)
         onUpload={handleBulletinsElevesUpload}
         helpTooltip={<PronoteHelpTooltip type="individuels" />}
       />
+      </div>
     );
   }
 
   // STATE B: Data loaded
   return (
     <div className="space-y-6 animate-fade-in">
+      <StepInfoBanner step={3} />
       <AppreciationPageHeader
         studentsCount={students.length}
         currentFileName={currentFileName}

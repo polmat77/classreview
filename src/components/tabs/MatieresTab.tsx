@@ -16,6 +16,7 @@ import ToneSelector from "@/components/ToneSelector";
 import { AppreciationTone } from "@/types/appreciation";
 import { analyzeTeacherAppreciations, identifyExceptionalSubjects } from "@/utils/appreciationThemeAnalyzer";
 import { useAuth } from "@/contexts/AuthContext";
+import StepInfoBanner from "@/components/StepInfoBanner";
 import { useCredits } from "@/hooks/useCredits";
 import { UpgradeModal } from "@/components/credits";
 
@@ -348,7 +349,9 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
   // Note: We specifically need the bulletin PDF for class appreciation, not just CSV data
   if (!bulletinClasse) {
     return (
-      <TabUploadPlaceholder
+      <div>
+        <StepInfoBanner step={2} />
+        <TabUploadPlaceholder
         title="Appréciation de la classe"
         icon={<BookOpen className="h-6 w-6" />}
         description="Générez automatiquement l'appréciation générale du conseil de classe grâce à l'intelligence artificielle : une synthèse de la dynamique du groupe et des axes de progression."
@@ -364,12 +367,14 @@ const MatieresTab = ({ onNext, data, onDataLoaded }: MatieresTabProps) => {
         onUpload={handleBulletinClasseUpload}
         helpTooltip={<PronoteHelpTooltip type="bulletin" />}
       />
+      </div>
     );
   }
 
   // STATE B: Data loaded - Show class appreciation generation
   return (
     <div className="space-y-6 animate-fade-in">
+      <StepInfoBanner step={2} />
       {/* Header with file action buttons */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

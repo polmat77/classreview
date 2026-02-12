@@ -34,6 +34,7 @@ import ClassSynthesisSummary from "@/components/analysis/ClassSynthesisSummary";
 
 import { getSubjectAverages } from "@/utils/statisticsCalculations";
 import { generateClassSummary } from "@/utils/classSummaryGenerator";
+import StepInfoBanner from "@/components/StepInfoBanner";
 
 interface AnalyseTabProps {
   onNext: () => void;
@@ -133,7 +134,9 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
   // STATE A: No file loaded - Show upload placeholder
   if (!classeCSV) {
     return (
-      <TabUploadPlaceholder
+      <div>
+        <StepInfoBanner step={1} />
+        <TabUploadPlaceholder
         title="Analyse des résultats de la classe"
         icon={<BarChart3 className="h-6 w-6" />}
         description="Obtenez une vue d'ensemble des performances de votre classe : moyenne générale, répartition des notes, élèves en difficulté ou en réussite."
@@ -147,6 +150,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
         onUpload={handleTableauResultatsUpload}
         helpTooltip={<PronoteHelpTooltip type="resultats" />}
       />
+      </div>
     );
   }
 
@@ -186,6 +190,7 @@ const AnalyseTab = ({ onNext, data, onDataLoaded }: AnalyseTabProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      <StepInfoBanner step={1} />
       {/* Class Info Header */}
       <ClassInfoHeader
         className={metadata.className}
