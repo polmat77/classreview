@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
     console.error('Error in admin-promo-codes:', error);
     
     return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Une erreur est survenue' 
+      error: 'Une erreur est survenue' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

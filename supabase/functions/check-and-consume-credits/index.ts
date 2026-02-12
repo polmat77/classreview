@@ -290,7 +290,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: false, 
         error: "INTERNAL_ERROR", 
-        message: error instanceof Error ? error.message : "Erreur interne" 
+        message: "Une erreur interne est survenue" 
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

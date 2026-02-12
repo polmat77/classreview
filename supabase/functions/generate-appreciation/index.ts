@@ -464,7 +464,7 @@ Axes d'amélioration : ${axesAmelioration}${enrichedSection}`;
   } catch (error) {
     console.error('Error generating appreciation:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      JSON.stringify({ error: 'Une erreur est survenue lors de la génération' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
