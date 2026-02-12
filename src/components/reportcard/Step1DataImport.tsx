@@ -188,6 +188,23 @@ const Step1DataImport = ({
         <PronoteHelpTooltip type="resultats" />
       </div>
 
+      {/* Info banner - document type guidance */}
+      <div
+        role="status"
+        className="w-full rounded-lg border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-400 px-5 py-4"
+      >
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+            <FileText className="h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Document requis : <strong>Le tableau des notes de votre matière</strong> (exporté depuis PRONOTE)</span>
+          </div>
+          <div className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>Aide disponible via le <strong>bouton orange</strong> ci-dessus</span>
+          </div>
+        </div>
+      </div>
+
       {/* Class metadata display - Reorganized order */}
       {classMetadata && (
         <div className="flex flex-wrap items-center gap-4 px-4 py-3 bg-muted/50 rounded-lg border">
