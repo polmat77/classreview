@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Attribution } from "@/types/attribution";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import StepInfoBanner from "@/components/StepInfoBanner";
+
 
 interface ExportTabProps {
   data?: {
@@ -187,7 +187,7 @@ const ExportTab = ({ data }: ExportTabProps) => {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <StepInfoBanner step={4} />
+      
       {/* Header */}
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
