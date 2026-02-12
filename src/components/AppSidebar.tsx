@@ -1,30 +1,30 @@
-import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { 
   BarChart3, 
   BookOpen, 
   PenLine, 
-  Download,
+  ClipboardList,
   Settings,
   Shield,
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Home
+  Home,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import UserMenu from '@/components/auth/UserMenu';
 import { CreditsBadge } from '@/components/credits';
-
-const logo = "/images/logos/ClassCouncilAI_logo.png";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+
+const logo = "/images/logos/ClassCouncilAI_logo.png";
 
 interface AppSidebarProps {
   activeTab: string;
@@ -35,9 +35,9 @@ interface AppSidebarProps {
 
 const navigationItems = [
   { id: 'analyse', label: 'Résultats de la classe', icon: BarChart3 },
-  { id: 'matieres', label: 'Appréciation de la Classe', icon: BookOpen },
+  { id: 'matieres', label: 'Appréciation de la classe', icon: BookOpen },
   { id: 'appreciations', label: 'Appréciations individuelles', icon: PenLine },
-  { id: 'export', label: 'Bilan', icon: Download },
+  { id: 'export', label: 'Synthèse et export', icon: ClipboardList },
 ];
 
 const secondaryItems = [
@@ -49,50 +49,10 @@ const secondaryItems = [
 export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedChange }: AppSidebarProps) {
   const location = useLocation();
 
-  const NavButton = ({ item, isActive, onClick, isSecondary = false }: { 
-    item: typeof navigationItems[0], 
-    isActive: boolean, 
-    onClick: () => void,
-    isSecondary?: boolean 
-  }) => {
-    const Icon = item.icon;
-    const content = (
-      <button
-        onClick={onClick}
-        className={cn(
-          "relative flex items-center gap-3 w-full rounded-xl transition-all duration-200 text-left",
-          isSecondary ? "px-4 py-2.5 text-sm" : "px-4 py-3",
-          isActive 
-            ? "bg-amber-50 text-amber-700 font-medium border border-amber-200" 
-            : "text-slate-600 hover:bg-slate-50 transition-colors"
-        )}
-      >
-        <Icon className={cn(
-          "h-5 w-5 flex-shrink-0 transition-colors",
-          isActive ? "text-amber-600" : "text-slate-500"
-        )} />
-        {!isCollapsed && (
-          <span className="truncate">{item.label}</span>
-        )}
-        {isActive && !isCollapsed && (
-          <span className="ml-auto w-2 h-2 rounded-full bg-amber-500" />
-        )}
-      </button>
-    );
+  const activeIndex = navigationItems.findIndex(item => item.id === activeTab);
 
-    if (isCollapsed) {
-      return (
-        <Tooltip>
-          <TooltipTrigger asChild>{content}</TooltipTrigger>
-          <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
-            {item.label}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return content;
-  };
+  const isStepCompleted = (index: number) => index < activeIndex;
+  const isStepAccessible = (index: number) => index <= activeIndex;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -104,17 +64,14 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
       >
         {/* Logo Section */}
         <div className={cn(
-          "flex-shrink-0 py-5 border-b border-slate-100 dark:border-slate-800",
+          "flex-shrink-0 py-4 border-b border-slate-100 dark:border-slate-800",
           isCollapsed ? "px-3" : "px-5"
         )}>
           <div className="flex items-center gap-3">
             <img 
               src={logo} 
               alt="ClassCouncil AI" 
-              className={cn(
-                "object-contain transition-all duration-300 flex-shrink-0",
-                isCollapsed ? "w-12 h-12" : "w-12 h-12"
-              )}
+              className="w-11 h-11 object-contain flex-shrink-0"
             />
             {!isCollapsed && (
               <div className="flex flex-col">
@@ -128,13 +85,13 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         </div>
 
         {/* Back to ClassCouncil AI landing page */}
-        <div className="px-4 py-3">
+        <div className="px-4 py-2.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
                 to="/classcouncil-ai"
                 className={cn(
-                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-4 py-2.5 text-sm",
+                  "flex items-center gap-2 w-full rounded-lg transition-all duration-200 px-4 py-2 text-sm",
                   "bg-gradient-to-r from-amber-400 to-amber-500 text-white font-medium shadow-sm hover:shadow-md hover:from-amber-500 hover:to-amber-600"
                 )}
               >
@@ -152,31 +109,74 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
 
         {/* Navigation Title */}
         {!isCollapsed && (
-          <div className="px-4 pt-4 pb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <div className="px-5 pt-3 pb-1">
+            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               Navigation
             </span>
           </div>
         )}
 
-        {/* Main Navigation */}
-        <nav className="flex-1 px-3 space-y-1 overflow-y-auto scrollbar-hide">
-          {navigationItems.map((item, index) => (
-            <div key={item.id}>
-              <NavButton 
-                item={item} 
-                isActive={activeTab === item.id}
-                onClick={() => onTabChange(item.id)}
-              />
-            </div>
-          ))}
+        {/* Main Navigation - 4 steps always visible */}
+        <nav className="px-3 space-y-1" role="navigation" aria-label="Étapes du workflow">
+          {navigationItems.map((item, index) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            const completed = isStepCompleted(index);
+            const accessible = isStepAccessible(index);
+
+            const button = (
+              <button
+                onClick={() => accessible ? onTabChange(item.id) : undefined}
+                disabled={!accessible}
+                aria-label={`Étape ${index + 1}: ${item.label}${completed ? ' (complétée)' : ''}${isActive ? ' (active)' : ''}`}
+                aria-current={isActive ? 'step' : undefined}
+                className={cn(
+                  "relative flex items-center gap-3 w-full rounded-xl transition-all duration-150 text-left pl-3 pr-3 h-10 text-sm",
+                  isActive && "bg-amber-50 dark:bg-amber-500/15 font-semibold border-l-[3px] border-amber-500 rounded-l-none",
+                  isActive && "text-slate-900 dark:text-amber-100",
+                  !isActive && completed && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer",
+                  !isActive && !completed && accessible && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer",
+                  !accessible && "text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed"
+                )}
+              >
+                <Icon className={cn(
+                  "h-[18px] w-[18px] flex-shrink-0 transition-colors",
+                  isActive ? "text-amber-600 dark:text-amber-400" : completed ? "text-emerald-500" : "text-slate-400 dark:text-slate-500"
+                )} />
+                {!isCollapsed && (
+                  <span className="truncate">{item.label}</span>
+                )}
+                {/* Completed check */}
+                {completed && !isCollapsed && (
+                  <Check className="ml-auto h-4 w-4 text-emerald-500 flex-shrink-0" />
+                )}
+                {/* Active dot */}
+                {isActive && !isCollapsed && !completed && (
+                  <span className="ml-auto w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                )}
+              </button>
+            );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>{button}</TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return <div key={item.id}>{button}</div>;
+          })}
         </nav>
 
         {/* Separator */}
-        <div className="h-px bg-slate-100 dark:bg-slate-800 mx-3" />
+        <div className="h-px bg-slate-100 dark:bg-slate-800 mx-3 mt-3" />
 
         {/* Secondary Navigation */}
-        <nav className="px-3 py-2 space-y-1 border-t border-slate-100 dark:border-slate-800">
+        <nav className="px-3 py-2 space-y-0.5">
           {secondaryItems.map((item) => {
             const Icon = item.icon;
             
@@ -186,10 +186,10 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
                 <Link
                   to={item.to}
                   className={cn(
-                    "flex items-center gap-3 w-full rounded-xl transition-all duration-200 px-4 py-2.5 text-sm",
+                    "flex items-center gap-3 w-full rounded-xl transition-all duration-150 px-3 h-9 text-sm",
                     isActive 
                       ? "bg-amber-50 text-amber-700" 
-                      : "text-slate-500 hover:bg-slate-50"
+                      : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
                   )}
                 >
                   <Icon className="h-4 w-4 flex-shrink-0" />
@@ -211,24 +211,36 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
               return <div key={item.id}>{content}</div>;
             }
 
-            return (
-              <NavButton 
-                key={item.id}
-                item={item} 
-                isActive={false}
-                onClick={() => {}}
-                isSecondary
-              />
+            const content = (
+              <button
+                className="flex items-center gap-3 w-full rounded-xl transition-all duration-150 px-3 h-9 text-sm text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800"
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" />
+                {!isCollapsed && <span className="font-medium">{item.label}</span>}
+              </button>
             );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>{content}</TooltipTrigger>
+                  <TooltipContent side="right" className="bg-slate-800 text-white border-slate-700">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return <div key={item.id}>{content}</div>;
           })}
         </nav>
 
         {/* Spacer */}
-        <div className="flex-grow min-h-4" />
+        <div className="flex-grow min-h-2" />
 
         {/* Credits Badge */}
         {!isCollapsed && (
-          <div className="px-4 py-3 border-t border-border">
+          <div className="px-4 py-2 border-t border-border">
             <CreditsBadge />
           </div>
         )}
@@ -236,25 +248,25 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
         {/* User Menu */}
         <div className={cn(
           "border-t border-border",
-          isCollapsed ? "px-3 py-3" : "px-4 py-3"
+          isCollapsed ? "px-3 py-2" : "px-4 py-2"
         )}>
           <UserMenu variant="sidebar" isCollapsed={isCollapsed} />
         </div>
 
         {/* Dark Mode Toggle */}
         {!isCollapsed && (
-          <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800">
             <DarkModeToggle variant="switch" showLabel />
           </div>
         )}
 
         {/* Footer Badge */}
         {!isCollapsed && (
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800">
-            <span className="inline-flex items-center px-3 py-1.5 bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full">
+          <div className="p-3 border-t border-slate-100 dark:border-slate-800">
+            <span className="inline-flex items-center px-3 py-1 bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400 text-xs font-medium rounded-full">
               🎓 Créé par un prof
             </span>
-            <p className="text-xs text-slate-400 mt-1">pour les profs</p>
+            <p className="text-xs text-slate-400 mt-0.5">pour les profs</p>
           </div>
         )}
 
