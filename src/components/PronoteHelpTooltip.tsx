@@ -15,35 +15,36 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
     switch (type) {
       case "resultats":
         return (
-          <div className="space-y-4">
-            <p className="font-semibold">📄 Exporter un tableau de résultats en PDF depuis PRONOTE</p>
-            <div className="space-y-4 text-sm">
+          <div className="space-y-5">
+            <p className="font-semibold text-base">📄 Exporter un tableau de résultats en PDF depuis PRONOTE</p>
+            <div className="space-y-5 text-sm leading-relaxed">
               <div>
-                <p className="font-semibold text-foreground">1️⃣ Menu "Notes"</p>
-                <p className="text-muted-foreground">Sélectionnez la classe et la période concernées.</p>
+                <p className="font-semibold text-foreground text-[15px]">1️⃣ Menu "Résultats" (onglet orange)</p>
+                <p className="text-muted-foreground mt-1">Sélectionnez la classe et la période concernées dans les menus déroulants.</p>
+                <p className="text-muted-foreground">Vous devez voir apparaître : <strong>"42 - Tableau des moyennes"</strong> (ou votre classe)</p>
               </div>
               <div>
-                <p className="font-semibold text-foreground">2️⃣ Cliquez sur l'icône Imprimante (ou CTRL + P)</p>
+                <p className="font-semibold text-foreground text-[15px]">2️⃣ Cliquez sur l'icône Imprimante (ou CTRL + P)</p>
               </div>
               <div>
-                <p className="font-semibold text-foreground">3️⃣ Dans la fenêtre "Impression des notes par professeur" :</p>
-                <div className="ml-4 space-y-2 mt-2">
+                <p className="font-semibold text-foreground text-[15px]">3️⃣ Dans la fenêtre "Impression des notes par classe" :</p>
+                <div className="ml-4 space-y-3 mt-2">
                   <div>
                     <p className="font-semibold text-foreground">Données à imprimer :</p>
-                    <p className="text-muted-foreground">Sélectionnez : <strong>"Le service sélectionné"</strong></p>
+                    <p className="text-muted-foreground">Sélectionnez : <strong>"Le service sélectionné"</strong> (bouton radio coché)</p>
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Type de sortie :</p>
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1">
                       <li>Sélectionnez : <strong>PDF</strong> (bouton radio)</li>
-                      <li>☐ Protégé → <strong className="text-destructive">NE PAS COCHER</strong> 🔓</li>
+                      <li>☐ Protégé → <strong className="text-red-500 font-bold">NE PAS COCHER</strong> 🔓</li>
                       <li>☑️ Imprimable</li>
                     </ul>
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Format :</p>
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1">
-                      <li>A4</li>
+                      <li>Sélectionnez : <strong>A4</strong></li>
                       <li>Orientation : <strong>Paysage</strong> (recommandé) 📄</li>
                     </ul>
                   </div>
@@ -52,7 +53,7 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1">
                       <li>Police : Arial</li>
                       <li>Taille standard : 8</li>
-                      <li>Orientation : Paysage 📄</li>
+                      <li>Orientation : <strong>Paysage</strong> (bouton radio coché)</li>
                     </ul>
                   </div>
                   <div>
@@ -60,25 +61,34 @@ const PronoteHelpTooltip = ({ type = "all" }: PronoteHelpTooltipProps) => {
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1">
                       <li>☑️ Date et heure</li>
                       <li>☑️ Numéro de page</li>
-                      <li>☑️ Nom de l'établissement</li>
-                      <li>Titre de page : <strong>"Tableau de notes 4e2"</strong> (ou le nom de votre classe)</li>
+                      <li>☐ Nom de base (laisser décoché)</li>
+                      <li>☐ Nom de l'établissement (optionnel)</li>
+                      <li>Titre de page : ☑️ <strong>"Tableau des moyennes"</strong> (dans le menu déroulant)</li>
                     </ul>
                   </div>
                   <div>
                     <p className="font-semibold text-foreground">Options de liste :</p>
                     <ul className="text-muted-foreground ml-4 list-disc space-y-1">
                       <li>☑️ Alterner la couleur de fond des lignes</li>
+                      <li>☐ Un tableau par page (laisser décoché)</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">Contenu (en bas de la fenêtre) :</p>
+                    <ul className="text-muted-foreground ml-4 list-disc space-y-1">
+                      <li>☑️ Avec la moyenne générale</li>
+                      <li>☑️ Avec le nom du professeur enseignant la matière</li>
                       <li>☑️ Élargir les colonnes pour occuper tout l'espace</li>
                     </ul>
                   </div>
                 </div>
               </div>
-              <div className="bg-red-50 dark:bg-red-500/10 p-3 rounded-lg border-l-4 border-red-500 mt-4">
-                <p className="font-semibold text-red-800 dark:text-red-400">⚠️ 🔒 Important : <strong>NE PAS cocher "Protégé"</strong></p>
+              <div className="bg-red-50 dark:bg-red-500/10 p-3 rounded-lg border-l-4 border-red-500 my-4">
+                <p className="font-bold text-red-800 dark:text-red-400">⚠️ 🔓 Important : <span className="font-extrabold">NE PAS cocher "Protégé"</span></p>
                 <p className="text-red-700 dark:text-red-300 text-xs mt-1">Sinon le PDF sera verrouillé et inutilisable.</p>
               </div>
               <div>
-                <p className="font-semibold text-foreground">4️⃣ Cliquez sur "Générer" pour créer le PDF</p>
+                <p className="font-semibold text-foreground text-[15px]">4️⃣ Cliquez sur "Générer" pour créer le PDF</p>
               </div>
             </div>
           </div>
