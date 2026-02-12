@@ -52,7 +52,6 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
   const activeIndex = navigationItems.findIndex(item => item.id === activeTab);
 
   const isStepCompleted = (index: number) => index < activeIndex;
-  const isStepAccessible = (index: number) => index <= activeIndex;
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -122,21 +121,18 @@ export function AppSidebar({ activeTab, onTabChange, isCollapsed, onCollapsedCha
             const Icon = item.icon;
             const isActive = activeTab === item.id;
             const completed = isStepCompleted(index);
-            const accessible = isStepAccessible(index);
+            
 
             const button = (
               <button
-                onClick={() => accessible ? onTabChange(item.id) : undefined}
-                disabled={!accessible}
+                onClick={() => onTabChange(item.id)}
                 aria-label={`Étape ${index + 1}: ${item.label}${completed ? ' (complétée)' : ''}${isActive ? ' (active)' : ''}`}
                 aria-current={isActive ? 'step' : undefined}
                 className={cn(
-                  "relative flex items-center gap-3 w-full rounded-xl transition-all duration-150 text-left pl-3 pr-3 h-10 text-sm",
+                  "relative flex items-center gap-3 w-full rounded-xl transition-all duration-150 text-left pl-3 pr-3 h-10 text-sm cursor-pointer",
                   isActive && "bg-amber-50 dark:bg-amber-500/15 font-semibold border-l-[3px] border-amber-500 rounded-l-none",
                   isActive && "text-slate-900 dark:text-amber-100",
-                  !isActive && completed && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer",
-                  !isActive && !completed && accessible && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer",
-                  !accessible && "text-slate-400 dark:text-slate-600 opacity-50 cursor-not-allowed"
+                  !isActive && "text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 )}
               >
                 <Icon className={cn(
