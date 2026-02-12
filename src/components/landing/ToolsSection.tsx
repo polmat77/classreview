@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, HelpCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const classCouncilLogo = "/images/logos/ClassCouncilAI_logo.png";
 const reportCardLogo = "/images/logos/ReportCardAI_logo.png";
@@ -13,35 +13,40 @@ interface Tool {
   features: string[];
   logo?: string;
   icon?: React.ReactNode;
-  href: string;
+  landingHref: string;
+  appHref: string;
   comingSoon?: boolean;
 }
 
 const ToolsSection = () => {
+  const navigate = useNavigate();
+
   const tools: Tool[] = [
     {
       name: "ClassCouncil",
       aiSuffix: true,
-      description: "Générez automatiquement les appréciations pour vos conseils de classe",
+      description: "Préparez la totalité de votre conseil de classe en quelques clics",
       features: [
         "Import PDF PRONOTE",
         "Analyse automatique des notes",
         "Appréciations personnalisées",
       ],
       logo: classCouncilLogo,
-      href: "/classcouncil-ai",
+      landingHref: "/classcouncil-ai",
+      appHref: "/classcouncil-ai/app",
     },
     {
       name: "ReportCard",
       aiSuffix: true,
-      description: "Rédigez des appréciations de bulletins personnalisées en quelques clics",
+      description: "Créez en un instant des appréciations de bulletins sur mesure pour chacune de vos classes dans votre matière",
       features: [
-        "6 tons disponibles",
-        "Limite de caractères PRONOTE",
+        "4 tons disponibles",
+        "Prise en compte du comportement, participation, bavardages...",
         "Export copier-coller",
       ],
       logo: reportCardLogo,
-      href: "/reportcard-ai",
+      landingHref: "/reportcard-ai",
+      appHref: "/reportcard-ai/app",
     },
     {
       name: "QuizMaster",
@@ -53,7 +58,8 @@ const ToolsSection = () => {
         "Export PDF",
       ],
       icon: <HelpCircle className="w-12 h-12 text-muted-foreground" />,
-      href: "#",
+      landingHref: "#",
+      appHref: "#",
       comingSoon: true,
     },
   ];
@@ -73,87 +79,100 @@ const ToolsSection = () => {
 
         {/* Tools Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tools.map((tool, index) => (
-            <Card
-              key={index}
-              className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-700 p-6 transition-all hover:shadow-md dark:hover:border-slate-600 ${
-                tool.comingSoon ? "opacity-75" : ""
-              }`}
-            >
-              {/* Logo/Icon */}
-              <div className="mb-4 relative">
-                {tool.logo ? (
-                  <img 
-                    src={tool.logo} 
-                    alt={`${tool.name}AI logo`} 
-                    className="h-16 max-h-[60px] w-auto object-contain"
-                  />
+          {tools.map((tool, index) => {
+            const cardContent = (
+              <Card
+                className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm dark:shadow-none border border-slate-100 dark:border-slate-700 p-6 transition-all duration-300 flex flex-col h-full ${
+                  tool.comingSoon
+                    ? "opacity-75"
+                    : "hover:shadow-lg hover:border-secondary dark:hover:border-secondary cursor-pointer"
+                }`}
+              >
+                {/* Logo/Icon */}
+                <div className="mb-4 relative">
+                  {tool.logo ? (
+                    <img
+                      src={tool.logo}
+                      alt={`${tool.name}AI logo`}
+                      className="h-16 max-h-[60px] w-auto object-contain"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-lg bg-muted dark:bg-slate-700 flex items-center justify-center">
+                      {tool.icon}
+                    </div>
+                  )}
+                  {tool.comingSoon && (
+                    <span className="absolute top-0 right-0 bg-muted dark:bg-slate-700 text-muted-foreground text-xs px-2 py-1 rounded-full">
+                      Bientôt
+                    </span>
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className="text-xl font-bold text-foreground mb-2">
+                  {tool.name}
+                  {tool.aiSuffix && <span className="text-accent">AI</span>}
+                </h3>
+
+                {/* Description */}
+                <p className="text-sm text-muted-foreground mb-4 flex-grow">
+                  {tool.description}
+                </p>
+
+                {/* Features */}
+                <ul className="space-y-2 mb-6">
+                  {tool.features.map((feature, featureIndex) => (
+                    <li
+                      key={featureIndex}
+                      className={`flex items-center gap-2 text-sm ${
+                        tool.comingSoon ? "text-muted-foreground/60" : "text-muted-foreground"
+                      }`}
+                    >
+                      <Check className={`w-4 h-4 flex-shrink-0 ${tool.comingSoon ? "text-muted-foreground/40" : "text-secondary"}`} />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+
+                {/* CTA Buttons */}
+                {tool.comingSoon ? (
+                  <Button
+                    variant="outline"
+                    className="w-full border-border text-muted-foreground cursor-not-allowed"
+                    disabled
+                  >
+                    Bientôt disponible
+                  </Button>
                 ) : (
-                  <div className="w-16 h-16 rounded-lg bg-muted dark:bg-slate-700 flex items-center justify-center">
-                    {tool.icon}
+                  <div className="space-y-2 mt-auto">
+                    <Button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white hover:from-amber-500 hover:to-amber-600 shadow-sm">
+                      Découvrir l'outil →
+                    </Button>
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(tool.appHref);
+                      }}
+                      className="w-full text-sm text-secondary hover:underline text-center py-1 transition-colors"
+                    >
+                      Accéder directement
+                    </button>
                   </div>
                 )}
-                {tool.comingSoon && (
-                  <span className="absolute top-0 right-0 bg-muted dark:bg-slate-700 text-muted-foreground text-xs px-2 py-1 rounded-full">
-                    Bientôt
-                  </span>
-                )}
-              </div>
+              </Card>
+            );
 
-              {/* Title */}
-              <h3 className="text-xl font-bold text-foreground mb-2">
-                {tool.name}
-                {tool.aiSuffix && <span className="text-accent">AI</span>}
-              </h3>
+            if (tool.comingSoon) {
+              return <div key={index}>{cardContent}</div>;
+            }
 
-              {/* Description */}
-              <p className={`text-sm mb-4 ${tool.comingSoon ? "text-muted-foreground" : "text-muted-foreground"}`}>
-                {tool.description}
-              </p>
-
-              {/* Features */}
-              <ul className="space-y-2 mb-6">
-                {tool.features.map((feature, featureIndex) => (
-                  <li
-                    key={featureIndex}
-                    className={`flex items-center gap-2 text-sm ${
-                      tool.comingSoon ? "text-muted-foreground/60" : "text-muted-foreground"
-                    }`}
-                  >
-                    <Check className={`w-4 h-4 ${tool.comingSoon ? "text-muted-foreground/40" : "text-secondary"}`} />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-
-              {/* CTA Buttons */}
-              {tool.comingSoon ? (
-                <Button
-                  variant="outline"
-                  className="w-full border-border text-muted-foreground cursor-not-allowed"
-                  disabled
-                >
-                  Bientôt disponible
-                </Button>
-              ) : (
-                <div className="space-y-2">
-                  <Link to={`${tool.href}/app`}>
-                    <Button className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-white hover:from-amber-500 hover:to-amber-600 shadow-sm">
-                      Essayer gratuitement
-                    </Button>
-                  </Link>
-                  <Link to={tool.href}>
-                    <Button
-                      variant="ghost"
-                      className="w-full text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                    >
-                      En savoir plus →
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </Card>
-          ))}
+            return (
+              <Link key={index} to={tool.landingHref} className="block">
+                {cardContent}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
