@@ -47,6 +47,144 @@ function truncateIntelligently(text: string, maxChars: number): string {
   return truncated.substring(0, maxChars - 3) + '...';
 }
 
+function getSubjectSkills(subject: string): string {
+  const s = subject.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  if (s.includes('anglais') || s.includes('english')) {
+    return `- Compréhension écrite (reading) et orale (listening)
+- Expression écrite (writing) et orale (speaking)
+- Maîtrise du vocabulaire et des structures grammaticales
+- Participation aux échanges en anglais
+- Qualité des productions (tâches finales, présentations orales)
+- Prise de parole en continu et en interaction
+- Ouverture culturelle aux pays anglophones`;
+  }
+
+  if (s.includes('espagnol')) {
+    return `- Compréhension écrite et orale
+- Expression écrite et orale en espagnol
+- Maîtrise du vocabulaire et de la conjugaison
+- Participation aux échanges en langue cible
+- Ouverture culturelle au monde hispanophone`;
+  }
+
+  if (s.includes('allemand')) {
+    return `- Compréhension écrite et orale
+- Expression écrite et orale en allemand
+- Maîtrise des déclinaisons et structures
+- Participation aux échanges en langue cible
+- Ouverture culturelle au monde germanophone`;
+  }
+
+  if (s.includes('italien')) {
+    return `- Compréhension écrite et orale
+- Expression écrite et orale en italien
+- Maîtrise du vocabulaire et des structures
+- Participation aux échanges en langue cible
+- Ouverture culturelle au monde italophone`;
+  }
+
+  if (s.includes('lv1') || s.includes('lv2') || s.includes('langue')) {
+    return `- Compréhension écrite et orale
+- Expression écrite et orale
+- Maîtrise du vocabulaire et des structures grammaticales
+- Participation aux échanges en langue cible
+- Qualité des productions écrites et orales`;
+  }
+
+  if (s.includes('francais') || s.includes('lettres')) {
+    return `- Compréhension et analyse de textes littéraires
+- Expression écrite (rédaction, argumentation, invention)
+- Maîtrise de la langue (orthographe, grammaire, conjugaison)
+- Expression orale et participation aux débats
+- Culture littéraire et ouverture artistique`;
+  }
+
+  if (s.includes('math')) {
+    return `- Raisonnement logique et démonstration
+- Maîtrise du calcul et des techniques opératoires
+- Résolution de problèmes
+- Rigueur dans la rédaction
+- Géométrie et représentation dans l'espace
+- Utilisation des outils numériques (tableur, scratch)`;
+  }
+
+  if (s.includes('histoire') || s.includes('geo') || s.includes('emc') || s.includes('enseignement moral')) {
+    return `- Connaissance des repères historiques et géographiques
+- Analyse et interprétation de documents
+- Argumentation et esprit critique
+- Maîtrise du vocabulaire spécifique
+- Qualité des productions écrites et orales
+- Éducation à la citoyenneté`;
+  }
+
+  if (s.includes('svt') || s.includes('sciences de la vie')) {
+    return `- Démarche scientifique et expérimentale
+- Compréhension des phénomènes biologiques et géologiques
+- Rigueur dans les comptes-rendus d'expérience
+- Travaux pratiques et manipulation
+- Responsabilité individuelle et collective (santé, environnement)`;
+  }
+
+  if (s.includes('physique') || s.includes('chimie') || s.includes('sciences physiques')) {
+    return `- Démarche scientifique et expérimentale
+- Maîtrise du calcul et des unités de mesure
+- Compréhension des lois physiques et chimiques
+- Rigueur dans les protocoles expérimentaux
+- Sécurité en travaux pratiques`;
+  }
+
+  if (s.includes('technologie') || s.includes('techno')) {
+    return `- Compréhension des systèmes techniques
+- Programmation et algorithmique
+- Conception et modélisation
+- Travail en projet et en équipe
+- Créativité et résolution de problèmes techniques`;
+  }
+
+  if (s.includes('arts plastiques') || s.includes('arts pla')) {
+    return `- Créativité et expression plastique personnelle
+- Maîtrise des techniques artistiques
+- Culture artistique et analyse d'œuvres
+- Engagement et initiative dans les projets
+- Capacité à expliquer sa démarche`;
+  }
+
+  if (s.includes('musique') || s.includes('education musicale')) {
+    return `- Pratique vocale et/ou instrumentale
+- Écoute active et culture musicale
+- Créativité et expression artistique
+- Participation aux projets musicaux collectifs`;
+  }
+
+  if (s.includes('eps') || s.includes('education physique') || s.includes('sport')) {
+    return `- Engagement moteur et investissement physique
+- Respect des règles et esprit sportif
+- Progrès techniques et condition physique
+- Coopération et travail d'équipe
+- Gestion de l'effort et persévérance`;
+  }
+
+  if (s.includes('latin') || s.includes('grec') || s.includes('langues anciennes')) {
+    return `- Maîtrise de la morphologie et de la syntaxe
+- Traduction et version
+- Culture et civilisation antique
+- Étymologie et enrichissement du vocabulaire français`;
+  }
+
+  if (s.includes('informatique') || s.includes('numerique') || s.includes('nsi') || s.includes('snt')) {
+    return `- Algorithmique et programmation
+- Maîtrise des outils numériques
+- Compréhension des concepts fondamentaux (données, réseaux)
+- Travail en projet et résolution de problèmes`;
+  }
+
+  return `- Maîtrise des compétences fondamentales de la discipline
+- Qualité du travail personnel et investissement
+- Participation et engagement en cours
+- Progrès et capacité à se remettre en question`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -79,7 +217,8 @@ serve(async (req) => {
     const { 
       student, 
       classAverage, 
-      subject, 
+      subject: rawSubject,
+      classData,
       trimester, 
       maxCharacters = 400, 
       tone: rawTone = 'standard' 
@@ -99,7 +238,91 @@ serve(async (req) => {
     const workLevel = getWorkLevel(average);
     const toneInstruction = toneInstructions[tone] || toneInstructions.standard;
 
-    const systemPrompt = `Tu es un professeur principal présentant un élève devant le conseil de classe. Tu dois être PRÉCIS et FACTUEL.
+    // Determine subject from multiple sources
+    const subject = (rawSubject || classData?.subject || '').trim();
+    const isDisciplinaryMode = subject.length > 0;
+
+    const getIndividualLengthGuidance = (limit: number): string => {
+      if (limit <= 300) return "CONCIS : 2-3 phrases, aller à l'essentiel.";
+      if (limit <= 350) return "STANDARD : 3 phrases, équilibre synthèse et détail.";
+      if (limit <= 400) return "DÉTAILLÉ : 3-4 phrases, développe les points clés.";
+      if (limit <= 450) return "DÉVELOPPÉ : 4 phrases, analyse plus complète.";
+      return "COMPLET : 4-5 phrases maximum, analyse détaillée.";
+    };
+
+    let systemPrompt: string;
+    let userPrompt: string;
+
+    if (isDisciplinaryMode) {
+      // ═══════════════════════════════════════════
+      // MODE DISCIPLINAIRE (prof de matière)
+      // ═══════════════════════════════════════════
+      const subjectSkills = getSubjectSkills(subject);
+      const className = classData?.className || '';
+      const period = classData?.trimester || trimester || '';
+
+      console.log(`Mode disciplinaire: ${subject} | Classe: ${className} | Période: ${period}`);
+
+      systemPrompt = `Tu es un(e) enseignant(e) de ${subject} rédigeant tes appréciations de bulletin scolaire pour ta matière uniquement.
+
+CONTEXTE :
+- Matière enseignée : ${subject}
+- Classe : ${className}
+- Période : ${period}
+
+CONTRAINTE ABSOLUE DE LONGUEUR :
+- L'appréciation DOIT contenir MAXIMUM ${maxCharacters} caractères (espaces et ponctuation inclus)
+- Compte précisément chaque caractère
+- Ne dépasse JAMAIS cette limite, même de 1 caractère
+- ${getIndividualLengthGuidance(maxCharacters)}
+
+RÈGLES STRICTES :
+- Commencer OBLIGATOIREMENT par le prénom "${firstName}"
+- Rédaction à la troisième personne (ne jamais tutoyer ou vouvoyer l'élève)
+- Ne PAS mentionner la moyenne chiffrée (elle apparaît déjà sur PRONOTE)
+- ⚠️ INTERDIT de mentionner d'autres matières que ${subject}
+- ⚠️ INTERDIT de parler "des matières", "des disciplines", "de l'ensemble des enseignements"
+- ⚠️ INTERDIT de se positionner comme professeur principal ou conseil de classe
+- L'appréciation concerne EXCLUSIVEMENT le travail et le comportement en ${subject}
+- Mentionner les compétences spécifiques de ${subject} quand c'est pertinent
+- Varier le vocabulaire (pas de formule répétitive d'un élève à l'autre)
+- Terminer par un conseil ou un encouragement ciblé sur ${subject}
+
+COMPÉTENCES SPÉCIFIQUES DE ${subject.toUpperCase()} À MOBILISER :
+${subjectSkills}
+
+TONALITÉ À ADOPTER :
+${toneInstruction}`;
+
+      let profil = 'Satisfaisant';
+      if (average >= 16) profil = 'Excellent';
+      else if (average >= 14) profil = 'Très bon';
+      else if (average >= 12) profil = 'Satisfaisant';
+      else if (average >= 10) profil = 'Correct';
+      else if (average >= 8) profil = 'Fragile';
+      else profil = 'En difficulté';
+
+      userPrompt = `Rédige l'appréciation de ${subject} pour cet élève.
+
+- Prénom : ${firstName}
+- Niveau en ${subject} : ${profil}
+- Sérieux en classe : ${seriousness !== null && seriousness !== undefined ? (seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique") : 'Non renseigné'}
+- Participation orale : ${participation !== null && participation !== undefined ? (participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante") : 'Non renseigné'}
+- Absences : ${absences || 0}
+- Devoirs non rendus : ${nonRendus || 0}
+${behaviorIssue ? `- Problème de comportement : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'oui'}` : ''}
+${isTalkative ? `- Bavardages signalés` : ''}
+${specificObservations && specificObservations.length > 0 ? `- Observations de l'enseignant : ${specificObservations.join(", ")}` : ''}
+
+⚠️ RAPPEL : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées. Appréciation de ${subject} UNIQUEMENT.`;
+
+    } else {
+      // ═══════════════════════════════════════════
+      // MODE CONSEIL DE CLASSE (code existant inchangé)
+      // ═══════════════════════════════════════════
+      console.log(`Mode conseil de classe (pas de matière spécifiée)`);
+
+      systemPrompt = `Tu es un professeur principal présentant un élève devant le conseil de classe. Tu dois être PRÉCIS et FACTUEL.
 
 CONTRAINTE DE LONGUEUR ABSOLUE ET NON NÉGOCIABLE :
 - MINIMUM : ${minChars} caractères
@@ -144,32 +367,33 @@ RÈGLES ABSOLUES :
 ❌ Ne JAMAIS répéter le niveau qualitatif dans le corps du texte
 ❌ Ne JAMAIS porter de jugement sur la personnalité de l'élève`;
 
-    let context = `Génère une présentation orale pour le conseil de classe :\n\n`;
-    context += `═══════════════════════════════════════════════════\n`;
-    context += `DONNÉES DE L'ÉLÈVE :\n`;
-    context += `- Prénom : ${firstName}\n`;
-    context += `- Nom : ${lastName}\n`;
-    context += `- Niveau de travail : ${workLevel}\n`;
-    if (seriousness !== null && seriousness !== undefined) {
-      context += `- Sérieux global : ${seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique"}\n`;
+      userPrompt = `Génère une présentation orale pour le conseil de classe :\n\n`;
+      userPrompt += `═══════════════════════════════════════════════════\n`;
+      userPrompt += `DONNÉES DE L'ÉLÈVE :\n`;
+      userPrompt += `- Prénom : ${firstName}\n`;
+      userPrompt += `- Nom : ${lastName}\n`;
+      userPrompt += `- Niveau de travail : ${workLevel}\n`;
+      if (seriousness !== null && seriousness !== undefined) {
+        userPrompt += `- Sérieux global : ${seriousness > 14 ? "très sérieux" : seriousness > 10 ? "sérieux" : seriousness > 6 ? "insuffisant" : "problématique"}\n`;
+      }
+      if (participation !== null && participation !== undefined) {
+        userPrompt += `- Participation globale : ${participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante"}\n`;
+      }
+      if (absences && absences > 0) userPrompt += `- Absences : ${absences}\n`;
+      if (nonRendus && nonRendus > 0) userPrompt += `- Devoirs non rendus : ${nonRendus}\n`;
+      userPrompt += `═══════════════════════════════════════════════════\n\n`;
+      
+      if (behaviorIssue) {
+        userPrompt += `⚠️ Problème de comportement signalé : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'oui'}\n`;
+      }
+      if (isTalkative) userPrompt += `⚠️ Signalé comme bavard\n`;
+      if (specificObservations && specificObservations.length > 0) {
+        userPrompt += `📝 Observations personnelles du PP : ${specificObservations.join(", ")}\n`;
+      }
+      
+      userPrompt += `\nTon demandé : ${tone}\n`;
+      userPrompt += `\n⚠️ RAPPEL : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées.`;
     }
-    if (participation !== null && participation !== undefined) {
-      context += `- Participation globale : ${participation > 14 ? "excellente" : participation > 10 ? "satisfaisante" : participation > 6 ? "insuffisante" : "quasi inexistante"}\n`;
-    }
-    if (absences && absences > 0) context += `- Absences : ${absences}\n`;
-    if (nonRendus && nonRendus > 0) context += `- Devoirs non rendus : ${nonRendus}\n`;
-    context += `═══════════════════════════════════════════════════\n\n`;
-    
-    if (behaviorIssue) {
-      context += `⚠️ Problème de comportement signalé : ${typeof behaviorIssue === 'string' ? behaviorIssue : 'oui'}\n`;
-    }
-    if (isTalkative) context += `⚠️ Signalé comme bavard\n`;
-    if (specificObservations && specificObservations.length > 0) {
-      context += `📝 Observations personnelles du PP : ${specificObservations.join(", ")}\n`;
-    }
-    
-    context += `\nTon demandé : ${tone}\n`;
-    context += `\n⚠️ RAPPEL : Maximum ${maxCharacters} caractères. NE PAS mentionner de notes chiffrées.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -181,7 +405,7 @@ RÈGLES ABSOLUES :
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: context },
+          { role: "user", content: userPrompt },
         ],
       }),
     });

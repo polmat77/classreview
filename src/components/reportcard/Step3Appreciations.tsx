@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Student, StudentObservations, GeneratedAppreciation, AppreciationSettings, AppreciationTone, toneOptions } from "@/types/reportcard";
+import { Student, StudentObservations, GeneratedAppreciation, AppreciationSettings, AppreciationTone, toneOptions, ClassMetadata } from "@/types/reportcard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,8 @@ interface Step3AppreciationsProps {
   observations: StudentObservations;
   appreciations: GeneratedAppreciation[];
   appreciationSettings: AppreciationSettings;
+  classMetadata: ClassMetadata | null;
+  teacherSubject: string;
   onAppreciationsChange: (appreciations: GeneratedAppreciation[]) => void;
   onAppreciationSettingsChange: (settings: AppreciationSettings) => void;
   onNext: () => void;
@@ -40,6 +42,8 @@ const Step3Appreciations = ({
   observations,
   appreciations,
   appreciationSettings,
+  classMetadata,
+  teacherSubject,
   onAppreciationsChange,
   onAppreciationSettingsChange,
   onNext,
@@ -173,6 +177,13 @@ const Step3Appreciations = ({
           student: studentData,
           maxCharacters: appreciationSettings.maxCharacters,
           tone,
+          subject: teacherSubject.trim() || undefined,
+          classData: classMetadata ? {
+            className: classMetadata.className,
+            subject: teacherSubject.trim() || undefined,
+            teacher: classMetadata.teacher,
+            trimester: classMetadata.period,
+          } : undefined,
         },
       });
 
