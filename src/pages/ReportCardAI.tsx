@@ -67,6 +67,16 @@ const getInitialState = (): ReportCardState => {
 const ReportCardAI = () => {
   const { toast } = useToast();
   const { showModal, acceptConsent } = useRGPDConsent('reportcard');
+
+  // Teacher subject: auto-detected from PDF or manually entered
+  const [teacherSubject, setTeacherSubjectState] = useState<string>(() => {
+    return localStorage.getItem('reportcard_teacher_subject') || '';
+  });
+
+  const setTeacherSubject = useCallback((subject: string) => {
+    setTeacherSubjectState(subject);
+    localStorage.setItem('reportcard_teacher_subject', subject);
+  }, []);
   
   const [state, setState] = useState<ReportCardState>(() => {
     // Load from localStorage on init
@@ -114,6 +124,10 @@ const ReportCardAI = () => {
 
   const setClassMetadata = (classMetadata: ClassMetadata | null) => {
     setState((prev) => ({ ...prev, classMetadata }));
+    // Auto-fill subject from PDF metadata if not already set
+    if (classMetadata?.subject && !teacherSubject) {
+      setTeacherSubject(classMetadata.subject);
+    }
   };
 
   const setObservations = (observations: StudentObservations) => {
@@ -215,6 +229,8 @@ const ReportCardAI = () => {
             classMetadata={state.classMetadata}
             onStudentsChange={setStudents}
             onClassMetadataChange={setClassMetadata}
+            teacherSubject={teacherSubject}
+            onTeacherSubjectChange={setTeacherSubject}
             onNext={() => setCurrentStep(2)}
             onReset={resetStep1}
           />
@@ -237,6 +253,8 @@ const ReportCardAI = () => {
             observations={state.observations}
             appreciations={state.appreciations}
             appreciationSettings={state.appreciationSettings}
+            classMetadata={state.classMetadata}
+            teacherSubject={teacherSubject}
             onAppreciationsChange={setAppreciations}
             onAppreciationSettingsChange={setAppreciationSettings}
             onNext={() => setCurrentStep(4)}

@@ -2,6 +2,8 @@ import { useState, useCallback } from "react";
 import { Student, ClassMetadata, StudentStats } from "@/types/reportcard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +20,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Upload, FileText, Edit3, CheckCircle2, Trash2, AlertTriangle, BookOpen, Users, Calendar, Bug, User } from "lucide-react";
+import { Upload, FileText, Edit3, CheckCircle2, Trash2, AlertTriangle, BookOpen, Users, Calendar, Bug, User, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { parsePronoteGradePDF, parseStudentsFromManualInput } from "@/utils/reportcardPdfParser";
 import StepResetButton from "./StepResetButton";
@@ -29,6 +31,8 @@ interface Step1DataImportProps {
   classMetadata: ClassMetadata | null;
   onStudentsChange: (students: Student[]) => void;
   onClassMetadataChange: (metadata: ClassMetadata | null) => void;
+  teacherSubject: string;
+  onTeacherSubjectChange: (subject: string) => void;
   onNext: () => void;
   onReset: () => void;
 }
@@ -51,7 +55,9 @@ const Step1DataImport = ({
   students, 
   classMetadata, 
   onStudentsChange, 
-  onClassMetadataChange, 
+  onClassMetadataChange,
+  teacherSubject,
+  onTeacherSubjectChange,
   onNext,
   onReset,
 }: Step1DataImportProps) => {
@@ -484,6 +490,37 @@ Durand Emma`}
                   })}
                 </TableBody>
               </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Teacher subject field */}
+      {students.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-3">
+              <Label htmlFor="teacherSubject" className="text-sm font-medium">
+                Ma matière
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="teacherSubject"
+                  value={teacherSubject}
+                  onChange={(e) => onTeacherSubjectChange(e.target.value)}
+                  placeholder="Ex : ANGLAIS LV1, MATHÉMATIQUES, HISTOIRE-GÉO..."
+                  className="max-w-sm"
+                />
+                {classMetadata?.subject && teacherSubject === classMetadata.subject && (
+                  <Badge variant="secondary" className="text-xs whitespace-nowrap">
+                    <Check className="w-3 h-3 mr-1" />
+                    Détecté depuis le PDF
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Les appréciations seront adaptées à votre discipline. Modifiez si la détection automatique est incorrecte.
+              </p>
             </div>
           </CardContent>
         </Card>
