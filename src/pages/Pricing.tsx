@@ -35,7 +35,7 @@ const pricingPlans = [
       "3 régénérations gratuites / classe",
       "Données 100% locales (RGPD)",
     ],
-    cta: "Commencer gratuitement",
+    cta: "Commencer l'essai gratuit",
     theme: "light",
   },
   {

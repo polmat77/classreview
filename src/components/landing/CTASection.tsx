@@ -17,12 +17,12 @@ const CTASection = () => {
             size="lg"
             className="bg-white text-[#f0a830] hover:bg-white/95 px-8 py-6 text-base font-semibold rounded-lg shadow-lg transition-all duration-300 hover:scale-[1.02]"
           >
-            Commencer gratuitement
+            Commencer l'essai gratuit
           </Button>
         </Link>
 
         <p className="mt-6 text-white/80 text-sm font-medium">
-          Gratuit • Sans inscription • Compatible PRONOTE
+          Essai gratuit • Sans inscription • Compatible PRONOTE
         </p>
       </div>
     </section>
