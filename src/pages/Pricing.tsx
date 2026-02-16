@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Shield, ArrowLeft, Star, School, Loader2 } from "lucide-react";
+import { Check, Shield, ArrowLeft, Star, School, Loader2, Info, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DarkModeToggle from "@/components/DarkModeToggle";
 import PromoCodeInput from "@/components/promo/PromoCodeInput";
@@ -14,6 +14,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { STRIPE_PLANS, StripePlanKey } from "@/config/stripe";
 
 const logo = "/images/logos/AIProject4You_logo.png";
+
+const MAILTO_LINK = "mailto:aiproject4you@gmail.com?subject=Demande%20d'acc%C3%A8s%20Pro%20-%20AIProject4You&body=Bonjour%2C%0D%0A%0D%0AJe%20souhaiterais%20b%C3%A9n%C3%A9ficier%20de%20l'offre%20de%20lancement%20%C3%A0%20-50%25%20sur%20les%20tarifs%20AIProject4You.%0D%0A%0D%0AMon%20email%20de%20connexion%20%3A%20%0D%0ANombre%20de%20cr%C3%A9dits%20souhait%C3%A9%20%3A%20%0D%0A%0D%0AMerci%20!";
 
 // Pricing plans data
 const pricingPlans = [
@@ -189,41 +191,8 @@ const Pricing = () => {
       return;
     }
 
-    // Paid plans - require auth
-    if (!isAuthenticated) {
-      openAuthModal();
-      return;
-    }
-
-    const planKey = planId as StripePlanKey;
-    if (!(planKey in STRIPE_PLANS)) return;
-
-    setLoadingPlan(planId);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          price_id: STRIPE_PLANS[planKey].price_id,
-          plan: planKey,
-        },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      toast({
-        title: "Erreur",
-        description: "Impossible de lancer le paiement. Réessayez.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingPlan(null);
-    }
+    // Paid plans → mailto during launch phase
+    window.location.href = MAILTO_LINK;
   };
 
   return (
@@ -283,6 +252,26 @@ const Pricing = () => {
         </section>
 
         {/* Pricing Cards */}
+        {/* Launch Banner */}
+        <section className="max-w-[1400px] mx-auto mb-8">
+          <div className="flex flex-col md:flex-row items-start gap-4 p-5 rounded-xl bg-blue-50 dark:bg-slate-800 border-l-4 border-[#f0a830]">
+            <Info className="h-6 w-6 text-[#f0a830] flex-shrink-0 mt-0.5" />
+            <div className="flex-1 space-y-2">
+              <p className="text-sm text-foreground leading-relaxed">
+                🚀 Phase de lancement — Le système de paiement est actuellement en cours de mise en place. Pour toute demande de crédits supplémentaires ou d'accès Pro, contactez-nous par email et bénéficiez de{" "}
+                <span className="font-bold text-[#f0a830]">50% de réduction</span> sur les tarifs affichés !
+              </p>
+              <a
+                href={MAILTO_LINK}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f0a830] hover:bg-[#e09520] text-white text-sm font-medium transition-colors"
+              >
+                <Mail className="h-4 w-4" />
+                Nous contacter
+              </a>
+            </div>
+          </div>
+        </section>
+
         <section
           id="pricing-cards"
           ref={(el) => (sectionsRef.current["pricing-cards"] = el)}
@@ -402,7 +391,7 @@ const Pricing = () => {
             <Button
               variant="outline"
               className="border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors"
-              onClick={() => window.location.href = "mailto:contact@aiproject4you.com?subject=Offre Établissement"}
+              onClick={() => window.location.href = MAILTO_LINK}
             >
               Nous contacter →
             </Button>
@@ -461,6 +450,12 @@ const PricingCard = ({ plan, onSelect, loading }: PricingCardProps) => {
         !isGold && !isDark && "bg-card border border-border hover:shadow-lg"
       )}
     >
+      {/* Launch badge */}
+      {plan.id !== "free" && (
+        <div className="absolute -top-3 left-3 px-2 py-0.5 bg-emerald-500 text-white text-[10px] font-bold uppercase rounded-full shadow-md z-10">
+          OFFRE DE LANCEMENT -50%
+        </div>
+      )}
       {/* Badges */}
       {plan.recommended && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-gradient-to-r from-accent to-accent-hover text-white text-[11px] font-bold uppercase rounded-full shadow-md">
