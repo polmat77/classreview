@@ -70,9 +70,11 @@ Deno.serve(async (req) => {
     const userId = claimsData.user.id;
 
     // 2. Parse request body
-    const { code }: RedemptionRequest = await req.json();
-    
-    if (!code || typeof code !== 'string') {
+    const body = await req.json();
+    const code = typeof body?.code === 'string' ? body.code.trim() : '';
+
+    // Validate: non-empty, reasonable length, alphanumeric/dash only
+    if (!code || code.length > 50 || !/^[A-Za-z0-9\-_]+$/.test(code)) {
       const response: RedemptionResponse = {
         success: false,
         status: 'INVALID',
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const normalizedCode = code.trim().toUpperCase();
+    const normalizedCode = code.toUpperCase();
 
     // 3. Fetch the promo code
     const { data: promoCode, error: promoError } = await supabaseAdmin

@@ -38,9 +38,20 @@ serve(async (req) => {
       });
     }
 
-    const { price_id, plan } = await req.json();
+    const body = await req.json();
+    const price_id = typeof body?.price_id === "string" ? body.price_id.trim() : "";
+    const plan = typeof body?.plan === "string" ? body.plan.trim() : "";
+
     if (!price_id || !plan) {
       return new Response(JSON.stringify({ error: "Missing price_id or plan" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate price_id format (Stripe price IDs start with "price_")
+    if (!/^price_[a-zA-Z0-9]{10,}$/.test(price_id)) {
+      return new Response(JSON.stringify({ error: "Invalid price_id format" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
