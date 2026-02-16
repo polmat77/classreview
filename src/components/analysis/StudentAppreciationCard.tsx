@@ -76,10 +76,29 @@ const StudentAppreciationCard = ({
 }: StudentAppreciationCardProps) => {
   const { toast } = useToast();
   const [justificationsOpen, setJustificationsOpen] = useState(false);
+  const [originalText, setOriginalText] = useState("");
   
   // Separate copy states for header button and inline button
   const { isCopied: isHeaderCopied, copyToClipboard: copyHeader } = useCopyToClipboard();
   const { isCopied: isInlineCopied, copyToClipboard: copyInline } = useCopyToClipboard();
+
+  // Store original text when entering edit mode
+  const handleEditToggle = () => {
+    if (!isEditing) {
+      setOriginalText(appreciation);
+    }
+    onEditToggle();
+  };
+
+  const handleSave = () => {
+    onEditToggle();
+    toast({ title: "Enregistré ✓", description: `L'appréciation de ${name} a été sauvegardée.` });
+  };
+
+  const handleCancel = () => {
+    onAppreciationChange(originalText);
+    onEditToggle();
+  };
   
   const charCount = appreciation.length;
   const isOverLimit = charCount > charLimit;
@@ -140,7 +159,7 @@ const StudentAppreciationCard = ({
                       size="sm"
                       variant="ghost"
                       onClick={handleCopyFromHeader}
-                      disabled={!appreciation}
+                      disabled={!appreciation || isEditing}
                     >
                       {isHeaderCopied ? (
                         <Check className="h-4 w-4 text-success" />
@@ -159,7 +178,7 @@ const StudentAppreciationCard = ({
                       size="sm"
                       variant="ghost"
                       onClick={onRegenerate}
-                      disabled={isLoading}
+                      disabled={isLoading || isEditing}
                     >
                       {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -177,7 +196,8 @@ const StudentAppreciationCard = ({
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={onEditToggle}
+                      onClick={handleEditToggle}
+                      className={isEditing ? "text-[#7dd3e8]" : ""}
                     >
                       <Edit2 className="h-4 w-4" />
                     </Button>
@@ -227,11 +247,11 @@ const StudentAppreciationCard = ({
       
       <CardContent>
         {isEditing ? (
-          <div className="space-y-3">
+          <div className="space-y-3 transition-all duration-300">
             <Textarea
               value={appreciation}
               onChange={(e) => onAppreciationChange(e.target.value)}
-              className="min-h-[120px] resize-none"
+              className="min-h-[120px] resize-none border-2 border-[#7dd3e8] focus:border-[#7dd3e8] focus:ring-[#7dd3e8]/30"
               placeholder="Cliquez sur l'icône ✨ pour générer l'appréciation..."
             />
             <div className="flex items-center justify-between">
@@ -239,7 +259,7 @@ const StudentAppreciationCard = ({
                 {charCount}/{charLimit} caractères
                 {isOverLimit && (
                   <span className="ml-2 px-2 py-0.5 bg-destructive/10 text-destructive rounded text-xs">
-                    {charCount - charLimit} en trop
+                    ⚠️ {charCount - charLimit} en trop
                   </span>
                 )}
               </span>
@@ -258,9 +278,16 @@ const StudentAppreciationCard = ({
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={onEditToggle}
+                  onClick={handleCancel}
                 >
-                  Fermer
+                  ❌ Annuler
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  className="bg-[#f0a830] hover:bg-[#e09520] text-white"
+                >
+                  ✅ Enregistrer
                 </Button>
               </div>
             </div>
