@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Shield, Loader2 } from "lucide-react";
+import { Check, Shield, Loader2, Info, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,8 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { STRIPE_PLANS, StripePlanKey } from "@/config/stripe";
 import PricingFAQ from "./pricing/PricingFAQ";
+
+const MAILTO_LINK = "mailto:aiproject4you@gmail.com?subject=Demande%20d'acc%C3%A8s%20Pro%20-%20AIProject4You&body=Bonjour,%0D%0A%0D%0AJe%20souhaiterais%20b%C3%A9n%C3%A9ficier%20de%20l'offre%20de%20lancement%20%C3%A0%20-50%25%20sur%20les%20tarifs%20AIProject4You.%0D%0A%0D%0AMon%20email%20de%20connexion%20:%20%0D%0ANombre%20de%20cr%C3%A9dits%20souhait%C3%A9%20:%20%0D%0A%0D%0AMerci%20!";
 
 interface PricingPlan {
   badge?: string;
@@ -121,61 +123,13 @@ const PricingSection = () => {
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleCtaClick = async (plan: PricingPlan) => {
-    if (plan.price === "0€") {
-      openAuthModal();
+    // All paid plans → mailto
+    if (plan.price !== "0€") {
+      window.location.href = MAILTO_LINK;
       return;
     }
-
-    if (!isAuthenticated) {
-      openAuthModal();
-      return;
-    }
-
-    // Refresh session to ensure valid JWT
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    console.log('Session check:', { hasSession: !!sessionData?.session, error: sessionError });
-    
-    if (!sessionData?.session) {
-      console.error('No valid session, re-opening auth modal');
-      openAuthModal();
-      return;
-    }
-
-    const stripeKey = planToStripeKey[plan.name];
-    if (!stripeKey) return;
-
-    setLoadingPlan(plan.name);
-    try {
-      console.log('Calling create-checkout-session with:', {
-        price_id: STRIPE_PLANS[stripeKey].price_id,
-        plan: stripeKey,
-      });
-
-      const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-        body: {
-          price_id: STRIPE_PLANS[stripeKey].price_id,
-          plan: stripeKey,
-        },
-      });
-
-      console.log('Edge function response:', { data, error });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
-    } catch (err: any) {
-      console.error('Checkout error:', err);
-      toast({
-        title: "Erreur",
-        description: "Impossible de lancer le paiement. Réessayez.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoadingPlan(null);
-    }
+    // Free plan → auth modal
+    openAuthModal();
   };
 
   return (
@@ -190,9 +144,24 @@ const PricingSection = () => {
             </span>
           </h2>
         </div>
-        <p className="text-center text-[#64748b] dark:text-slate-400 max-w-2xl mx-auto mb-12 text-base sm:text-lg">
+        <p className="text-center text-[#64748b] dark:text-slate-400 max-w-2xl mx-auto mb-6 text-base sm:text-lg">
           Payez uniquement pour vos élèves. Commencez gratuitement, évoluez selon vos besoins.
         </p>
+
+        {/* Launch Banner */}
+        <div className="max-w-[900px] mx-auto mb-10 bg-blue-50 dark:bg-slate-800 border-l-4 border-[#f0a830] rounded-r-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <Info className="w-6 h-6 text-[#f0a830] flex-shrink-0 mt-0.5 sm:mt-0" />
+          <div className="flex-1 text-sm text-slate-700 dark:text-slate-300">
+            🚀 Phase de lancement — Le système de paiement est actuellement en cours de mise en place. Pour toute demande de crédits supplémentaires ou d'accès Pro, contactez-nous par email et bénéficiez de{" "}
+            <span className="font-bold text-[#f0a830]">50% de réduction</span> sur les tarifs affichés !
+          </div>
+          <a href={MAILTO_LINK}>
+            <Button className="bg-[#f0a830] hover:bg-[#e09520] text-white rounded-full whitespace-nowrap gap-2">
+              <Mail className="w-4 h-4" />
+              Nous contacter
+            </Button>
+          </a>
+        </div>
 
         {/* Pricing Cards */}
         <div className="flex gap-4 lg:gap-5 overflow-x-auto pb-4 snap-x snap-mandatory lg:snap-none lg:justify-center items-end mb-12">
@@ -211,6 +180,12 @@ const PricingSection = () => {
               {plan.highlighted && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-gradient-to-r from-[#f0a830] to-[#f5c563] text-white text-[11px] font-bold uppercase px-4 py-1 rounded-full whitespace-nowrap">
                   RECOMMANDÉ
+                </div>
+              )}
+
+              {plan.price !== "0€" && (
+                <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap z-10">
+                  OFFRE DE LANCEMENT -50%
                 </div>
               )}
 
@@ -294,7 +269,7 @@ const PricingSection = () => {
                 Contactez-nous pour un devis personnalisé • Facture établissement • Formation incluse • Support dédié
               </p>
             </div>
-            <a href="mailto:contact@aiproject4you.com?subject=Offre Établissement">
+            <a href={MAILTO_LINK}>
               <Button
                 variant="outline"
                 className="border-[#1a2332] dark:border-slate-500 text-[#1a2332] dark:text-white hover:bg-[#1a2332] hover:text-white dark:hover:bg-slate-600 whitespace-nowrap"
