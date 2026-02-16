@@ -78,7 +78,7 @@ const ClassCouncilLanding = () => {
               <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />
-                  Gratuit et sans engagement
+                  Essai gratuit
                 </span>
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />

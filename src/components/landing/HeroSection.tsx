@@ -10,7 +10,7 @@ interface HeroSectionProps {
 
 const HeroSection = ({ onScrollToSection }: HeroSectionProps) => {
   const badges = [
-    "100% gratuit",
+    "Essai gratuit",
     "RGPD",
     "Compatible PRONOTE",
   ];

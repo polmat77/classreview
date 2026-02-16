@@ -84,7 +84,7 @@ const ReportCardLanding = () => {
               <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />
-                  Gratuit et sans engagement
+                  Essai gratuit
                 </span>
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4 text-emerald-500" />
@@ -184,7 +184,7 @@ const ReportCardLanding = () => {
 
           <Link to="/reportcard-ai/app">
             <Button className="px-10 py-7 h-auto bg-gradient-to-r from-amber-400 to-amber-500 text-white font-bold rounded-xl shadow-2xl hover:shadow-3xl hover:-translate-y-1 transition-all text-lg">
-              Essayer gratuitement maintenant
+              Commencer l'essai gratuit
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>
@@ -192,7 +192,7 @@ const ReportCardLanding = () => {
           <div className="flex flex-wrap justify-center gap-4 mt-6 text-sm text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5">
               <Check className="w-4 h-4 text-emerald-500" />
-              100% gratuit
+              Essai gratuit
             </span>
             <span className="flex items-center gap-1.5">
               <Check className="w-4 h-4 text-emerald-500" />

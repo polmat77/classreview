@@ -15,7 +15,7 @@ const FAQSection = () => {
     {
       question: "Est-ce vraiment gratuit ?",
       answer:
-        "Oui ! ClassCouncilAI est 100% gratuit et illimité. ReportCardAI offre 30 appréciations gratuites par mois. Pour un usage intensif, vous pouvez passer à l'offre Pro à partir de 3,25€/mois.",
+        "Les deux outils offrent un essai gratuit permettant de tester jusqu'à 5 générations IA. Pour une utilisation régulière et sans limite, des offres Pro sont disponibles à partir de 4,99€.",
     },
     {
       question: "Mes données élèves sont-elles protégées ?",
