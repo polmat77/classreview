@@ -1,5 +1,6 @@
 import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
+import OnboardingChatbot from "@/components/OnboardingChatbot";
 import Stepper from "@/components/Stepper";
 import AnalyseTab from "@/components/tabs/AnalyseTab";
 import MatieresTab from "@/components/tabs/MatieresTab";
@@ -135,6 +136,7 @@ const Index = () => {
           {renderTabContent()}
         </div>
       </MainLayout>
+      <OnboardingChatbot toolName="ClassCouncilAI" />
     </>
   );
 };
