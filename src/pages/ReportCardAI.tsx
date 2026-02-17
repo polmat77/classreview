@@ -9,6 +9,7 @@ import Step4ClassSummary from "@/components/reportcard/Step4ClassSummary";
 import { useToast } from "@/hooks/use-toast";
 import { useRGPDConsent } from "@/hooks/useRGPDConsent";
 import { RGPDConsentModal } from "@/components/RGPDConsentModal";
+import OnboardingChatbot from "@/components/OnboardingChatbot";
 
 const STORAGE_KEY = "reportcard-ai-session";
 const PREFERENCES_KEY = "reportCardAI_preferences";
@@ -297,6 +298,7 @@ const ReportCardAI = () => {
       >
         {renderStep()}
       </ReportCardLayout>
+      <OnboardingChatbot toolName="ReportCardAI" />
     </>
   );
 };
