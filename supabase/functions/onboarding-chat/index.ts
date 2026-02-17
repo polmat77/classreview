@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,12 +14,40 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    // 1. Fetch knowledge base entries
+    let knowledgeContext = '';
+    try {
+      const supabaseAdmin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      );
+
+      const { data: knowledgeEntries } = await supabaseAdmin
+        .from('chatbot_knowledge')
+        .select('question, answer, category')
+        .in('tool', [toolName || 'global', 'global'])
+        .eq('active', true)
+        .order('priority', { ascending: false })
+        .limit(8);
+
+      if (knowledgeEntries && knowledgeEntries.length > 0) {
+        knowledgeContext = `\n\n═══════════════════════════════\nBASE DE CONNAISSANCES VÉRIFIÉE\n(Utilise ces informations en priorité absolue pour répondre)\n═══════════════════════════════\n`;
+        knowledgeEntries.forEach((entry, i) => {
+          knowledgeContext += `\nQ${i + 1}: ${entry.question}\nR${i + 1}: ${entry.answer}\n`;
+        });
+        knowledgeContext += `═══════════════════════════════\n`;
+      }
+    } catch (kbError) {
+      console.error("Knowledge base fetch error (non-blocking):", kbError);
+    }
+
+    // 2. Build system prompt with knowledge context
     const systemPrompt = `Tu es un assistant d'onboarding pour AIProject4You, une suite d'outils éducatifs pour enseignants français. Tu aides les utilisateurs à prendre en main l'outil ${toolName || "AIProject4You"}. Réponds UNIQUEMENT en français. Sois concis (max 3 phrases), bienveillant et pédagogue. Tu connais parfaitement :
 - ClassCouncilAI : import PDF PRONOTE, génération d'appréciations de conseil de classe, export
 - ReportCardAI : workflow 4 étapes (import PDF ou saisie manuelle, observations comportementales, génération IA par élève avec ton configurable, bilan de classe), limite caractères 200-500, 5 tons (Ferme/Neutre/Bienveillant/Encourageant/Constructif)
 - QuizMaster : création quiz XML compatibles PRONOTE, types QCM/vrai-faux/réponse libre/cloze
 - RGPD : toutes les données sont traitées localement dans le navigateur, aucune donnée élève n'est transmise à des serveurs externes.
-Ne réponds PAS à des questions hors contexte éducatif ou non liées aux outils.`;
+Ne réponds PAS à des questions hors contexte éducatif ou non liées aux outils.${knowledgeContext}`;
 
     // Keep only last 10 messages
     const trimmedMessages = (messages || []).slice(-10);
@@ -71,4 +100,3 @@ Ne réponds PAS à des questions hors contexte éducatif ou non liées aux outil
     });
   }
 });
-
